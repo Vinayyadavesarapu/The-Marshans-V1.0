@@ -19,6 +19,11 @@ test('1. ProductCard has NO color circles / variant dots', () => {
   assert.equal(content.includes('marshans-current-price'), true, 'Price display must be preserved');
   assert.equal(content.includes('marshans-cart-action-btn'), true, 'Add to cart button must be preserved');
   assert.equal(content.includes('marshans-badge-pill'), true, 'Category badge must be preserved');
+
+  // Verify ProductCardSkeleton has no leftover color dots
+  const skeletonContent = readFileSync(resolve('src/components/react/ProductCardSkeleton.tsx'), 'utf8');
+  assert.equal(skeletonContent.includes('skeleton-dots-row'), false, 'skeleton-dots-row should be removed');
+  assert.equal(skeletonContent.includes('skeleton-dot'), false, 'skeleton-dot should be removed');
 });
 
 test('2. ProductMasterView has NO hardcoded feature badges in Description tab', () => {

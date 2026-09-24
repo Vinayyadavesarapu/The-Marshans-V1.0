@@ -44,6 +44,60 @@ export default function HomeProductSection({ initialProducts = [] }: HomeProduct
           ))}
         </div>
       </div>
+
+      <style>{`
+        .home-products-section {
+          width: 100%;
+          padding: 2.5rem 0 5rem;
+          box-sizing: border-box;
+          background-color: #faf9f7;
+        }
+
+        .home-products-section .container {
+          max-width: 1440px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+          box-sizing: border-box;
+        }
+
+        .home-products-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 24px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        @media (max-width: 1100px) {
+          .home-products-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .home-products-section {
+            padding: 1.5rem 0 3.5rem;
+          }
+
+          .home-products-section .container {
+            padding: 0 1rem;
+          }
+
+          .home-products-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            max-width: 100%;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .home-products-grid {
+            grid-template-columns: 1fr;
+            max-width: 340px;
+            margin: 0 auto;
+          }
+        }
+      `}</style>
     </section>
   );
 }

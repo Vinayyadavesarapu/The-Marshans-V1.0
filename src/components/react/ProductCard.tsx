@@ -389,7 +389,6 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
         .marshans-pricing-group {
           display: flex;
           flex-direction: column;
-          gap: 10px;
         }
 
         .marshans-price-display {

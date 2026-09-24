@@ -21,11 +21,6 @@ export default function ProductCardSkeleton() {
         <div className="skeleton-bottom-row">
           <div className="skeleton-left">
             <div className="skeleton-price shimmer" />
-            <div className="skeleton-dots-row">
-              <span className="skeleton-dot shimmer" />
-              <span className="skeleton-dot shimmer" />
-              <span className="skeleton-dot shimmer" />
-            </div>
           </div>
 
           <div className="skeleton-cart-btn shimmer" />
@@ -117,26 +112,12 @@ export default function ProductCardSkeleton() {
         .skeleton-left {
           display: flex;
           flex-direction: column;
-          gap: 12px;
         }
 
         .skeleton-price {
           width: 90px;
           height: 24px;
           border-radius: 6px;
-          background: #e2e8f0;
-        }
-
-        .skeleton-dots-row {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-        }
-
-        .skeleton-dot {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
           background: #e2e8f0;
         }
 
