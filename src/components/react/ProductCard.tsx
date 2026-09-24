@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { addToCart } from '../../lib/api/cart';
 import type { Product } from '../../lib/api/products';
 import { resolveImageUrl } from '../../lib/utils/media';
+import { isItemInWishlist, toggleWishlistItem } from '../../lib/utils/wishlist';
 
 export interface ProductCardProps {
   product: Product;
@@ -13,6 +14,21 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   const [added, setAdded] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  useEffect(() => {
+    if (product?.id != null) {
+      setIsWishlisted(isItemInWishlist(product.id) || (product.slug ? isItemInWishlist(product.slug) : false));
+    }
+
+    const handleWishlistEvent = () => {
+      if (product?.id != null) {
+        setIsWishlisted(isItemInWishlist(product.id) || (product.slug ? isItemInWishlist(product.slug) : false));
+      }
+    };
+
+    window.addEventListener('marshans:wishlist-updated', handleWishlistEvent);
+    return () => window.removeEventListener('marshans:wishlist-updated', handleWishlistEvent);
+  }, [product?.id, product?.slug]);
 
   // Quick Add to Cart Handler
   const handleAddToCart = async (e: React.MouseEvent) => {
@@ -54,7 +70,12 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsWishlisted((prev) => !prev);
+    if (product?.id != null) {
+      const next = toggleWishlistItem(product.id);
+      setIsWishlisted(next);
+    } else {
+      setIsWishlisted((prev) => !prev);
+    }
   };
 
   // Format category badge text (spaced uppercase, e.g. L U M O)
