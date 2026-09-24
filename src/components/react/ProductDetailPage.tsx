@@ -38,10 +38,11 @@ export default function ProductDetailPage({ initialProduct = null }: ProductDeta
         setLoading(false);
         loadRelated(initialProduct);
 
-        // Refresh build-time product with live Store 2 data (id/price/images may have changed since build)
-        getProductByIdOrSlug(initialProduct.slug || initialProduct.id)
+        // Refresh build-time product with live Store 2 data (id/price/images may have changed since build).
+        // null = the API confirmed it no longer exists -> show not found; a network failure keeps the current view.
+        getProductByIdOrSlug(initialProduct.id)
           .then((live) => {
-            if (isMounted && live) setProduct(live);
+            if (isMounted) setProduct(live);
           })
           .catch(() => {});
         return;
@@ -62,9 +63,9 @@ export default function ProductDetailPage({ initialProduct = null }: ProductDeta
         if (isMounted) {
           if (resolved) {
             setProduct(resolved);
-            // Sync browser URL to clean slug if on query parameter
+            // Sync browser URL to clean slug if on query parameter (keep the id: slugs are derived from names and can collide)
             if (typeof window !== 'undefined' && resolved.slug && window.location.search.includes('slug=')) {
-              window.history.replaceState({}, '', `/product/${resolved.slug}`);
+              window.history.replaceState({}, '', `/product/${resolved.slug}?id=${resolved.id}`);
             }
             loadRelated(resolved);
           } else {
@@ -84,7 +85,7 @@ export default function ProductDetailPage({ initialProduct = null }: ProductDeta
         const res = await getProducts({ limit: 20 });
         if (isMounted && res && Array.isArray(res.products)) {
           const filtered = res.products
-            .filter((p) => p.id !== currProduct.id && p.category_slug === currProduct.category_slug)
+            .filter((p) => p.id !== currProduct.id && p.category_id === currProduct.category_id)
             .slice(0, 4);
           setRelatedProducts(filtered);
         }

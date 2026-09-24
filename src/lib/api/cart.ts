@@ -181,7 +181,8 @@ export async function addToCart(item: {
 }
 
 /**
- * Update item quantity via backend PATCH /api/cart/items/:id
+ * Update item quantity via backend PUT /api/cart/items/:id
+ * (same handler as PATCH; PUT is the method the API's CORS policy allows for browsers)
  */
 export async function updateCartQuantity(cartItemId: string, delta: number, currentQty?: number): Promise<boolean> {
   const current = getLocalCart();
@@ -194,7 +195,7 @@ export async function updateCartQuantity(cartItemId: string, delta: number, curr
 
   try {
     const res = await apiClient<any>(`/cart/items/${encodeURIComponent(cartItemId)}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify({ quantity: newQty })
     });
 

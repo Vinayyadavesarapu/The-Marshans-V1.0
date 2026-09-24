@@ -33,7 +33,8 @@ export default function CollectionPage({
     getProducts({ category_slug: categorySlug, limit: 50 })
       .then((res) => {
         if (isMounted && res && Array.isArray(res.products)) {
-          if (res.products.length > 0 || initialProducts.length === 0) {
+          // Live API response replaces build-time products (even when it is now empty)
+          if (res.ok) {
             setProducts(res.products);
           }
           setLoading(false);

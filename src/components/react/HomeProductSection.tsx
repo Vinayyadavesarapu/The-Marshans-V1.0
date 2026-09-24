@@ -15,8 +15,8 @@ export default function HomeProductSection({ initialProducts = [] }: HomeProduct
     getProducts({ limit: 12 })
       .then((res) => {
         if (isMounted && res && Array.isArray(res.products)) {
-          // If live products are returned, update products list
-          if (res.products.length > 0 || initialProducts.length === 0) {
+          // Live API response replaces build-time products (even when it is now empty)
+          if (res.ok) {
             setProducts(res.products);
           }
           setLoading(false);

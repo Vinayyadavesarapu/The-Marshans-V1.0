@@ -8,7 +8,7 @@
  */
 
 import { apiClient } from './client';
-import { toBackendCategorySlug, normalizeCategorySlug } from './categories';
+import { fetchCategories, normalizeCategorySlug, resolveBackendCategory } from './categories';
 import { resolveImageUrl } from '../utils/media';
 
 export interface ProductImage {
@@ -84,7 +84,9 @@ export interface Product {
 }
 
 /**
- * Fetch products from production Store 2 backend
+ * Fetch products from production Store 2 backend.
+ * `ok` is true only when the live API answered, so callers can replace build-time data even with an empty list.
+ * `category_slug` is a frontend route slug; it is resolved to the live backend category id.
  */
 export async function getProducts(params: {
   search?: string;
@@ -94,13 +96,19 @@ export async function getProducts(params: {
   featured?: boolean;
   limit?: number;
   offset?: number;
-} = {}): Promise<{ products: Product[]; total: number }> {
+} = {}): Promise<{ products: Product[]; total: number; ok: boolean }> {
+  let categoryId: number | null = params.category_id ? Number(params.category_id) : null;
+  if (params.category_slug) {
+    const categories = await fetchCategories();
+    if (!categories) return { products: [], total: 0, ok: false };
+    const category = resolveBackendCategory(params.category_slug, categories);
+    if (!category) return { products: [], total: 0, ok: true };
+    categoryId = category.id;
+  }
+
   const query = new URLSearchParams();
   if (params.search) query.set('search', params.search);
-  if (params.category_id) query.set('category_id', String(params.category_id));
-  if (params.category_slug) {
-    query.set('category_slug', toBackendCategorySlug(params.category_slug));
-  }
+  if (categoryId !== null) query.set('category_id', String(categoryId));
   if (params.is_best_seller) query.set('is_best_seller', '1');
   if (params.featured) query.set('featured', '1');
   if (params.limit) query.set('limit', String(params.limit));
@@ -112,28 +120,28 @@ export async function getProducts(params: {
   if (res && res.success && res.data && Array.isArray(res.data.products)) {
     let formatted = res.data.products.map(formatBackendProduct);
 
-    // The backend ignores the category_slug query param and returns the full Store 2 catalog,
-    // so enforce the category using each product's own category_slug from the API response.
-    if (params.category_slug) {
-      const wanted = normalizeCategorySlug(params.category_slug);
-      formatted = formatted.filter((p) => p.category_slug === wanted);
-      return { products: formatted, total: formatted.length };
+    // Enforce the category on each product's own category_id from the API response
+    if (categoryId !== null) {
+      formatted = formatted.filter((p) => p.category_id === categoryId);
+      return { products: formatted, total: formatted.length, ok: true };
     }
 
     return {
       products: formatted,
-      total: typeof res.data.total === 'number' ? res.data.total : formatted.length
+      total: typeof res.data.total === 'number' ? res.data.total : formatted.length,
+      ok: true
     };
   }
 
-  // Pure empty state if backend returns 0 or offline
-  return { products: [], total: 0 };
+  // Backend offline / error: callers keep whatever they already show
+  return { products: [], total: 0, ok: false };
 }
 
 export const fetchProducts = getProducts;
 
 /**
- * Fetch a single product by ID or slug from production Store 2 backend
+ * Fetch a single product by ID or slug from production Store 2 backend.
+ * Resolves null when the live API confirms the product does not exist; throws when the API is unreachable.
  */
 export async function getProductByIdOrSlug(idOrSlug: string | number): Promise<Product | null> {
   const clean = String(idOrSlug).trim();
@@ -146,21 +154,18 @@ export async function getProductByIdOrSlug(idOrSlug: string | number): Promise<P
   }
 
   // 2. Fallback: If not found directly (e.g. backend queried slug vs id), search active catalog
-  try {
-    const listRes = await getProducts({ limit: 100 });
-    const match = listRes.products.find(
-      (p) =>
-        p.slug === clean ||
-        p.admin_product_id === clean ||
-        p.sku === clean ||
-        String(p.id) === clean
-    );
-    if (match) return match;
-  } catch (err) {
-    // non-blocking
+  const listRes = await getProducts({ limit: 100 });
+  if (!listRes.ok) {
+    throw new Error(res?.error || 'Product API unreachable');
   }
-
-  return null;
+  const match = listRes.products.find(
+    (p) =>
+      p.slug === clean ||
+      p.admin_product_id === clean ||
+      p.sku === clean ||
+      String(p.id) === clean
+  );
+  return match || null;
 }
 
 /**
@@ -195,7 +200,7 @@ export function formatBackendProduct(raw: any): Product {
   const rawComparePricePaise = raw.compare_at_price ? Number(raw.compare_at_price) : undefined;
   const displayComparePrice = rawComparePricePaise !== undefined ? rawComparePricePaise / 100 : undefined;
 
-  const catSlug = normalizeCategorySlug(raw.category_slug || raw.category_name || 'general');
+  const catSlug = normalizeCategorySlug(raw.category_slug || raw.category_name || 'general', raw.category_name);
 
   // Format materials with paise modifier conversion if present
   const materials: ProductMaterial[] | undefined = Array.isArray(raw.materials)
@@ -244,7 +249,7 @@ export function formatBackendProduct(raw: any): Product {
   return {
     id: raw.id,
     admin_product_id: raw.admin_product_id || `MAR-${raw.id}`,
-    category_id: raw.category_id || 1,
+    category_id: raw.category_id != null ? Number(raw.category_id) : 0,
     category_name: raw.category_name || 'General',
     category_slug: catSlug,
     name: raw.name || `Product ${raw.id}`,

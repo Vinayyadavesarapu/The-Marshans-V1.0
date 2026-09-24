@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { getProducts } from '../../lib/api/products';
+import { fetchCategories, resolveBackendCategory } from '../../lib/api/categories';
 
 const CATEGORIES = [
   { id: 'all', name: 'All Drops' },
@@ -18,6 +19,22 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('featured');
   const [inStockOnly, setInStockOnly] = useState(false);
+  // Live backend category id for the selected route slug (undefined while resolving, null if no match)
+  const [selectedCategoryId, setSelectedCategoryId] = useState(undefined);
+
+  useEffect(() => {
+    if (selectedCategory === 'all') return;
+    let isMounted = true;
+    setSelectedCategoryId(undefined);
+    fetchCategories().then((categories) => {
+      if (!isMounted || !categories) return;
+      const category = resolveBackendCategory(selectedCategory, categories);
+      setSelectedCategoryId(category ? category.id : null);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCategory]);
 
   // Runtime live fetch from Store 2 production API
   useEffect(() => {
@@ -25,7 +42,8 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
     getProducts({ limit: 100 })
       .then((res) => {
         if (isMounted && res && Array.isArray(res.products)) {
-          if (res.products.length > 0 || initialProducts.length === 0) {
+          // Live API response replaces build-time products (even when it is now empty)
+          if (res.ok) {
             setProducts(res.products);
           }
           setLoading(false);
@@ -60,10 +78,7 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
 
     // Filter by Category
     if (selectedCategory !== 'all') {
-      list = list.filter((p) => {
-        const cat = (p.category_slug || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        return cat.includes(selectedCategory);
-      });
+      list = list.filter((p) => selectedCategoryId != null && p.category_id === selectedCategoryId);
     }
 
     // Filter by Search Query
@@ -92,7 +107,7 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
     }
 
     return list;
-  }, [products, selectedCategory, searchQuery, sortBy, inStockOnly]);
+  }, [products, selectedCategory, selectedCategoryId, searchQuery, sortBy, inStockOnly]);
 
   const updateCategory = (catId) => {
     setSelectedCategory(catId);
