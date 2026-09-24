@@ -12,15 +12,6 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-
-  // Variant color dots
-  const variantColors = [
-    { name: 'Pure White', bg: '#ffffff', border: '#d4d4d8' },
-    { name: 'Obsidian Grey', bg: '#52525b', border: '#52525b' },
-    { name: 'Midnight Black', bg: '#09090b', border: '#09090b' }
-  ];
-
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Quick Add to Cart Handler
@@ -39,7 +30,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
       quantity: 1,
       imageUrl: resolveImageUrl(product.primary_image_url || product.images?.[0]?.image_url),
       categoryName: product.category_name,
-      material: product.materials?.[0]?.name || variantColors[selectedVariantIndex]?.name || 'Standard PLA+',
+      material: product.materials?.[0]?.name || 'Standard PLA+',
       finishing: product.finishing_options?.[0]?.name || 'Studio Finish'
     });
 
@@ -145,36 +136,13 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           </div>
 
           <div className="marshans-bottom-row">
-            {/* Price & Variant Dots */}
+            {/* Price */}
             <div className="marshans-pricing-group">
               <div className="marshans-price-display">
                 <span className="marshans-current-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
                 {product.compare_at_price && product.compare_at_price > product.price && (
                   <span className="marshans-compare-price">₹{Number(product.compare_at_price).toLocaleString('en-IN')}</span>
                 )}
-              </div>
-
-              {/* Variant / Color Dots */}
-              <div className="marshans-variant-dots" role="radiogroup" aria-label="Available Finishes">
-                {variantColors.map((color, idx) => (
-                  <button
-                    key={color.name}
-                    type="button"
-                    role="radio"
-                    aria-checked={selectedVariantIndex === idx}
-                    aria-label={color.name}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSelectedVariantIndex(idx);
-                    }}
-                    className={`marshans-variant-dot ${selectedVariantIndex === idx ? 'is-selected' : ''}`}
-                    style={{
-                      backgroundColor: color.bg,
-                      borderColor: color.border
-                    }}
-                  />
-                ))}
               </div>
             </div>
 
@@ -419,33 +387,6 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           font-weight: 500;
           color: #a1a1aa;
           text-decoration: line-through;
-        }
-
-        /* Variant Color Dots */
-        .marshans-variant-dots {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .marshans-variant-dot {
-          width: 17px;
-          height: 17px;
-          border-radius: 50%;
-          border: 1.5px solid;
-          padding: 0;
-          cursor: pointer;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          outline: none;
-        }
-
-        .marshans-variant-dot:hover {
-          transform: scale(1.15);
-        }
-
-        .marshans-variant-dot.is-selected {
-          transform: scale(1.1);
-          box-shadow: 0 0 0 2px #ffffff, 0 0 0 3.5px #09090b;
         }
 
         /* Glowing Amber Circular Cart Button */

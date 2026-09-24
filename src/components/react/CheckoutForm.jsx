@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { getLocalCart, clearCart, getCartSummary, getBackendCart, isCustomerAuthenticated } from '../../lib/api/cart';
+import {
+  getLocalCart,
+  clearCart,
+  getCartSummary,
+  getBackendCart,
+  isCustomerAuthenticated,
+  getShippingPolicy,
+  getCachedShippingPolicy
+} from '../../lib/api/cart';
 import { createOrder } from '../../lib/api/orders';
 import { buildOrderPayload, CheckoutPayloadError } from '../../lib/api/checkoutPayload';
 import { SAVED_ADDRESS_KEY } from '../../lib/session/cache';
@@ -7,6 +15,7 @@ import { onAuthStateChange } from '../../lib/firebase/client';
 
 export default function CheckoutForm() {
   const [items, setItems] = useState([]);
+  const [shippingPolicy, setShippingPolicy] = useState(getCachedShippingPolicy());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('upi');
@@ -24,6 +33,16 @@ export default function CheckoutForm() {
 
   useEffect(() => {
     setItems(getLocalCart());
+
+    // Fetch authoritative backend shipping policy
+    getShippingPolicy().then((policy) => {
+      if (policy) setShippingPolicy(policy);
+    }).catch(console.error);
+
+    const handlePolicyUpdate = (e) => {
+      if (e.detail) setShippingPolicy(e.detail);
+    };
+    window.addEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
 
     const unsub = onAuthStateChange((user) => {
       if (user) {
@@ -59,10 +78,13 @@ export default function CheckoutForm() {
       }
     } catch {}
 
-    return () => unsub();
+    return () => {
+      unsub();
+      window.removeEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
+    };
   }, []);
 
-  const summary = getCartSummary(items);
+  const summary = getCartSummary(items, shippingPolicy);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -266,7 +288,7 @@ export default function CheckoutForm() {
                   onChange={() => setPaymentMethod('upi')}
                 />
                 <div className="payment-opt-info">
-                  <strong>Instant UPI (Zero Gateway Fee)</strong>
+                  <strong>Instant UPI</strong>
                   <p>Google Pay, PhonePe, Paytm, BHIM</p>
                 </div>
                 <span className="pay-badge">Instant</span>
@@ -349,7 +371,7 @@ export default function CheckoutForm() {
           </div>
 
           <div className="summary-line">
-            <span>Air Express Delivery</span>
+            <span>Standard Air Delivery</span>
             <span>{summary.shipping === 0 ? <strong style={{ color: '#15803d' }}>FREE</strong> : `₹${summary.shipping}`}</span>
           </div>
 

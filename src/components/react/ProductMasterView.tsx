@@ -9,6 +9,8 @@ export interface GalleryItem {
   is_primary?: boolean | number;
   is_video?: boolean;
   video_url?: string;
+  is_360?: boolean;
+  view_360_url?: string;
 }
 
 interface ProductMasterViewProps {
@@ -47,9 +49,9 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
     ? product.images
     : [{ id: 1, image_url: resolveImageUrl(product.primary_image_url), is_primary: true }];
 
-  const allMedia: GalleryItem[] = rawImages.map((img) => ({
+  const allMedia: GalleryItem[] = rawImages.map((img: any) => ({
     id: img.id,
-    image_url: resolveImageUrl(img.image_url),
+    image_url: resolveImageUrl(typeof img === 'string' ? img : img.image_url),
     is_primary: img.is_primary,
     is_video: false
   }));
@@ -60,6 +62,17 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
       image_url: resolveImageUrl(rawImages[0]?.image_url),
       is_video: true,
       video_url: product.video_url
+    });
+  }
+
+  // 360° Media Item (ONLY when a valid 360 URL exists)
+  const resolved360Url = product.view_360_url ? resolveImageUrl(product.view_360_url) : null;
+  if (resolved360Url && !allMedia.some((m) => m.is_360)) {
+    allMedia.push({
+      id: 'product-360-main',
+      image_url: allMedia[0]?.image_url || resolveImageUrl(product.primary_image_url),
+      is_360: true,
+      view_360_url: resolved360Url
     });
   }
 
@@ -156,9 +169,9 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
                     type="button"
                     role="tab"
                     aria-selected={selectedMediaIdx === idx}
-                    aria-label={`View media ${idx + 1}`}
+                    aria-label={item.is_360 ? 'View 360° interactive view' : item.is_video ? 'View video' : `View media ${idx + 1}`}
                     onClick={() => setSelectedMediaIdx(idx)}
-                    className={`thumbnail-btn ${selectedMediaIdx === idx ? 'active' : ''} ${item.is_video ? 'is-video-thumb' : ''}`}
+                    className={`thumbnail-btn ${selectedMediaIdx === idx ? 'active' : ''} ${item.is_video ? 'is-video-thumb' : ''} ${item.is_360 ? 'is-360-thumb' : ''}`}
                   >
                     <img src={item.image_url} alt="" className="thumb-img" />
                     {item.is_video && (
@@ -166,6 +179,11 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff">
                           <polygon points="5 3 19 12 5 21 5 3" />
                         </svg>
+                      </div>
+                    )}
+                    {item.is_360 && (
+                      <div className="video-thumb-badge is-360-badge" aria-hidden="true">
+                        360°
                       </div>
                     )}
                   </button>
@@ -185,6 +203,15 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
                     className="gallery-active-video"
                   />
                 </div>
+              ) : activeMedia.is_360 && activeMedia.view_360_url ? (
+                <div className="three-sixty-player-container">
+                  <iframe
+                    src={activeMedia.view_360_url}
+                    title={`${product.name} 360 view`}
+                    className="gallery-active-360"
+                    allowFullScreen
+                  />
+                </div>
               ) : (
                 <div className="image-viewport-wrapper">
                   <img
@@ -198,7 +225,7 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
               )}
 
               {/* Fullscreen Expand Action */}
-              {!activeMedia.is_video && (
+              {!activeMedia.is_video && !activeMedia.is_360 && (
                 <button
                   type="button"
                   className="stage-expand-btn"
@@ -215,6 +242,27 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
                 </button>
               )}
             </div>
+
+            {/* Interactive 360 quick button - ONLY when 360 exists */}
+            {resolved360Url && (
+              <div className="gallery-360-quick-action">
+                <button
+                  type="button"
+                  className={`btn-360-quick ${activeMedia.is_360 ? 'active' : ''}`}
+                  onClick={() => {
+                    const idx = allMedia.findIndex(m => m.is_360);
+                    if (idx !== -1) setSelectedMediaIdx(idx);
+                  }}
+                  aria-label="Toggle 360° interactive view"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                  </svg>
+                  Interactive 360° View
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -505,71 +553,13 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
           <div className="tab-pane">
             {activeTab === 'description' && (
               <div className="pane-description">
-                <p className="description-p">{product.description}</p>
-                
-                {/* 4 Feature Badges */}
-                <div className="feature-badges-grid">
-                  <div className="feature-badge-item">
-                    <div className="feature-badge-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#09090b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 22s4-10 10-10 10 10 10 10" />
-                        <path d="M12 12V2" />
-                      </svg>
-                    </div>
-                    <div className="feature-badge-copy">
-                      <strong>Eco-friendly materials</strong>
-                      <span>High-grade biopolymers</span>
-                    </div>
-                  </div>
-
-                  <div className="feature-badge-item">
-                    <div className="feature-badge-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#09090b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="5" />
-                        <line x1="12" y1="1" x2="12" y2="3" />
-                        <line x1="12" y1="21" x2="12" y2="23" />
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                        <line x1="1" y1="12" x2="3" y2="12" />
-                        <line x1="21" y1="12" x2="23" y2="12" />
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                      </svg>
-                    </div>
-                    <div className="feature-badge-copy">
-                      <strong>Warm ambient lighting</strong>
-                      <span>Diffused radiance</span>
-                    </div>
-                  </div>
-
-                  <div className="feature-badge-item">
-                    <div className="feature-badge-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#09090b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="6 2 18 2 22 8 12 22 2 8 6 2" />
-                      </svg>
-                    </div>
-                    <div className="feature-badge-copy">
-                      <strong>Modern minimal design</strong>
-                      <span>Curated collector art</span>
-                    </div>
-                  </div>
-
-                  <div className="feature-badge-item">
-                    <div className="feature-badge-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#09090b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 12 20 22 4 22 4 12" />
-                        <rect x="2" y="7" width="20" height="5" />
-                        <line x1="12" y1="22" x2="12" y2="7" />
-                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-                      </svg>
-                    </div>
-                    <div className="feature-badge-copy">
-                      <strong>Perfect for gifting</strong>
-                      <span>Signature unboxing</span>
-                    </div>
-                  </div>
-                </div>
+                {product.description && product.description.trim() ? (
+                  product.description.split('\n').filter(Boolean).map((para, i) => (
+                    <p key={i} className="description-p">{para}</p>
+                  ))
+                ) : (
+                  <p className="description-p empty-description">No detailed description provided for this piece.</p>
+                )}
               </div>
             )}
 
@@ -947,6 +937,68 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
           height: 100%;
           object-fit: contain;
           display: block;
+        }
+
+        .is-360-badge {
+          background: rgba(9, 9, 11, 0.7);
+          color: #ffffff;
+          font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+        }
+
+        .three-sixty-player-container {
+          width: 100%;
+          height: 100%;
+          background: #ffffff;
+        }
+
+        .gallery-active-360 {
+          width: 100%;
+          height: 100%;
+          border: none;
+          display: block;
+        }
+
+        .gallery-360-quick-action {
+          margin-top: 14px;
+          display: flex;
+          justify-content: center;
+        }
+
+        .btn-360-quick {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 18px;
+          border-radius: 9999px;
+          border: 1px solid rgba(0, 0, 0, 0.12);
+          background: #ffffff;
+          color: #09090b;
+          font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .btn-360-quick:hover {
+          background: #f4f4f5;
+          border-color: #09090b;
+        }
+
+        .btn-360-quick.active {
+          background: #09090b;
+          color: #ffffff;
+          border-color: #09090b;
+        }
+
+        .empty-description {
+          font-style: italic;
+          opacity: 0.7;
         }
 
         .stage-expand-btn {
@@ -1369,46 +1421,6 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
           margin: 0 0 22px 0;
         }
 
-        .feature-badges-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
-        }
-
-        .feature-badge-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-        }
-
-        .feature-badge-icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          background: #f4f4f5;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .feature-badge-copy {
-          display: flex;
-          flex-direction: column;
-          font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
-        }
-
-        .feature-badge-copy strong {
-          font-size: 12px;
-          color: #09090b;
-          font-weight: 700;
-        }
-
-        .feature-badge-copy span {
-          font-size: 11px;
-          color: #71717a;
-        }
-
         .specs-table {
           width: 100%;
           border-collapse: collapse;
@@ -1550,10 +1562,6 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
 
           .assurance-pillar:nth-child(2) {
             border-right: none;
-          }
-
-          .feature-badges-grid {
-            grid-template-columns: 1fr;
           }
 
           .tabs-nav {

@@ -248,25 +248,42 @@ export async function clearCart(): Promise<void> {
   saveLocalCart([]);
 }
 
+import { calculateShipping, getCachedShippingPolicy, getShippingPolicy, type ShippingPolicy, type ShippingCalculation } from './shipping';
+
+export { getShippingPolicy, getCachedShippingPolicy, calculateShipping };
+export type { ShippingPolicy, ShippingCalculation };
+
 /**
- * Calculate cart summary metrics
+ * Calculate cart summary metrics using authoritative backend shipping policy
  */
-export function getCartSummary(items: CartItem[] = getLocalCart()): CartSummary {
+export function getCartSummary(
+  items: CartItem[] = getLocalCart(),
+  policy?: ShippingPolicy
+): CartSummary {
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  // Free delivery threshold: ₹1999
-  const shipping = subtotal >= 1999 || items.length === 0 ? 0 : 149;
-  const total = subtotal + shipping;
+
+  if (items.length === 0) {
+    return {
+      itemCount: 0,
+      subtotal: 0,
+      shipping: 0,
+      total: 0,
+      isFreeShipping: false
+    };
+  }
+
+  const calc = calculateShipping(subtotal, policy || getCachedShippingPolicy());
 
   return {
     itemCount,
-    subtotal,
-    shipping,
-    total,
-    isFreeShipping: subtotal >= 1999
+    subtotal: calc.subtotal,
+    shipping: calc.shipping,
+    total: calc.total,
+    isFreeShipping: calc.isFreeShipping
   };
 }
 
 export function getCartCount(): number {
-  return getCartSummary().itemCount;
+  return getLocalCart().reduce((sum, item) => sum + item.quantity, 0);
 }

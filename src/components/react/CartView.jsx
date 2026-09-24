@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { getLocalCart, updateCartQuantity, removeFromCart, getCartSummary, getBackendCart, isCustomerAuthenticated } from '../../lib/api/cart';
+import {
+  getLocalCart,
+  updateCartQuantity,
+  removeFromCart,
+  getCartSummary,
+  getBackendCart,
+  isCustomerAuthenticated,
+  getShippingPolicy,
+  getCachedShippingPolicy,
+  calculateShipping
+} from '../../lib/api/cart';
 import { onAuthStateChange } from '../../lib/firebase/client';
 import { resolveImageUrl } from '../../lib/utils/media';
 
 export default function CartView() {
   const [items, setItems] = useState([]);
+  const [shippingPolicy, setShippingPolicy] = useState(getCachedShippingPolicy());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -16,7 +27,17 @@ export default function CartView() {
     setItems(getLocalCart());
     setIsAuthenticated(isCustomerAuthenticated());
 
-    // 2. Auth listener to load authoritative backend cart
+    // 2. Fetch authoritative backend shipping policy
+    getShippingPolicy().then((policy) => {
+      if (policy) setShippingPolicy(policy);
+    }).catch(console.error);
+
+    const handlePolicyUpdate = (e) => {
+      if (e.detail) setShippingPolicy(e.detail);
+    };
+    window.addEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
+
+    // 3. Auth listener to load authoritative backend cart
     const unsub = onAuthStateChange((user) => {
       setIsAuthenticated(Boolean(user));
       if (user) {
@@ -36,10 +57,13 @@ export default function CartView() {
     return () => {
       unsub();
       window.removeEventListener('marshans:cart-updated', handleUpdate);
+      window.removeEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
     };
   }, []);
 
-  const summary = getCartSummary(items);
+  const subtotalAmount = items.reduce((s, it) => s + (it.price * it.quantity), 0);
+  const shippingCalc = calculateShipping(subtotalAmount, shippingPolicy);
+  const summary = getCartSummary(items, shippingPolicy);
   const finalDiscount = promoDiscount;
   const finalTotal = Math.max(0, summary.total - finalDiscount);
 
@@ -56,10 +80,6 @@ export default function CartView() {
       setPromoError('Invalid promotion code.');
     }
   };
-
-  const freeShippingThreshold = 1999;
-  const progressPercent = Math.min(100, Math.round((summary.subtotal / freeShippingThreshold) * 100));
-  const amountNeededForFreeShipping = Math.max(0, freeShippingThreshold - summary.subtotal);
 
   if (items.length === 0) {
     if (!isAuthenticated) {
@@ -93,21 +113,36 @@ export default function CartView() {
     <div className="cart-view-layout">
       {/* Left: Cart Items List */}
       <div className="cart-items-column">
-        {/* Free Shipping Progress Indicator */}
+        {/* Shipping Banner / Progress Indicator */}
         <div className="free-shipping-card">
-          <div className="shipping-progress-text">
-            {amountNeededForFreeShipping === 0 ? (
-              <span className="unlocked-msg">🎉 <strong>FREE PAN-INDIA DELIVERY UNLOCKED!</strong></span>
-            ) : (
-              <span>Add <strong>₹{amountNeededForFreeShipping.toLocaleString('en-IN')}</strong> more to unlock <strong>FREE Delivery</strong></span>
-            )}
-          </div>
-          <div className="shipping-bar-track">
-            <div
-              className="shipping-bar-fill"
-              style={{ width: `${progressPercent}%`, backgroundColor: amountNeededForFreeShipping === 0 ? '#15803d' : '#09090b' }}
-            />
-          </div>
+          {shippingPolicy.freeShippingEnabled && shippingPolicy.freeShippingThreshold > 0 ? (
+            <>
+              <div className="shipping-progress-text">
+                {shippingCalc.isFreeShipping ? (
+                  <span className="unlocked-msg">🎉 <strong>FREE PAN-INDIA DELIVERY UNLOCKED!</strong></span>
+                ) : (
+                  <span>Add <strong>₹{shippingCalc.amountNeededForFreeShipping.toLocaleString('en-IN')}</strong> more to unlock <strong>FREE Delivery</strong></span>
+                )}
+              </div>
+              <div className="shipping-bar-track">
+                <div
+                  className="shipping-bar-fill"
+                  style={{
+                    width: `${shippingCalc.progressPercent}%`,
+                    backgroundColor: shippingCalc.isFreeShipping ? '#15803d' : '#09090b'
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="shipping-progress-text">
+              {summary.shipping === 0 ? (
+                <span className="unlocked-msg">🎉 <strong>FREE PAN-INDIA DELIVERY</strong></span>
+              ) : (
+                <span>Standard Air Delivery: <strong>₹{summary.shipping}</strong> across India</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Item Rows */}
@@ -304,6 +339,10 @@ export default function CartView() {
           font-size: 13px;
           color: #3f3f46;
           margin-bottom: 8px;
+        }
+
+        .free-shipping-card .shipping-progress-text:only-child {
+          margin-bottom: 0;
         }
 
         .unlocked-msg {

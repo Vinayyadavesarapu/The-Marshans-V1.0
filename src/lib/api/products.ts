@@ -64,6 +64,7 @@ export interface Product {
   primary_image_url: string;
   images: ProductImage[];
   video_url?: string | null;
+  view_360_url?: string | null;
   colors?: ProductColorOption[];
   sizes?: ProductSizeOption[];
   materials?: ProductMaterial[];
@@ -157,7 +158,7 @@ export async function getProductByIdOrSlug(idOrSlug: string | number): Promise<P
  * Normalizes backend MariaDB Store 2 product data to frontend Product interface.
  * Converts authoritative paise money values to rupees for display.
  */
-function formatBackendProduct(raw: any): Product {
+export function formatBackendProduct(raw: any): Product {
   const primaryImg = resolveImageUrl(raw.primary_image_url || raw.lumo_light_image || '', '');
 
   const images: ProductImage[] =
@@ -228,6 +229,9 @@ function formatBackendProduct(raw: any): Product {
       }))
     : undefined;
 
+  const raw360 = raw.view_360_url || raw.lumo_light_360_url || null;
+  const resolved360 = raw360 ? resolveImageUrl(raw360) : null;
+
   return {
     id: raw.id,
     admin_product_id: raw.admin_product_id || `MAR-${raw.id}`,
@@ -244,6 +248,7 @@ function formatBackendProduct(raw: any): Product {
     primary_image_url: primaryImg || (images[0]?.image_url ?? '/assets/placeholders/product-placeholder.svg'),
     images,
     video_url: raw.video_url || null,
+    view_360_url: resolved360,
     colors,
     sizes,
     materials,
