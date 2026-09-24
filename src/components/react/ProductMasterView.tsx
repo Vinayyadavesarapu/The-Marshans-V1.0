@@ -3,6 +3,10 @@ import { addToCart } from '../../lib/api/cart';
 import type { Product, ProductColorOption, ProductSizeOption, ProductMaterial, ProductFinishingOption } from '../../lib/api/products';
 import { resolveImageUrl } from '../../lib/utils/media';
 
+// Specifications / Shipping & Returns tabs are hidden from the product page for now.
+// Their panes and product data stay intact for reuse in the Features area — flip to true to restore.
+const SHOW_SPECS_AND_SHIPPING_TABS = false;
+
 export interface GalleryItem {
   id: string | number;
   image_url: string;
@@ -530,6 +534,9 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
             >
               DESCRIPTION
             </button>
+            {/* Specifications & Shipping tabs hidden for now; panes/data kept for the upcoming Features area */}
+            {SHOW_SPECS_AND_SHIPPING_TABS && (
+            <>
             <button
               type="button"
               role="tab"
@@ -548,6 +555,8 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
             >
               SHIPPING & RETURNS
             </button>
+            </>
+            )}
           </div>
 
           <div className="tab-pane">

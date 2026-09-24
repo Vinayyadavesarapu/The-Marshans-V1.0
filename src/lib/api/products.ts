@@ -110,7 +110,16 @@ export async function getProducts(params: {
   const res = await apiClient<{ products: any[]; total: number }>(endpoint);
 
   if (res && res.success && res.data && Array.isArray(res.data.products)) {
-    const formatted = res.data.products.map(formatBackendProduct);
+    let formatted = res.data.products.map(formatBackendProduct);
+
+    // The backend ignores the category_slug query param and returns the full Store 2 catalog,
+    // so enforce the category using each product's own category_slug from the API response.
+    if (params.category_slug) {
+      const wanted = normalizeCategorySlug(params.category_slug);
+      formatted = formatted.filter((p) => p.category_slug === wanted);
+      return { products: formatted, total: formatted.length };
+    }
+
     return {
       products: formatted,
       total: typeof res.data.total === 'number' ? res.data.total : formatted.length

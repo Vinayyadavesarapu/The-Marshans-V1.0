@@ -37,6 +37,13 @@ export default function ProductDetailPage({ initialProduct = null }: ProductDeta
         setProduct(initialProduct);
         setLoading(false);
         loadRelated(initialProduct);
+
+        // Refresh build-time product with live Store 2 data (id/price/images may have changed since build)
+        getProductByIdOrSlug(initialProduct.slug || initialProduct.id)
+          .then((live) => {
+            if (isMounted && live) setProduct(live);
+          })
+          .catch(() => {});
         return;
       }
 

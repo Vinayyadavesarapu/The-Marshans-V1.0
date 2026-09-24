@@ -41,6 +41,11 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
       return;
     }
 
+    if (!res?.success) {
+      console.warn('Add to cart failed:', res?.error);
+      return;
+    }
+
     setAdded(true);
     setTimeout(() => setAdded(false), 2200);
   };
