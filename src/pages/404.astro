@@ -1,0 +1,129 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="404 — Artifact Not Found | THE MARSHANS"
+  description="The requested page could not be located in The Marshans catalog."
+>
+  <script is:inline>
+    // Seamless client-side routing fallback for dynamically added products
+    (function () {
+      var path = window.location.pathname;
+      if (path.indexOf('/product/') === 0) {
+        var slug = path.replace(/^\/product\/?/, '').split('/')[0];
+        if (slug && slug !== 'index.html' && slug !== '') {
+          window.location.replace('/product?slug=' + encodeURIComponent(slug));
+        }
+      }
+    })();
+  </script>
+
+  <div class="not-found-wrapper">
+    <div class="container">
+      <span class="not-found-icon">🪐</span>
+      <span class="not-found-eyebrow">COORDINATES UNKNOWN</span>
+      <h1 class="not-found-title">404 — ARTIFACT NOT FOUND</h1>
+      <p class="not-found-desc">
+        The coordinate you are searching for does not exist or has been shifted into the deep universe archives.
+      </p>
+      <div class="not-found-actions">
+        <a href="/shop" class="btn btn-primary">Browse Full Catalog</a>
+        <a href="/#home-carousel-section" class="btn btn-secondary">Return Home</a>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .not-found-wrapper {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 1.5rem;
+    background-color: #ffffff;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .not-found-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .not-found-eyebrow {
+    font-family: var(--font-sans, -apple-system, sans-serif);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.25em;
+    color: #e11d48;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .not-found-title {
+    font-family: var(--font-display, 'Bebas Neue', Impact, sans-serif);
+    font-size: clamp(36px, 6vw, 54px);
+    letter-spacing: 0.05em;
+    color: #09090b;
+    margin: 0 0 16px 0;
+    line-height: 1.1;
+  }
+
+  .not-found-desc {
+    font-family: var(--font-sans, -apple-system, sans-serif);
+    font-size: 15px;
+    color: #71717a;
+    line-height: 1.6;
+    margin-bottom: 36px;
+  }
+
+  .not-found-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    padding: 0 28px;
+    font-family: var(--font-sans, -apple-system, sans-serif);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background-color: #09090b;
+    color: #ffffff;
+  }
+
+  .btn-primary:hover {
+    background-color: #27272a;
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: #09090b;
+    border: 1px solid #e4e4e7;
+  }
+
+  .btn-secondary:hover {
+    background-color: #f4f4f5;
+  }
+</style>

@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CartView from '../components/react/CartView.jsx';
+---
+
+<Layout
+  title="Shopping Bag — THE MARSHANS"
+  description="Review your 3D printed artifacts and proceeding to priority dispatch."
+  noindex={true}
+>
+  <div class="cart-page-wrapper">
+    <div class="container section-padding" style="padding-top: 48px;">
+      <div class="cart-header-row">
+        <span class="section-subtitle">YOUR VAULT</span>
+        <h1 class="section-title">SHOPPING BAG</h1>
+      </div>
+
+      <CartView client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .cart-page-wrapper {
+    background-color: #fafafa;
+    min-height: 80vh;
+  }
+
+  .cart-header-row {
+    margin-bottom: 36px;
+  }
+</style>

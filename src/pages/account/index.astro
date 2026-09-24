@@ -1,0 +1,23 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AccountDashboard from '../../components/react/AccountDashboard.jsx';
+---
+
+<Layout
+  title="Collector Dashboard — THE MARSHANS"
+  description="Manage your Marshan orders, track print queues, and configure delivery profiles."
+  noindex={true}
+>
+  <div class="account-page-layout">
+    <div class="container section-padding" style="padding-top: 48px;">
+      <AccountDashboard client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .account-page-layout {
+    background-color: #fafafa;
+    min-height: 80vh;
+  }
+</style>

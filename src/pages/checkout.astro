@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CheckoutForm from '../components/react/CheckoutForm.jsx';
+---
+
+<Layout
+  title="Checkout — THE MARSHANS"
+  description="Secure checkout and priority courier fulfillment coordinates."
+  noindex={true}
+>
+  <div class="checkout-page-root">
+    <div class="container section-padding" style="padding-top: 48px;">
+      <div class="checkout-header">
+        <span class="section-subtitle">STORE #2 // MARSHANS DISPATCH</span>
+        <h1 class="section-title">SECURE ORDER AUTHORIZATION</h1>
+      </div>
+
+      <CheckoutForm client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .checkout-page-root {
+    background-color: #fafafa;
+    min-height: 85vh;
+  }
+
+  .checkout-header {
+    margin-bottom: 36px;
+  }
+</style>

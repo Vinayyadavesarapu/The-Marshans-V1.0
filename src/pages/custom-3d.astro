@@ -1,0 +1,87 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Custom3DStudio from '../components/react/Custom3DStudio.jsx';
+
+const customForgeJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  'name': 'Custom Forge — On-Demand 3D Fabrication',
+  'provider': {
+    '@type': 'Organization',
+    'name': 'THE MARSHANS',
+    'url': 'https://themarshans.shop'
+  },
+  'serviceType': 'Custom 3D Printing & Rapid Prototyping',
+  'description': 'On-demand additive manufacturing for custom STL, OBJ, STEP, and 3MF files with precision engineering polymers and studio finishes.',
+  'url': 'https://themarshans.shop/custom-3d'
+};
+---
+
+<Layout
+  title="Custom Forge — On-Demand 3D Printing Studio — THE MARSHANS"
+  description="Instant automated manufacturing estimates for custom STL, OBJ, and 3MF files. Engineered with 0.12mm precision by THE MARSHANS."
+  image="/assets/categories/custom-forge/hero.webp"
+  jsonLd={customForgeJsonLd}
+>
+  <div class="custom-page-wrapper">
+    <!-- Complete Finished Hero Banner (True Full-Width & Proportionally Scaled) -->
+    <section class="custom-hero-banner" aria-label="Custom Forge Hero Banner">
+      <img
+        src="/assets/categories/custom-forge/hero.webp"
+        alt="Custom Forge — THE MARSHANS"
+        class="custom-hero-banner-img"
+        loading="eager"
+        decoding="async"
+      />
+    </section>
+
+    <!-- Interactive Custom Forge Studio Workspace -->
+    <div class="container section-padding" style="padding-top: 36px; padding-bottom: 72px;">
+      <Custom3DStudio client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .custom-page-wrapper {
+    background-color: #fafafa;
+    min-height: 85vh;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .custom-hero-banner {
+    width: 100%;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    line-height: 0;
+    box-sizing: border-box;
+    background: transparent;
+  }
+
+  .custom-hero-banner-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: none;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 1rem;
+    }
+  }
+</style>

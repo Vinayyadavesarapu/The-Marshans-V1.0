@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600">
+  <rect width="1200" height="600" fill="#0f172a"/>
+  <g stroke="#38bdf8" stroke-width="1" opacity="0.15">
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/>
+    <line x1="0" y1="450" x2="1200" y2="450"/>
+    <line x1="300" y1="0" x2="300" y2="600"/>
+    <line x1="600" y1="0" x2="600" y2="600"/>
+    <line x1="900" y1="0" x2="900" y2="600"/>
+  </g>
+  <circle cx="600" cy="260" r="140" fill="#38bdf8" opacity="0.15" filter="blur(30px)"/>
+  <text x="600" y="270" text-anchor="middle" font-family="'Bebas Neue', Impact, sans-serif" font-size="80" letter-spacing="6" fill="#ffffff">CUSTOM 3D FABRICATION</text>
+  <text x="600" y="330" text-anchor="middle" font-family="'Manrope', sans-serif" font-size="18" font-weight="600" letter-spacing="3" fill="#38bdf8">PRECISION ON-DEMAND ADDITIVE MANUFACTURING</text>
+</svg>

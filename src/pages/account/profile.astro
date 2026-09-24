@@ -1,0 +1,54 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ProfileManager from '../../components/react/ProfileManager.jsx';
+---
+
+<Layout
+  title="Saved Addresses — THE MARSHANS"
+  description="Manage your default shipping addresses and dispatch settings."
+  noindex={true}
+>
+  <div class="profile-page-root">
+    <div class="container section-padding" style="padding-top: 48px;">
+      <div class="profile-page-header">
+        <div class="header-breadcrumbs">
+          <a href="/account">← Back to Dashboard</a>
+        </div>
+        <span class="section-subtitle">COLLECTOR PROFILE</span>
+        <h1 class="section-title">SHIPPING COORDINATES</h1>
+      </div>
+
+      <ProfileManager client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .profile-page-root {
+    background-color: #fafafa;
+    min-height: 80vh;
+  }
+
+  .profile-page-header {
+    margin-bottom: 36px;
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .header-breadcrumbs {
+    margin-bottom: 12px;
+  }
+
+  .header-breadcrumbs a {
+    font-size: 12px;
+    font-weight: 700;
+    color: #71717a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .header-breadcrumbs a:hover {
+    color: #111111;
+  }
+</style>

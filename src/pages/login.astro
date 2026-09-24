@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LoginForm from '../components/react/LoginForm.jsx';
+---
+
+<Layout
+  title="Sign In — THE MARSHANS"
+  description="Sign in to your Marshan collector account to track orders and manage drops."
+  noindex={true}
+>
+  <div class="auth-page-wrapper">
+    <div class="container section-padding">
+      <LoginForm client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .auth-page-wrapper {
+    background-color: #fafafa;
+    min-height: 75vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>

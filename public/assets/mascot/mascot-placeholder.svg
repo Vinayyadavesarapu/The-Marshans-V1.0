@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" rx="28" fill="#f4f4f5"/>
+  <circle cx="100" cy="85" r="45" fill="#e4e4e7" stroke="#d4d4d8" stroke-width="3"/>
+  <circle cx="85" cy="80" r="6" fill="#18181b"/>
+  <circle cx="115" cy="80" r="6" fill="#18181b"/>
+  <path d="M 85 105 Q 100 120 115 105" stroke="#18181b" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <rect x="70" y="140" width="60" height="36" rx="18" fill="#e11d48"/>
+  <text x="100" y="162" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#ffffff" letter-spacing="1">MARSHAN</text>
+</svg>

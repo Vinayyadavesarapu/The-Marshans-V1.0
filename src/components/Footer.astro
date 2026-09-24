@@ -1,0 +1,388 @@
+---
+import { siteConfig } from '../lib/config/site';
+---
+
+<footer class="site-footer">
+  <div class="footer-newsletter-wrap">
+    <div class="container newsletter-inner">
+      <div class="newsletter-copy">
+        <h3 class="newsletter-title">JOIN THE MARSHAN DISPATCH</h3>
+        <p class="newsletter-sub">Get first access to limited 3D print drops, artist collaborations, and exclusive prototype releases.</p>
+      </div>
+      <form class="newsletter-form" id="newsletter-form" onsubmit="event.preventDefault(); alert('Welcome to the Marshan Dispatch. You are on the priority drop list!');">
+        <input
+          type="email"
+          placeholder="Enter your email address..."
+          required
+          class="newsletter-input"
+        />
+        <button type="submit" class="btn btn-primary newsletter-btn">
+          Subscribe
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container footer-main">
+    <div class="footer-grid">
+      <!-- Column 1: Brand & Philosophy -->
+      <div class="footer-col brand-col">
+        <div class="footer-logo-row">
+          <img src="/assets/branding/marshans-logo.png" alt="THE MARSHANS" class="footer-logo-img" width="160" height="30" />
+          <span class="footer-tagline-badge">MADE TO BE DISCOVERED</span>
+        </div>
+        <p class="footer-bio">
+          Precision 3D printed artifacts, luminous ambient sculptures, intricate dioramas, and functional engineering designed for modern desks and sacred spaces.
+        </p>
+        <div class="chipakk-cross-badge">
+          <span class="chipakk-note">An independent brand under</span>
+          <a href={siteConfig.chipakkStore.href} target="_blank" rel="noopener noreferrer" class="chipakk-link">
+            <span>CHIPAKK</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Column 2: The 5 Universes -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">The Universes</h4>
+        <ul class="footer-links">
+          <li><a href="/categories/lumo">LUMO (Ambient Lamps)</a></li>
+          <li><a href="/categories/fandom-tribe">Fandom Tribe (Collectibles)</a></li>
+          <li><a href="/categories/minitales">Mini Tales (Dioramas)</a></li>
+          <li><a href="/categories/utility-co">Utility Co. (Desk Gear)</a></li>
+          <li><a href="/categories/darshanam">Darshanam (Temples & Heritage)</a></li>
+          <li><a href="/custom-3d" class="footer-highlight-link">Custom Forge (On-Demand 3D)</a></li>
+        </ul>
+      </div>
+
+      <!-- Column 3: Collector Services -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">Collector Care</h4>
+        <ul class="footer-links">
+          <li><a href="/account/orders">Track Your Order</a></li>
+          <li><a href="/cart">Shopping Bag</a></li>
+          <li><a href="/account">My Account</a></li>
+          <li><a href="/custom-3d">Upload STL / 3MF</a></li>
+        </ul>
+      </div>
+
+      <!-- Column 4: Quality & Trust -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">Craft Guarantee</h4>
+        <div class="trust-list">
+          <div class="trust-item">
+            <span class="trust-badge-icon">✓</span>
+            <div>
+              <strong>0.12mm Ultra-Fine Layers</strong>
+              <p>High-resolution SLA & multi-color FDM printing.</p>
+            </div>
+          </div>
+          <div class="trust-item">
+            <span class="trust-badge-icon">✓</span>
+            <div>
+              <strong>Eco-Friendly PLA & Tough Resins</strong>
+              <p>Non-toxic, sustainable and durable materials.</p>
+            </div>
+          </div>
+          <div class="trust-item">
+            <span class="trust-badge-icon">✓</span>
+            <div>
+              <strong>Secure Pan-India Delivery</strong>
+              <p>Bubble-wrapped & crash-resistant packaging.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="footer-bottom">
+      <div class="footer-bottom-copy">
+        © {new Date().getFullYear()} THE MARSHANS. All rights reserved. Precision Made in India.
+      </div>
+      <div class="footer-bottom-payment">
+        <span class="payment-badge">UPI</span>
+        <span class="payment-badge">RuPay</span>
+        <span class="payment-badge">Visa</span>
+        <span class="payment-badge">Mastercard</span>
+        <span class="payment-badge">NetBanking</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background-color: #fafafa;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    color: #18181b;
+    margin-top: auto;
+  }
+
+  .footer-newsletter-wrap {
+    background-color: #f4f4f5;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 48px 0;
+  }
+
+  .newsletter-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .newsletter-copy {
+    max-width: 520px;
+  }
+
+  .newsletter-title {
+    font-family: var(--font-display, Impact, sans-serif);
+    font-size: clamp(28px, 3.5vw, 40px);
+    letter-spacing: 0.05em;
+    color: #09090b;
+    margin-bottom: 8px;
+  }
+
+  .newsletter-sub {
+    font-size: 14px;
+    color: #71717a;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .newsletter-form {
+    display: flex;
+    gap: 10px;
+    flex: 1 1 360px;
+    max-width: 480px;
+  }
+
+  .newsletter-input {
+    flex: 1;
+    height: 48px;
+    padding: 0 16px;
+    border-radius: var(--radius-sm, 6px);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: #ffffff;
+    font-size: 14px;
+    outline: none;
+    font-family: var(--font-sans, sans-serif);
+    transition: border-color 0.2s ease;
+  }
+
+  .newsletter-input:focus {
+    border-color: #111111;
+  }
+
+  .newsletter-btn {
+    height: 48px;
+    white-space: nowrap;
+  }
+
+  .footer-main {
+    padding-top: 64px;
+    padding-bottom: 32px;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.5fr;
+    gap: 48px;
+    margin-bottom: 56px;
+  }
+
+  .footer-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .footer-logo-img {
+    height: 30px;
+    width: auto;
+    max-width: 150px;
+    object-fit: contain;
+    display: block;
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  .footer-tagline-badge {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    background: #e4e4e7;
+    color: #3f3f46;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .footer-bio {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #71717a;
+    max-width: 420px;
+    margin-bottom: 24px;
+  }
+
+  .chipakk-cross-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 6px 12px;
+    border-radius: 8px;
+  }
+
+  .chipakk-note {
+    font-size: 11px;
+    color: #71717a;
+  }
+
+  .chipakk-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #e11d48;
+  }
+
+  .chipakk-link:hover {
+    text-decoration: underline;
+  }
+
+  .footer-col-title {
+    font-family: var(--font-display, Impact, sans-serif);
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    color: #18181b;
+    margin-bottom: 20px;
+  }
+
+  .footer-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .footer-links a {
+    font-size: 14px;
+    color: #52525b;
+    transition: color 0.15s ease;
+  }
+
+  .footer-links a:hover {
+    color: #09090b;
+  }
+
+  .footer-highlight-link {
+    color: #e11d48 !important;
+    font-weight: 700;
+  }
+
+  .trust-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .trust-badge-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: #e4e4e7;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 800;
+    color: #18181b;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .trust-item strong {
+    display: block;
+    color: #18181b;
+    font-size: 13px;
+  }
+
+  .trust-item p {
+    margin: 2px 0 0 0;
+    color: #71717a;
+    font-size: 12px;
+  }
+
+  .footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .footer-bottom-copy {
+    font-size: 12px;
+    color: #a1a1aa;
+  }
+
+  .footer-bottom-payment {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .payment-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #52525b;
+  }
+
+  @media (max-width: 1024px) {
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    .footer-bottom {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

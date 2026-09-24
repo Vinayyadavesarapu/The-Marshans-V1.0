@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Serve existing physical files and directories directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Route /product/:slug to the static runtime product handler /product/?slug=:slug
+  RewriteRule ^product/([^/]+)/?$ /product/?slug=$1 [L,QSA]
+</IfModule>

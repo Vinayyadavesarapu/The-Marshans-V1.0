@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+    <rect width="600" height="600" fill="#fefce8"/>
+    <circle cx="300" cy="270" r="160" fill="#ca8a04" opacity="0.12"/>
+    <g transform="translate(200, 170)">
+      <polygon points="100,20 180,70 180,170 100,220 20,170 20,70" fill="#ca8a04" opacity="0.85" stroke="#ffffff" stroke-width="4"/>
+      <polygon points="100,20 180,70 100,120 20,70" fill="#ca8a04" opacity="0.5"/>
+      <line x1="100" y1="120" x2="100" y2="220" stroke="#ffffff" stroke-width="3" opacity="0.6"/>
+    </g>
+    <text x="300" y="470" text-anchor="middle" font-family="'Bebas Neue', Impact, sans-serif" font-size="34" letter-spacing="2" fill="#18181b">GILDED TEMPLE GOPURAM</text>
+    <text x="300" y="505" text-anchor="middle" font-family="'Manrope', sans-serif" font-size="14" font-weight="700" letter-spacing="2" fill="#ca8a04">DARSHANAM</text>
+    <text x="300" y="540" text-anchor="middle" font-family="'Manrope', sans-serif" font-size="18" font-weight="800" fill="#09090b">₹5,299</text>
+  </svg>

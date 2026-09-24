@@ -1,0 +1,135 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ProductDetailPage from '../../components/react/ProductDetailPage.tsx';
+---
+
+<Layout
+  title="Artifact Detail — THE MARSHANS | Precision 3D Printed Artifacts"
+  description="Precision 3D printed artifacts, ambient luminous sculptures, collectible figures, and functional desk gear."
+  type="product"
+>
+  <ProductDetailPage client:load />
+</Layout>
+
+<style is:global>
+  .product-page-root {
+    background-color: #ffffff;
+    padding-bottom: 96px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+  }
+
+  /* Breadcrumbs */
+  .breadcrumbs-container {
+    padding-top: 28px;
+    padding-bottom: 24px;
+  }
+
+  .breadcrumbs-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+    font-size: 12px;
+    font-weight: 500;
+    color: #71717a;
+    flex-wrap: wrap;
+    letter-spacing: 0.02em;
+  }
+
+  .breadcrumbs-nav a {
+    color: #71717a;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .breadcrumbs-nav a:hover {
+    color: #09090b;
+  }
+
+  .breadcrumb-sep {
+    color: #d4d4d8;
+    font-size: 10px;
+  }
+
+  .breadcrumb-current {
+    color: #09090b;
+    font-weight: 600;
+  }
+
+  /* Main Product Grid */
+  .product-main-container {
+    padding-bottom: 64px;
+    border-bottom: 1px solid #f4f4f5;
+  }
+
+  /* Companion Artifacts */
+  .companion-artifacts-section {
+    padding-top: 64px;
+  }
+
+  .companion-header {
+    margin-bottom: 32px;
+  }
+
+  .companion-eyebrow {
+    font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #e11d48;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .companion-title {
+    font-family: var(--font-display, 'Bebas Neue', Impact, sans-serif);
+    font-size: clamp(28px, 3.5vw, 42px);
+    letter-spacing: 0.04em;
+    color: #09090b;
+    margin: 0;
+  }
+
+  .companion-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+
+  @media (max-width: 1200px) {
+    .companion-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 900px) {
+    .companion-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .companion-grid {
+      grid-template-columns: 1fr;
+    }
+    .product-page-root {
+      padding-bottom: 64px;
+    }
+    .breadcrumbs-container {
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+    .container {
+      padding: 0 1rem;
+    }
+  }
+</style>

@@ -1,0 +1,56 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CollectionPage from '../../components/react/collection/CollectionPage.tsx';
+import { getProducts } from '../../lib/api/products';
+import { CATEGORIES_CONFIG, getCategoryMeta } from '../../config/categoriesConfig';
+
+export async function getStaticPaths() {
+  const universes = Object.values(CATEGORIES_CONFIG);
+
+  return universes.map((u) => ({
+    params: { slug: u.slug },
+    props: { universe: u }
+  }));
+}
+
+const { slug } = Astro.params;
+const { universe } = Astro.props;
+
+const meta = universe || getCategoryMeta(slug as string);
+
+// Fetch real production products for Store 2 filtered by this category slug
+const { products } = await getProducts({ category_slug: meta.slug, limit: 50 });
+
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  'itemListElement': [
+    {
+      '@type': 'ListItem',
+      'position': 1,
+      'name': 'Home',
+      'item': 'https://themarshans.shop/'
+    },
+    {
+      '@type': 'ListItem',
+      'position': 2,
+      'name': meta.name,
+      'item': `https://themarshans.shop/categories/${meta.slug}`
+    }
+  ]
+};
+---
+
+<Layout
+  title={`${meta.name} — ${meta.title} | THE MARSHANS`}
+  description={meta.description}
+  image={meta.heroImage}
+  jsonLd={breadcrumbJsonLd}
+>
+  <CollectionPage
+    client:load
+    categorySlug={meta.slug}
+    initialProducts={products}
+    categoryMeta={meta}
+  />
+</Layout>

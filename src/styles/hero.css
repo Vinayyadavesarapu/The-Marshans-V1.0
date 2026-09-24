@@ -1,0 +1,273 @@
+/* ==========================================
+   GRID CONFIGURATION — MANUAL EDIT
+   ========================================== */
+.hero-grid {
+  --grid-size: 60px;
+  --grid-line-width: 1px;
+  --grid-color: rgba(0, 0, 0, 0.05);
+
+  background-color: #ffffff;
+  background-image: 
+    linear-gradient(to right, var(--grid-color) var(--grid-line-width), transparent var(--grid-line-width)),
+    linear-gradient(to bottom, var(--grid-color) var(--grid-line-width), transparent var(--grid-line-width));
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+/* ==========================================
+   TRANSITION CLOUD HEIGHT — MANUAL EDIT
+   ========================================== */
+:root {
+  --transition-cloud-height: 65vh;
+  --hero-bg: #ffffff;
+  --hero-text: #111111;
+  --hero-subtle: #777777;
+}
+
+
+/* ==========================================
+   HERO BASE & RESET
+   ========================================== */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--hero-bg);
+  color: var(--hero-text);
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Complete scroll lock while hero intro plays */
+html.hero-scroll-locked,
+body.hero-scroll-locked {
+  overflow: hidden !important;
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+  height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+}
+
+/* Ensure navbar and content below hero are completely invisible while hero is playing */
+html.hero-scroll-locked .hero-navbar-section,
+html.hero-scroll-locked .home-carousel-section,
+html.hero-scroll-locked .home-products-section {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Prevent scroll anchoring jumps when hero collapses */
+html, body, .hero-page-flow {
+  overflow-anchor: none !important;
+}
+
+/* Page flow container: strictly normal vertical document flow */
+.hero-page-flow {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================
+   SECTION 1: HERO VIDEO SECTION
+   ========================================== */
+.hero-video-section {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  background-color: #000000;
+}
+
+/* When intro has already played, or user navigates from another page, collapse hero instantly with zero flash */
+html.skip-home-hero .hero-video-section {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+.hero-video-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.hero-video-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: -50px;
+  width: 100%;
+  height: calc(100% + 50px);
+  overflow: hidden;
+  z-index: 1;
+  will-change: transform;
+  transform-origin: center center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+  border: none;
+  outline: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================
+   SECTION 2: LARGE BLURRED CLOUD TRANSITION
+   ========================================== */
+.hero-transition-cloud {
+  position: relative;
+  width: 100vw;
+  width: 100%;
+  max-width: 100vw;
+  height: auto;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  background-color: transparent;
+  display: block;
+}
+
+.transition-cloud-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.large-transition-cloud {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  display: block;
+  max-width: none;
+  height: auto;
+  border: none;
+  outline: none;
+  will-change: transform, filter, opacity;
+  transform-origin: center center;
+}
+
+/* ==========================================
+   SECTION 3: FULL-SCREEN CAROUSEL
+   ========================================== */
+.poster-carousel {
+  position: relative;
+  width: 100vw;
+  max-width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.carousel-placeholder-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.carousel-placeholder-tag {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #999999;
+}
+
+.carousel-placeholder-title {
+  font-size: clamp(24px, 4vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #111111;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.carousel-placeholder-sub {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #666666;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  padding-top: 16px;
+  width: 100%;
+  max-width: 240px;
+  margin: 0;
+}
+
+/* ==========================================
+   MOBILE RESPONSIVENESS
+   ========================================== */
+@media (max-width: 768px) {
+  :root {
+    --transition-cloud-height: 30vh;
+  }
+
+
+  .hero-grid {
+    --grid-size: 40px;
+  }
+
+  .hero-cloud {
+    max-width: 80vw;
+  }
+}

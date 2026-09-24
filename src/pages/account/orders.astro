@@ -1,0 +1,51 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import OrdersList from '../../components/react/OrdersList.jsx';
+---
+
+<Layout
+  title="My Orders & Tracking — THE MARSHANS"
+  description="Real-time status tracking for your 3D printed artifact dispatches."
+  noindex={true}
+>
+  <div class="orders-page-root">
+    <div class="container section-padding" style="padding-top: 48px;">
+      <div class="orders-page-header">
+        <div class="header-breadcrumbs">
+          <a href="/account">← Back to Dashboard</a>
+        </div>
+        <span class="section-subtitle">MARSHAN DISPATCH NETWORK</span>
+        <h1 class="section-title">ORDERS & FULFILLMENT</h1>
+      </div>
+
+      <OrdersList client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .orders-page-root {
+    background-color: #fafafa;
+    min-height: 80vh;
+  }
+
+  .orders-page-header {
+    margin-bottom: 36px;
+  }
+
+  .header-breadcrumbs {
+    margin-bottom: 12px;
+  }
+
+  .header-breadcrumbs a {
+    font-size: 12px;
+    font-weight: 700;
+    color: #71717a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .header-breadcrumbs a:hover {
+    color: #111111;
+  }
+</style>

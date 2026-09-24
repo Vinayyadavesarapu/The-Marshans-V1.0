@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/Layout.astro';
+import OrderSuccess from '../components/react/OrderSuccess.jsx';
+---
+
+<Layout
+  title="Order Confirmed — THE MARSHANS"
+  description="Your 3D printed artifact has entered our fabrication queue."
+  noindex={true}
+>
+  <div class="confirmation-page-wrap">
+    <div class="container section-padding">
+      <OrderSuccess client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .confirmation-page-wrap {
+    background-color: #fafafa;
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+  }
+</style>

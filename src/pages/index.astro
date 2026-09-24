@@ -1,11 +1,75 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import HeroIntro from '../components/HeroIntro.astro';
+import HomeProductSection from '../components/react/HomeProductSection.tsx';
+import { getProducts } from '../lib/api/products';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const { products } = await getProducts({ limit: 12 });
 ---
 
-<Layout>
-	<Welcome />
+<Layout
+  title="THE MARSHANS — Made to be Discovered | Precision 3D Printed Artifacts"
+  description="Precision 3D printed artifacts, ambient luminous sculptures, collectible figures, and functional desk gear."
+  hideHeader={true}
+>
+  <!-- ==========================================
+       1. HERO VIDEO
+       2. CLOUD TRANSITION
+       3. HOME NAVIGATION
+       4. HOME CAROUSEL
+       ========================================== -->
+  <HeroIntro />
+
+  <!-- ==========================================
+       5. PRODUCT CARDS FOUNDATION (RUNTIME CAPABLE)
+       ========================================== -->
+  <HomeProductSection client:load initialProducts={products} />
 </Layout>
+
+<style>
+  .home-products-section {
+    width: 100%;
+    padding: 2rem 0 5rem;
+    box-sizing: border-box;
+    background-color: #faf9f7;
+  }
+
+  .container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+  }
+
+  .home-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 1024px) {
+    .home-products-grid {
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .home-products-section {
+      padding: 1.5rem 0 4rem;
+    }
+
+    .container {
+      padding: 0 1rem;
+    }
+
+    .home-products-grid {
+      grid-template-columns: 1fr;
+      max-width: 420px;
+      margin: 0 auto;
+      gap: 1.5rem;
+    }
+  }
+</style>

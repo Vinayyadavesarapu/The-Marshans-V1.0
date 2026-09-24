@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RegisterForm from '../components/react/RegisterForm.jsx';
+---
+
+<Layout
+  title="Create Account — THE MARSHANS"
+  description="Register for a new Marshan ID to receive drop notifications, print farm tracking, and priority orders."
+  noindex={true}
+>
+  <div class="auth-page-wrapper">
+    <div class="container section-padding">
+      <RegisterForm client:load />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .auth-page-wrapper {
+    background-color: #fafafa;
+    min-height: 75vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>

@@ -1,0 +1,99 @@
+---
+export interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  image?: string;
+  type?: 'website' | 'article' | 'product';
+  noindex?: boolean;
+  jsonLd?: Record<string, any> | Array<Record<string, any>>;
+}
+
+const {
+  title = 'THE MARSHANS — Made to be Discovered | Precision 3D Printed Artifacts',
+  description = 'Precision additive manufacturing artifacts, luminous ambient lamps, collectible figures, and functional desk gear crafted with 0.12mm sub-micron accuracy.',
+  canonical,
+  image = '/assets/branding/marshans-logo.png',
+  type = 'website',
+  noindex = false,
+  jsonLd
+} = Astro.props;
+
+const siteUrl = 'https://themarshans.shop';
+const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
+const ogImageUrl = image.startsWith('http') ? image : new URL(image, siteUrl).href;
+
+// Default brand JSON-LD
+const defaultJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${siteUrl}/#organization`,
+      'name': 'THE MARSHANS',
+      'url': siteUrl,
+      'logo': {
+        '@type': 'ImageObject',
+        'url': `${siteUrl}/assets/branding/marshans-logo.png`
+      },
+      'description': 'Precision 3D printed artifacts, ambient luminous sculptures, collectible figures, and functional gear.'
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${siteUrl}/#website`,
+      'url': siteUrl,
+      'name': 'THE MARSHANS',
+      'publisher': {
+        '@id': `${siteUrl}/#organization`
+      }
+    }
+  ]
+};
+
+const structuredData = jsonLd || (Astro.url.pathname === '/' ? defaultJsonLd : undefined);
+---
+
+<!-- Primary Meta Tags -->
+<title>{title}</title>
+<meta name="title" content={title} />
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalUrl} />
+<meta
+  name="robots"
+  content={noindex
+    ? 'noindex, nofollow'
+    : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'}
+/>
+
+<!-- Favicon & Site Identity -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<meta name="theme-color" content="#09090b" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content="THE MARSHANS" />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:locale" content="en_IN" />
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content={canonicalUrl} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImageUrl} />
+
+<!-- Structured Data (JSON-LD) -->
+{structuredData && (
+  <script
+    type="application/ld+json"
+    is:inline
+    set:html={JSON.stringify(structuredData)}
+  />
+)}

@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /categories/
+Allow: /custom-3d
+Allow: /product/
+Allow: /shop
+Allow: /assets/
+Disallow: /account/
+Disallow: /checkout
+Disallow: /cart
+Disallow: /order-confirmation
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+
+Sitemap: https://themarshans.shop/sitemap.xml

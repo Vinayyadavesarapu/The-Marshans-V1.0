@@ -1,0 +1,152 @@
+---
+import HeroCamera from './react/HeroCamera.jsx';
+import MarshansNavbar from './react/MarshansNavbar.tsx';
+import HomeCarousel from './home/HomeCarousel.tsx';
+---
+
+<div class="hero-page-flow">
+  <!-- ==========================================
+       Inline head-level script executing immediately before DOM render
+       to prevent any flash of hero when navigating to Home from another page
+       or when intro is already completed.
+       ========================================== -->
+  <script is:inline>
+    (function() {
+      try {
+        if ('scrollRestoration' in history) {
+          history.scrollRestoration = 'manual';
+        }
+
+        var isReload = false;
+        var navEntries = performance.getEntriesByType('navigation');
+        if (navEntries.length > 0) {
+          isReload = navEntries[0].type === 'reload';
+        } else if (performance.navigation) {
+          isReload = performance.navigation.type === 1;
+        }
+
+        var isHashSkip = window.location.hash === '#home-carousel-section' || window.location.hash === '#home-navbar';
+        var isParamSkip = window.location.search.indexOf('skip_hero=true') !== -1;
+        var isCompleted = sessionStorage.getItem('marshans_home_intro_completed') === 'true';
+        var isInternalReferrer = false;
+
+        if (document.referrer) {
+          try {
+            var refUrl = new URL(document.referrer);
+            if (refUrl.origin === window.location.origin && refUrl.pathname !== '/') {
+              isInternalReferrer = true;
+            }
+          } catch(e) {}
+        }
+
+        if (isReload) {
+          // Explicit refresh on '/': reset intro state so hero plays fresh
+          sessionStorage.removeItem('marshans_home_intro_completed');
+          document.documentElement.classList.remove('skip-home-hero');
+        } else if (isHashSkip || isParamSkip || isCompleted || isInternalReferrer) {
+          // User already watched intro, or clicked Home from another page
+          document.documentElement.classList.add('skip-home-hero');
+        }
+
+        // If hero is active (not skipped), lock scroll IMMEDIATELY before first paint
+        if (!document.documentElement.classList.contains('skip-home-hero')) {
+          document.documentElement.classList.add('hero-scroll-locked');
+          window.scrollTo(0, 0);
+
+          var blockScroll = function(e) {
+            if (document.documentElement.classList.contains('hero-scroll-locked')) {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+            }
+          };
+
+          var blockKey = function(e) {
+            if (!document.documentElement.classList.contains('hero-scroll-locked')) return;
+            var keys = ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'PageDown', 'PageUp', 'Space', ' ', 'Home', 'End', 'Tab'];
+            if (keys.indexOf(e.key) !== -1 || keys.indexOf(e.code) !== -1) {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+            }
+          };
+
+          window.addEventListener('wheel', blockScroll, { passive: false, capture: true });
+          window.addEventListener('touchmove', blockScroll, { passive: false, capture: true });
+          window.addEventListener('keydown', blockKey, { capture: true });
+          document.addEventListener('wheel', blockScroll, { passive: false, capture: true });
+          document.addEventListener('touchmove', blockScroll, { passive: false, capture: true });
+          document.addEventListener('keydown', blockKey, { capture: true });
+
+          window.__marshans_block_scroll = blockScroll;
+          window.__marshans_block_key = blockKey;
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- ==========================================
+       1. HERO VIDEO WITH ATMOSPHERIC CLOUD OVERLAY
+       ========================================== -->
+  <section class="hero-video-section" id="home-hero-video-section" aria-label="Hero Video">
+    <HeroCamera client:load />
+  </section>
+
+  <!-- ==========================================
+       2. SIMPLE CLASSIC NAVBAR DIRECTLY ABOVE CAROUSEL
+       ========================================== -->
+  <section class="hero-navbar-section" id="home-navbar" aria-label="Main Navigation">
+    <MarshansNavbar client:load />
+  </section>
+
+  <!-- ==========================================
+       3. HOME CAROUSEL
+       ========================================== -->
+  <section class="home-carousel-section" id="home-carousel-section" aria-label="Home Exhibition Carousel">
+    <HomeCarousel client:load />
+  </section>
+</div>
+
+<style>
+  .hero-page-flow {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+  }
+
+  .hero-video-section {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .hero-navbar-section {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .home-carousel-section {
+    width: 100%;
+    margin: 0;
+    padding: 2rem 0 2rem;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 5;
+    border: none;
+    border-radius: 0;
+  }
+
+  @media (max-width: 768px) {
+    .home-carousel-section {
+      padding: 1.5rem 0 1.5rem;
+    }
+  }
+</style>
