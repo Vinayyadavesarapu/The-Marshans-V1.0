@@ -13,15 +13,12 @@ const { products } = await getProducts({ limit: 12 });
   hideHeader={true}
 >
   <!-- ==========================================
-       1. HERO VIDEO
-       2. CLOUD TRANSITION
-       3. HOME NAVIGATION
-       4. HOME CAROUSEL
+       1. HOME NAVIGATION & CAROUSEL
        ========================================== -->
   <HeroIntro />
 
   <!-- ==========================================
-       5. PRODUCT CARDS FOUNDATION (RUNTIME CAPABLE)
+       2. PRODUCT CARDS SECTION (RUNTIME CAPABLE)
        ========================================== -->
   <HomeProductSection client:load initialProducts={products} />
 </Layout>

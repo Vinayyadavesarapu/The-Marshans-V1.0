@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import SearchModal from './SearchModal.jsx';
 import HeaderUserNav from './HeaderUserNav.jsx';
 import CartBadge from './CartBadge.jsx';
-import { markHomeIntroCompleted } from '../../lib/homeIntroState';
 
 export interface NavItem {
   label: string;
@@ -10,7 +9,7 @@ export interface NavItem {
 }
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
-  { label: 'Home', href: '/#home-navbar' },
+  { label: 'Home', href: '/' },
   { label: 'LUMO', href: '/categories/lumo' },
   { label: 'Fandom Tribe', href: '/categories/fandom-tribe' },
   { label: 'Mini Tales', href: '/categories/minitales' },
@@ -44,21 +43,11 @@ export default function MarshansNavbar() {
     };
   }, [mobileMenuOpen]);
 
-  // Handle Home link click smoothly without hero flash
+  // Handle Home link click smoothly
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    markHomeIntroCompleted();
-    document.documentElement.classList.add('skip-home-hero');
-
     if (window.location.pathname === '/' || window.location.pathname === '') {
       e.preventDefault();
-      const navbar = document.getElementById('home-navbar');
-      const carousel = document.getElementById('home-carousel-section');
-      const target = navbar || carousel;
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -68,7 +57,7 @@ export default function MarshansNavbar() {
         {/* LEFT: MARSHANS LOGO */}
         <div className="navbar-left">
           <a
-            href="/#home-navbar"
+            href="/"
             onClick={handleHomeClick}
             className="navbar-brand"
             aria-label="THE MARSHANS Home"

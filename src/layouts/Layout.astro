@@ -53,46 +53,6 @@ const {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
-    <!-- Early execution script to prevent hero flash on Home navigation -->
-    <script is:inline>
-      (function() {
-        try {
-          if (window.location.pathname === '/' || window.location.pathname === '') {
-            var isReload = false;
-            var navEntries = performance.getEntriesByType('navigation');
-            if (navEntries.length > 0) {
-              isReload = navEntries[0].type === 'reload';
-            } else if (performance.navigation) {
-              isReload = performance.navigation.type === 1;
-            }
-
-            var isHashSkip = window.location.hash === '#home-carousel-section' || window.location.hash === '#home-navbar';
-            var isParamSkip = window.location.search.indexOf('skip_hero=true') !== -1;
-            var isCompleted = sessionStorage.getItem('marshans_home_intro_completed') === 'true';
-            var isInternalReferrer = false;
-
-            if (document.referrer) {
-              try {
-                var refUrl = new URL(document.referrer);
-                if (refUrl.origin === window.location.origin && refUrl.pathname !== '/') {
-                  isInternalReferrer = true;
-                }
-              } catch(e) {}
-            }
-
-            if (isReload) {
-              // Explicit reload on '/': show hero
-              sessionStorage.removeItem('marshans_home_intro_completed');
-              document.documentElement.classList.remove('skip-home-hero');
-            } else if (isHashSkip || isParamSkip || isCompleted || isInternalReferrer) {
-              // Navigating from another page or already completed: collapse hero immediately
-              document.documentElement.classList.add('skip-home-hero');
-            }
-          }
-        } catch(e) {}
-      })();
-    </script>
   </head>
   <body class="site-body">
     {!hideHeader && <Header />}
