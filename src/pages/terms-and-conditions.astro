@@ -1,0 +1,1060 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const lastUpdatedDate = 'October 24, 2024';
+const effectiveDate = 'October 24, 2024';
+
+const termsJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': 'Terms & Conditions — THE MARSHANS',
+  'url': 'https://themarshans.shop/terms-and-conditions',
+  'description': 'Terms and conditions governing website use and purchases of standard, made-to-order, and custom FDM and resin 3D-printed products from THE MARSHANS.',
+  'publisher': {
+    '@type': 'Organization',
+    'name': 'THE MARSHANS',
+    'url': 'https://themarshans.shop',
+    'legalName': 'THE MARSHANS',
+    'address': {
+      '@type': 'PostalAddress',
+      'streetAddress': 'Villa no 31 E, Hirise meadows, Mallampet, bachhupally',
+      'addressLocality': 'Hyderabad',
+      'postalCode': '500090',
+      'addressRegion': 'Telangana',
+      'addressCountry': 'IN'
+    }
+  }
+};
+---
+
+<Layout
+  title="THE MARSHANS — Terms & Conditions"
+  description="Read the terms and conditions governing the use of THE MARSHANS website and purchases of our 3D printed artifacts and custom prints."
+  canonical="https://themarshans.shop/terms-and-conditions"
+  jsonLd={termsJsonLd}
+>
+  <div class="legal-page-wrapper">
+    <!-- Header Section -->
+    <header class="legal-header">
+      <div class="container">
+        <div class="legal-badge-row">
+          <span class="legal-badge">STORE POLICIES & LEGAL FRAMEWORK</span>
+          <span class="legal-date">Last Updated: {lastUpdatedDate}</span>
+        </div>
+        <h1 class="legal-title">TERMS & CONDITIONS</h1>
+        <p class="legal-subtitle">
+          Please review these Terms & Conditions carefully before browsing or placing orders on THE MARSHANS. These terms govern your access to our website and the purchase of our precision 3D-printed creations.
+        </p>
+        <div class="statutory-notice-card">
+          <div class="statutory-notice-icon" aria-hidden="true">⚖️</div>
+          <div class="statutory-notice-text">
+            <strong>Statutory Consumer Rights Notice:</strong>
+            <p>Nothing in these Terms limits any rights or remedies available to consumers under applicable law, including the Consumer Protection Act, 2019 and the Consumer Protection (E-Commerce) Rules, 2020.</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="container legal-body-container">
+      <div class="legal-layout">
+        <!-- Quick Table of Contents Sidebar / Navigator -->
+        <aside class="legal-sidebar" aria-label="Table of Contents">
+          <div class="sidebar-sticky-box">
+            <h3 class="sidebar-title">TABLE OF CONTENTS</h3>
+            <nav class="toc-nav">
+              <ol class="toc-list">
+                <li><a href="#section-1">1. Introduction</a></li>
+                <li><a href="#section-2">2. Definitions</a></li>
+                <li><a href="#section-3">3. Eligibility and Use of Website</a></li>
+                <li><a href="#section-4">4. Product Information</a></li>
+                <li><a href="#section-5">5. FDM 3D Printing Characteristics</a></li>
+                <li><a href="#section-6">6. Resin 3D Printing Characteristics</a></li>
+                <li><a href="#section-7">7. Custom & Personalized Products</a></li>
+                <li><a href="#section-8">8. Customer-Provided Designs & IP</a></li>
+                <li><a href="#section-9">9. Orders & Order Acceptance</a></li>
+                <li><a href="#section-10">10. Pricing & Taxes</a></li>
+                <li><a href="#section-11">11. Payment Methods & Security</a></li>
+                <li><a href="#section-12">12. Production & Processing</a></li>
+                <li><a href="#section-13">13. Shipping & Delivery</a></li>
+                <li><a href="#section-14">14. Delivery Delays & Logistics</a></li>
+                <li><a href="#section-15">15. Order Cancellation</a></li>
+                <li><a href="#section-16">16. Returns & Refunds Overview</a></li>
+                <li><a href="#section-17">17. Defective, Damaged or Incorrect Products</a></li>
+                <li><a href="#section-18">18. 3D Print Product Care & Use</a></li>
+                <li><a href="#section-19">19. Prohibited & Unsafe Uses</a></li>
+                <li><a href="#section-20">20. Intellectual Property</a></li>
+                <li><a href="#section-21">21. Website Availability & Maintenance</a></li>
+                <li><a href="#section-22">22. Limitation of Liability</a></li>
+                <li><a href="#section-23">23. Force Majeure</a></li>
+                <li><a href="#section-24">24. Changes to These Terms</a></li>
+                <li><a href="#section-25">25. Governing Law & Jurisdiction</a></li>
+                <li><a href="#section-26">26. Contact & Grievance Information</a></li>
+              </ol>
+            </nav>
+            <div class="sidebar-policy-link">
+              <p>Looking for refund instructions?</p>
+              <a href="/refund-policy" class="btn-text-link">View Refund Policy →</a>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Legal Content Sections -->
+        <article class="legal-content">
+          <!-- 1. Introduction -->
+          <section id="section-1" class="policy-section">
+            <span class="section-number">Section 01</span>
+            <h2>1. Introduction</h2>
+            <p>
+              Welcome to <strong>THE MARSHANS</strong> (accessible at <a href="https://themarshans.shop">https://themarshans.shop</a>). THE MARSHANS is an independent design and additive manufacturing studio based in Hyderabad, India, specializing in precision 3D-printed artifacts, ambient lamps, desk gear, architectural dioramas, cultural collectibles, and on-demand custom fabrication.
+            </p>
+            <p>
+              Our products are crafted using advanced additive manufacturing technologies, specifically <strong>Fused Deposition Modeling (FDM)</strong> and <strong>Photopolymer Resin 3D Printing (SLA/DLP/MSLA)</strong>.
+            </p>
+            <p>
+              These Terms and Conditions ("Terms") govern your access to and use of our Website, digital interfaces, custom quote configurators, and all purchases of physical goods from THE MARSHANS. By browsing, placing an order, uploading files, or engaging our services, you acknowledge that you have read, understood, and agree to be bound by these Terms.
+            </p>
+            <div class="policy-meta-pill">
+              <span><strong>Effective Date:</strong> {effectiveDate}</span>
+              <span class="meta-separator">|</span>
+              <span><strong>Last Updated:</strong> {lastUpdatedDate}</span>
+            </div>
+          </section>
+
+          <!-- 2. Definitions -->
+          <section id="section-2" class="policy-section">
+            <span class="section-number">Section 02</span>
+            <h2>2. Definitions</h2>
+            <p>For the purposes of these Terms, the following definitions apply:</p>
+            <ul class="definition-list">
+              <li>
+                <strong>"THE MARSHANS", "We", "Us", or "Our":</strong> Refers to the legal entity THE MARSHANS, operating the storefront at themarshans.shop, having its registered business facility at Villa no 31 E, Hirise meadows, Mallampet, bachhupally, Hyderabad-500090, Telangana, India.
+              </li>
+              <li>
+                <strong>"Website":</strong> Refers to the online ecommerce storefront located at https://themarshans.shop and all associated pages, endpoints, subdomains, and customer portals.
+              </li>
+              <li>
+                <strong>"Customer", "User", "You", or "Your":</strong> Refers to any individual, business entity, or authorized representative who accesses the Website, browses our catalog, uploads design files, or purchases products.
+              </li>
+              <li>
+                <strong>"Product":</strong> Refers to any tangible physical item sold on the Website, including ready-made catalog items, made-to-order pieces, and bespoke fabricated prints.
+              </li>
+              <li>
+                <strong>"Standard Product":</strong> Refers to a pre-designed, catalog item manufactured to standardized dimensions, colors, and material specifications without bespoke customer personalization.
+              </li>
+              <li>
+                <strong>"Made-to-Order Product":</strong> Refers to a catalog item that is not held in finished stock and is manufactured specifically upon receipt and confirmation of a customer order.
+              </li>
+              <li>
+                <strong>"Custom Product":</strong> Refers to any item personalized with customer-requested text, customized dimensions, unique color schemes, or fabricated directly from customer-supplied CAD/STL/OBJ/3MF files through our Custom Forge service.
+              </li>
+              <li>
+                <strong>"FDM Printing":</strong> Fused Deposition Modeling / Fused Filament Fabrication — an additive manufacturing method where molten thermoplastic filament (e.g., PLA, PETG, ABS, TPU) is extruded layer-by-layer to build a 3D geometry.
+              </li>
+              <li>
+                <strong>"Resin Printing":</strong> Stereolithography (SLA) / Digital Light Processing (DLP) / Masked Stereolithography (MSLA) — an additive manufacturing method where liquid photopolymer resin is selectively cured layer-by-layer using ultraviolet light, followed by solvent washing and secondary UV post-curing.
+              </li>
+              <li>
+                <strong>"Order":</strong> Refers to a confirmed purchase request submitted by the Customer through the Website checkout workflow and received by our system.
+              </li>
+              <li>
+                <strong>"Business Day":</strong> Refers to any calendar day other than Sundays and official public or bank holidays recognized in Telangana and the Republic of India.
+              </li>
+            </ul>
+          </section>
+
+          <!-- 3. Eligibility and Use of Website -->
+          <section id="section-3" class="policy-section">
+            <span class="section-number">Section 03</span>
+            <h2>3. Eligibility and Use of Website</h2>
+            <p>
+              By using our Website, you represent that you are at least 18 years of age or possess legal parental or guardian consent to enter into binding agreements under Indian law.
+            </p>
+            <div class="policy-box">
+              <h4>Customer Account and Information Accuracy</h4>
+              <ul>
+                <li>You agree to provide true, accurate, current, and complete contact, billing, and shipping details during checkout or account registration.</li>
+                <li>You are solely responsible for verifying the accuracy of shipping addresses, phone numbers, postal codes, and email addresses prior to confirming payment.</li>
+                <li>You agree not to use the Website for any unlawful purpose, fraud, data scraping, automated harvesting, denial-of-service attempts, or interfering with security features.</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- 4. Product Information & Visual Representation -->
+          <section id="section-4" class="policy-section">
+            <span class="section-number">Section 04</span>
+            <h2>4. Product Information & Visual Representation</h2>
+            <p>
+              We strive to display our products, finishes, scale, and colors as accurately as possible. However, additive manufacturing has unique visual and physical properties:
+            </p>
+            <ul>
+              <li><strong>Display Variations:</strong> Due to variations in computer monitors, mobile screens, brightness, and color calibration profiles, actual physical product colors may exhibit slight variations compared to digital photographs or 3D renders.</li>
+              <li><strong>Inherent Process Characteristics:</strong> Because 3D printing is an additive manufacturing method rather than high-volume injection molding, individual pieces will exhibit minor process characteristics such as micro-layer striations, minute seam points, or support detachment marks.</li>
+              <li><strong>Non-Defect Classification:</strong> Natural process characteristics consistent with high-precision 3D printing do not constitute a defect or failure of workmanship.</li>
+            </ul>
+            <div class="policy-callout-warning">
+              <strong>Important Clarification:</strong> While normal additive process characteristics are standard industry phenomena, this clause does <em>not</em> excuse materially defective items, broken parts, missing components, structurally compromised prints, or products that fail in a substantial manner to match their advertised specifications.
+            </div>
+          </section>
+
+          <!-- 5. FDM 3D Printing Characteristics -->
+          <section id="section-5" class="policy-section">
+            <span class="section-number">Section 05</span>
+            <h2>5. FDM 3D Printing Characteristics</h2>
+            <p>
+              Products manufactured via Fused Deposition Modeling (FDM) are built by laying down microscopic tracks of molten thermoplastic filament in consecutive horizontal layers (typically 0.12mm to 0.28mm layer heights). Customers should note the following technical characteristics:
+            </p>
+            <ul>
+              <li><strong>Visible Layer Lines:</strong> The layered nature of FDM produces subtle micro-grooves along the vertical Z-axis, which are an intrinsic aesthetic and structural feature of additive fabrication.</li>
+              <li><strong>Z-Seam Lines:</strong> Where the extruder starts and finishes each perimeter layer, a fine vertical or scattered alignment mark (the "Z-seam") may be subtly discernible.</li>
+              <li><strong>Overhang & Support Interfaces:</strong> Geometries featuring overhangs exceeding 45° require temporary support structures during fabrication. Surfaces where supports were detached are cleaned and dressed by hand, but may retain slight surface texture differences.</li>
+              <li><strong>Dimensional Tolerances:</strong> FDM items conform to standard studio engineering tolerances (typically ±0.2mm to ±0.5% of total dimension, depending on geometry and thermal shrinkage).</li>
+              <li><strong>Anisotropic Structural Strength:</strong> FDM parts exhibit highest strength along the X/Y printing plane. Tensile strength along the Z-axis (layer adhesion) is naturally lower than injection-molded plastics.</li>
+            </ul>
+          </section>
+
+          <!-- 6. Resin 3D Printing Characteristics -->
+          <section id="section-6" class="policy-section">
+            <span class="section-number">Section 06</span>
+            <h2>6. Resin 3D Printing Characteristics</h2>
+            <p>
+              Resin 3D prints (SLA/DLP/MSLA) produce exceptionally smooth surfaces, crisp fine-detail resolution, and intricate miniatures with layer heights as fine as 0.03mm–0.05mm. The following technical and safety considerations apply:
+            </p>
+            <ul>
+              <li><strong>Support Touchpoints:</strong> Intricate resin sculptures require micro-scaffolding during UV light exposure. While support tips are meticulously clipped, washed, and UV-cured, microscopic support contact pips may remain and are gently hand-finished.</li>
+              <li><strong>Material Handling & Brittleness:</strong> High-detail standard photopolymer resins exhibit glass-like detail fidelity but possess lower impact resistance compared to ductile engineering thermoplastics. Resin figurines and delicate sculptures must be handled with care to prevent breakage from drops or excessive bending force.</li>
+              <li><strong>Thermal & Light Sensitivity:</strong> Cured resin artifacts should not be exposed to prolonged direct sunlight or extreme ambient temperatures, which may cause warping or UV over-curing over time.</li>
+            </ul>
+            <div class="policy-box safety-box">
+              <h4>⚠️ Safety & Usage Notice for Resin Products</h4>
+              <p>Unless an individual product listing explicitly certifies compliance for a specialized use, <strong>our resin products are NOT rated for:</strong></p>
+              <ul class="nested-list">
+                <li>Food, beverage, or consumable liquid contact;</li>
+                <li>Medical, dental, or surgical applications;</li>
+                <li>Direct oral contact or chewing (keep out of reach of infants and small pets);</li>
+                <li>Submersion in harsh solvents or high-heat environments.</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- 7. Custom and Personalized Products -->
+          <section id="section-7" class="policy-section">
+            <span class="section-number">Section 07</span>
+            <h2>7. Custom and Personalized Products</h2>
+            <p>
+              THE MARSHANS provides bespoke fabrication services, including custom nameplates, personalized text, bespoke dimensions, custom color configurations, and on-demand fabrication through our Custom Forge workspace.
+            </p>
+            <div class="policy-box">
+              <h4>Customer Responsibilities for Custom Orders</h4>
+              <ul>
+                <li><strong>Verification of Submitted Data:</strong> You are solely responsible for reviewing all custom inputs, including spelling, grammar, names, capitalization, dimensional sizing, reference imagery, and file orientation before submitting your order.</li>
+                <li><strong>Customer-Provided Errors:</strong> THE MARSHANS is not responsible for errors resulting directly from customer-supplied mistakes (e.g., misspelled names or incorrect file scale provided by the customer).</li>
+                <li><strong>Extended Production Timelines:</strong> Bespoke fabrication entails specialized computer-aided design (CAD) slicing, bed preparation, multi-hour machine runtime, post-cure processing, and manual quality control. Production lead times for custom prints may exceed standard catalog items.</li>
+                <li><strong>Consumer Protection Balance:</strong> While change-of-mind cancellations are restricted once production has commenced, customers retain full legal rights to remedies if the custom product is delivered damaged, defective, or materially fails to conform to the approved specifications.</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- 8. Customer-Provided Designs & Intellectual Property -->
+          <section id="section-8" class="policy-section">
+            <span class="section-number">Section 08</span>
+            <h2>8. Customer-Provided Designs & Intellectual Property</h2>
+            <p>
+              When uploading 3D files (STL, OBJ, 3MF, STEP) or submitting artwork for custom fabrication:
+            </p>
+            <ul>
+              <li><strong>Ownership & Authorization:</strong> You warrant that you are the original creator of the file, or hold valid commercial or personal licenses, permissions, or rights to reproduce the geometry.</li>
+              <li><strong>Non-Infringement:</strong> You agree not to upload or commission files that infringe upon any patent, trademark, copyright, design right, trade secret, or proprietary right of any third party.</li>
+              <li><strong>Refusal of Unlawful or Dangerous Items:</strong> THE MARSHANS strictly reserves the right to immediately decline or cancel any print request that depicts or relates to firearms, lethal weapons, weapon components, illicit paraphernalia, hate speech, or content violating Indian law or public safety standards.</li>
+              <li><strong>No Claim on Customer IP:</strong> THE MARSHANS does not claim any ownership rights over customer-uploaded CAD models or proprietary design files. Customer files are utilized strictly for slicing, estimating, and manufacturing the requested order.</li>
+            </ul>
+          </section>
+
+          <!-- 9. Orders and Order Acceptance -->
+          <section id="section-9" class="policy-section">
+            <span class="section-number">Section 09</span>
+            <h2>9. Orders and Order Acceptance</h2>
+            <p>
+              The order workflow on THE MARSHANS is structured as follows:
+            </p>
+            <ol class="step-list">
+              <li><strong>Order Placement:</strong> When you complete checkout, you submit an offer to purchase the specified items. You will receive an automated order confirmation email containing your order reference number.</li>
+              <li><strong>Review & Slicing:</strong> For custom and made-to-order requests, our engineering team inspects the model for printability, geometry integrity, wall thickness, and material volume.</li>
+              <li><strong>Order Acceptance:</strong> A binding contract is established when your order details are verified, payment is successfully authorized, and the order status is updated to confirmed or production is scheduled.</li>
+              <li><strong>Order Rejection or Cancellation:</strong> We reserve the right to decline or cancel an order in circumstances including technical printability failures, unresolvable file corruption, inaccurate product pricing, suspected fraudulent transactions, or delivery addresses outside courier service areas. In such cases, any payment received will be refunded in full.</li>
+            </ol>
+          </section>
+
+          <!-- 10. Pricing & Taxes -->
+          <section id="section-10" class="policy-section">
+            <span class="section-number">Section 10</span>
+            <h2>10. Pricing & Taxes</h2>
+            <ul>
+              <li><strong>Currency:</strong> All prices displayed on THE MARSHANS are denominated in <strong>Indian Rupees (INR — ₹)</strong>.</li>
+              <li><strong>Taxes:</strong> Prices displayed are inclusive of applicable Goods and Services Tax (GST) under Indian taxation laws, unless otherwise itemized at checkout. Our legal business entity holds GSTIN: <strong>36GTSPM5280F1Z3</strong>.</li>
+              <li><strong>Shipping Charges:</strong> Shipping fees are calculated dynamically at checkout based on package weight, volumetric dimensions, shipping destination, and applicable store shipping rules.</li>
+              <li><strong>Price Amendments:</strong> We reserve the right to revise prices for future orders without prior notice. Once an order is accepted and paid, the price for that specific order remains fixed.</li>
+            </ul>
+          </section>
+
+          <!-- 11. Payment Methods & Security -->
+          <section id="section-11" class="policy-section">
+            <span class="section-number">Section 11</span>
+            <h2>11. Payment Methods & Security</h2>
+            <p>
+              We provide secure, encrypted digital payment channels in compliance with Reserve Bank of India (RBI) guidelines and PCI-DSS standards. Supported payment options available at checkout include:
+            </p>
+            <ul>
+              <li><strong>Unified Payments Interface (UPI):</strong> Instant QR code and intent-based checkout via Google Pay, PhonePe, Paytm, BHIM, and all major Indian UPI applications.</li>
+              <li><strong>Debit & Credit Cards:</strong> RuPay, Visa, Mastercard, and domestic corporate/personal cards processed via verified 3D Secure / OTP authentication.</li>
+              <li><strong>NetBanking:</strong> Direct internet banking across all major Indian scheduled commercial banks.</li>
+              <li><strong>Cash on Delivery (COD):</strong> Where made active and available for eligible pin codes and non-custom products.</li>
+            </ul>
+            <p>
+              THE MARSHANS does not collect or store raw card numbers, CVVs, or bank account credentials on our servers. All sensitive financial transactions are encrypted and processed by authorized Indian payment gateway partners.
+            </p>
+          </section>
+
+          <!-- 12. Production & Processing -->
+          <section id="section-12" class="policy-section">
+            <span class="section-number">Section 12</span>
+            <h2>12. Production & Processing</h2>
+            <p>
+              Because THE MARSHANS operates a specialized additive manufacturing studio, order fulfillment timelines reflect craftsmanship and machine runtimes:
+            </p>
+            <ul>
+              <li><strong>Standard Products:</strong> Finished stock items typically process and dispatch within 1 to 3 Business Days.</li>
+              <li><strong>Made-to-Order Products:</strong> Fabricated upon order receipt, requiring queue scheduling, machine calibration, slicing, continuous printing, post-processing, and quality inspection (typically 3 to 7 Business Days).</li>
+              <li><strong>Custom Forge Prints:</strong> Timelines vary depending on model complexity, layer resolution, multi-part assembly, and customer design revisions.</li>
+              <li><strong>Estimates vs. Guarantees:</strong> Production estimates provided at checkout or in email communications represent good-faith operational timelines and do not constitute a fixed legal guarantee.</li>
+            </ul>
+          </section>
+
+          <!-- 13. Shipping & Delivery -->
+          <section id="section-13" class="policy-section">
+            <span class="section-number">Section 13</span>
+            <h2>13. Shipping & Delivery</h2>
+            <p>
+              We partner with reputed domestic express logistics providers to ensure your 3D artifacts arrive safely anywhere across India.
+            </p>
+            <ul>
+              <li><strong>Packaging Standards:</strong> Every item is packaged using multi-layer bubble cushioning, shock-absorbing materials, and rigid corrugated shipping containers to protect fine geometries.</li>
+              <li><strong>Dispatch & Tracking:</strong> Once dispatched, an automated shipping confirmation containing your logistics carrier name and consignment tracking AWB number is sent to your registered email or phone number.</li>
+              <li><strong>Transit Times:</strong> Standard domestic delivery typically requires 2 to 6 Business Days following dispatch, depending on transit distance and metro vs. tier-2/3 regional connectivity.</li>
+            </ul>
+          </section>
+
+          <!-- 14. Delivery Delays & Logistics -->
+          <section id="section-14" class="policy-section">
+            <span class="section-number">Section 14</span>
+            <h2>14. Delivery Delays & Logistics</h2>
+            <p>
+              While we coordinate closely with our carrier partners, logistical delays may occasionally arise due to regional weather disruptions, transport strikes, holiday courier backlogs, or remote accessibility.
+            </p>
+            <p>
+              In the event of an abnormal transit delay or a package flagged as delayed by the carrier, contact our support team at <a href="mailto:official@themarshans.shop">official@themarshans.shop</a>. We will initiate an inquiry with the logistics provider to expedite delivery or provide an updated ETA.
+            </p>
+          </section>
+
+          <!-- 15. Order Cancellation -->
+          <section id="section-15" class="policy-section">
+            <span class="section-number">Section 15</span>
+            <h2>15. Order Cancellation</h2>
+            <div class="policy-box">
+              <h4>Cancellation Rules by Product Category</h4>
+              <ul>
+                <li><strong>Standard Catalog Products:</strong> You may cancel a standard product order at any time prior to packaging and courier dispatch. Once handed over to the courier, the standard return workflow applies upon delivery.</li>
+                <li><strong>Made-to-Order & Custom Products:</strong> Once slicing preparation is approved and active machine fabrication, material consumption, or bespoke personalizing has begun, cancellation may be restricted because the item cannot be resold. If you need to cancel a custom request, contact us immediately after ordering.</li>
+                <li><strong>Statutory Preservation:</strong> Nothing in our cancellation rules restricts any rights available to consumers under applicable law for defective or non-conforming items.</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- 16. Returns & Refunds Overview -->
+          <section id="section-16" class="policy-section">
+            <span class="section-number">Section 16</span>
+            <h2>16. Returns & Refunds Overview</h2>
+            <p>
+              Our complete return conditions, inspection processes, resolution options, and timelines are detailed in our dedicated <a href="/refund-policy"><strong>Refund Policy</strong></a>.
+            </p>
+            <p>
+              In summary, we guarantee prompt review and fair remedies (replacement, repair, or refund) for any product delivered with manufacturing defects, transit damage, missing items, or material non-conformance.
+            </p>
+          </section>
+
+          <!-- 17. Defective, Damaged or Incorrect Products -->
+          <section id="section-17" class="policy-section">
+            <span class="section-number">Section 17</span>
+            <h2>17. Defective, Damaged or Incorrect Products</h2>
+            <p>
+              If your shipment arrives damaged in transit, with broken components, or contains an incorrect item, please notify us within the reporting period with the following details:
+            </p>
+            <ol class="step-list">
+              <li>Your Order Reference Number;</li>
+              <li>A brief description of the damage or defect;</li>
+              <li>Clear photographs or a short video clip showing the damaged product, the defect, and the external shipping carton;</li>
+              <li>Email these details to <a href="mailto:official@themarshans.shop">official@themarshans.shop</a>.</li>
+            </ol>
+            <p>
+              Upon verification, THE MARSHANS will arrange an immediate priority reprint and replacement or issue a refund according to our Refund Policy.
+            </p>
+          </section>
+
+          <!-- 18. 3D Print Product Care & Use -->
+          <section id="section-18" class="policy-section">
+            <span class="section-number">Section 18</span>
+            <h2>18. 3D Print Product Care & Use</h2>
+            <p>
+              To maintain the visual appeal and longevity of your 3D-printed creations, please observe the following care instructions:
+            </p>
+            <div class="care-grid">
+              <div class="care-card">
+                <strong>🌡️ Temperature Limits</strong>
+                <p>Standard PLA prints soften at temperatures exceeding 55°C (131°F). Do not leave PLA items in enclosed parked cars during summer, near stove burners, or in direct hot sunlight.</p>
+              </div>
+              <div class="care-card">
+                <strong>☀️ UV & Direct Sunlight</strong>
+                <p>Prolonged exposure to intense direct sunlight may cause color fading or degrade resin flexibility over time. Display items indoors or in ambient lighting.</p>
+              </div>
+              <div class="care-card">
+                <strong>🧼 Cleaning & Moisture</strong>
+                <p>Dust lightly with a soft micro-fiber cloth or dry bristle brush. For water-resistant materials, wipe with a lukewarm damp cloth. Never clean with acetone, bleach, or aggressive chemical thinners.</p>
+              </div>
+              <div class="care-card">
+                <strong>⚡ Electronic Lamps & Luminaires</strong>
+                <p>For LUMO ambient lamps, use only low-heat LED bulbs, USB-powered LED strips, or low-voltage light sources supplied or recommended. Never use incandescent or halogen bulbs.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- 19. Prohibited & Unsafe Uses -->
+          <section id="section-19" class="policy-section">
+            <span class="section-number">Section 19</span>
+            <h2>19. Prohibited & Unsafe Uses</h2>
+            <p>
+              All products sold on THE MARSHANS are intended strictly for decorative, ambient, desk organization, and collector display purposes unless an explicit engineering specification accompanies the product.
+            </p>
+            <ul>
+              <li><strong>Not Toys for Young Children:</strong> Many 3D-printed items have fine protruding features, small detachable accessories, or micro-segments that pose a choking hazard for infants and children under 3 years of age.</li>
+              <li><strong>No Critical Structural/Safety Deployments:</strong> Do not use our decorative prints in load-bearing automotive, aerospace, life-support, or structural safety mechanisms.</li>
+            </ul>
+          </section>
+
+          <!-- 20. Intellectual Property of THE MARSHANS -->
+          <section id="section-20" class="policy-section">
+            <span class="section-number">Section 20</span>
+            <h2>20. Intellectual Property of THE MARSHANS</h2>
+            <p>
+              All content on the Website—including brand identity, logos, the name "THE MARSHANS", website design, user interface code, product descriptions, photography, 3D renders, and proprietary catalog models—is the intellectual property of THE MARSHANS and is protected under Indian and international copyright and trademark laws.
+            </p>
+            <p>
+              You may not copy, reverse-engineer, scrape, reproduce, or commercially exploit our original models, renders, or digital assets without express written authorization from THE MARSHANS.
+            </p>
+          </section>
+
+          <!-- 21. Website Availability & Maintenance -->
+          <section id="section-21" class="policy-section">
+            <span class="section-number">Section 21</span>
+            <h2>21. Website Availability & Maintenance</h2>
+            <p>
+              We make every reasonable effort to keep the Website operational 24 hours a day, 7 days a week. However, we may periodically perform planned system maintenance, security upgrades, or feature enhancements. We are not liable for transient downtime caused by third-party hosting, internet backbones, or telecom disruptions.
+            </p>
+          </section>
+
+          <!-- 22. Limitation of Liability -->
+          <section id="section-22" class="policy-section">
+            <span class="section-number">Section 22</span>
+            <h2>22. Limitation of Liability</h2>
+            <p>
+              To the fullest extent permitted by applicable Indian law:
+            </p>
+            <ul>
+              <li>THE MARSHANS shall not be liable for indirect, incidental, special, consequential, or punitive damages resulting from product misuse, improper care, unauthorized modification, or inability to access the Website.</li>
+              <li>Our total aggregate liability arising out of or related to any order, whether in contract, tort, or otherwise, shall not exceed the total purchase price actually paid by the Customer for the specific product giving rise to the claim.</li>
+              <li>Nothing in these Terms excludes or limits liability for gross negligence, willful misconduct, death, or personal injury where such exclusion is impermissible under applicable statutory law.</li>
+            </ul>
+          </section>
+
+          <!-- 23. Force Majeure -->
+          <section id="section-23" class="policy-section">
+            <span class="section-number">Section 23</span>
+            <h2>23. Force Majeure</h2>
+            <p>
+              THE MARSHANS shall not be deemed in breach of these Terms or liable for any delay or failure in manufacturing, shipping, or fulfillment caused by events beyond our reasonable control, including but not limited to: acts of God, extreme natural disasters, floods, earthquakes, regional power grid failures, pandemic lockdowns, civil unrest, transport blockades, courier hub strikes, or nationwide internet/banking gateway interruptions.
+            </p>
+          </section>
+
+          <!-- 24. Changes to These Terms -->
+          <section id="section-24" class="policy-section">
+            <span class="section-number">Section 24</span>
+            <h2>24. Changes to These Terms</h2>
+            <p>
+              We reserve the right to revise or update these Terms periodically to reflect evolving legal frameworks, technological enhancements, or studio practices. When revisions occur, the updated document will be published on this page with an updated "Last Updated" timestamp. Continued use of our Website following such modifications indicates acceptance of the amended Terms.
+            </p>
+          </section>
+
+          <!-- 25. Governing Law & Jurisdiction -->
+          <section id="section-25" class="policy-section">
+            <span class="section-number">Section 25</span>
+            <h2>25. Governing Law & Jurisdiction</h2>
+            <p>
+              These Terms, their interpretation, and any dispute or claim arising out of or in connection with them or your purchase of products from THE MARSHANS shall be governed by and construed in accordance with the <strong>laws of the Republic of India</strong>.
+            </p>
+            <p>
+              Subject to applicable consumer dispute resolution forums established under the Consumer Protection Act, 2019, any legal proceeding arising out of these Terms shall be subject to the exclusive jurisdiction of the competent courts situated in <strong>Hyderabad, Telangana, India</strong>.
+            </p>
+          </section>
+
+          <!-- 26. Contact & Grievance Information -->
+          <section id="section-26" class="policy-section">
+            <span class="section-number">Section 26</span>
+            <h2>26. Contact & Grievance Information</h2>
+            <p>
+              In accordance with the <strong>Consumer Protection (E-Commerce) Rules, 2020</strong>, the contact details of our business and designated Grievance Officer are set forth below:
+            </p>
+            <div class="grievance-card">
+              <div class="grievance-header">
+                <h3>BUSINESS & GRIEVANCE REDRESSAL DESK</h3>
+                <span class="verified-pill">✓ Verified Business Entity</span>
+              </div>
+              <div class="grievance-grid">
+                <div class="grievance-item">
+                  <span class="grievance-label">Store / Brand Name</span>
+                  <span class="grievance-val">THE MARSHANS</span>
+                </div>
+                <div class="grievance-item">
+                  <span class="grievance-label">Legal Business Name</span>
+                  <span class="grievance-val">THE MARSHANS</span>
+                </div>
+                <div class="grievance-item">
+                  <span class="grievance-label">Goods & Services Tax (GSTIN)</span>
+                  <span class="grievance-val"><code>36GTSPM5280F1Z3</code></span>
+                </div>
+                <div class="grievance-item">
+                  <span class="grievance-label">Registered Business Address</span>
+                  <span class="grievance-val">Villa no 31 E, Hirise meadows, Mallampet, bachhupally, Hyderabad-500090, Telangana, India</span>
+                </div>
+                <div class="grievance-item">
+                  <span class="grievance-label">Customer Support Email</span>
+                  <span class="grievance-val"><a href="mailto:official@themarshans.shop">official@themarshans.shop</a></span>
+                </div>
+                <div class="grievance-item">
+                  <span class="grievance-label">Official Storefront URL</span>
+                  <span class="grievance-val"><a href="https://themarshans.shop" target="_blank" rel="noopener noreferrer">https://themarshans.shop</a></span>
+                </div>
+              </div>
+              <div class="grievance-footer">
+                <p>Consumer grievances are acknowledged within 48 hours and resolved in accordance with applicable consumer protection guidelines.</p>
+              </div>
+            </div>
+          </section>
+        </article>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .legal-page-wrapper {
+    background-color: #fafafa;
+    min-height: 85vh;
+    padding-bottom: 96px;
+    color: #18181b;
+  }
+
+  .legal-header {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding: clamp(36px, 6vw, 64px) 0 clamp(28px, 4vw, 48px);
+  }
+
+  .legal-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .legal-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    background: #18181b;
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .legal-date {
+    font-size: 13px;
+    color: #71717a;
+    font-weight: 500;
+  }
+
+  .legal-title {
+    font-family: var(--font-display, Impact, sans-serif);
+    font-size: clamp(36px, 6vw, 64px);
+    letter-spacing: 0.04em;
+    line-height: 1.05;
+    margin: 0 0 16px 0;
+    color: #09090b;
+  }
+
+  .legal-subtitle {
+    font-size: clamp(15px, 1.8vw, 17px);
+    line-height: 1.6;
+    color: #52525b;
+    max-width: 820px;
+    margin: 0 0 28px 0;
+  }
+
+  .statutory-notice-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: #f4f4f5;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #18181b;
+    border-radius: var(--radius-sm, 6px);
+    padding: 16px 20px;
+    max-width: 860px;
+  }
+
+  .statutory-notice-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .statutory-notice-text strong {
+    display: block;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #09090b;
+    margin-bottom: 4px;
+  }
+
+  .statutory-notice-text p {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #3f3f46;
+    margin: 0;
+  }
+
+  /* Body Container */
+  .legal-body-container {
+    padding-top: 48px;
+  }
+
+  .legal-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  /* Sidebar */
+  .legal-sidebar {
+    position: relative;
+  }
+
+  .sidebar-sticky-box {
+    position: sticky;
+    top: 96px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-md, 12px);
+    padding: 24px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  }
+
+  .sidebar-title {
+    font-family: var(--font-display, Impact, sans-serif);
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    color: #09090b;
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .toc-nav {
+    margin-bottom: 24px;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toc-list li a {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #52525b;
+    display: block;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+  }
+
+  .toc-list li a:hover {
+    color: #09090b;
+    background-color: #f4f4f5;
+    transform: translateX(3px);
+  }
+
+  .sidebar-policy-link {
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding-top: 16px;
+  }
+
+  .sidebar-policy-link p {
+    font-size: 12px;
+    color: #71717a;
+    margin: 0 0 6px 0;
+  }
+
+  .btn-text-link {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #e11d48;
+    text-transform: uppercase;
+  }
+
+  .btn-text-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Content Sections */
+  .legal-content {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-md, 12px);
+    padding: clamp(24px, 5vw, 56px);
+    max-width: 900px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  }
+
+  .policy-section {
+    padding-bottom: 40px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .policy-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  .section-number {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    color: #a1a1aa;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .policy-section h2 {
+    font-family: var(--font-display, Impact, sans-serif);
+    font-size: clamp(24px, 3.2vw, 32px);
+    letter-spacing: 0.04em;
+    color: #09090b;
+    margin: 0 0 18px 0;
+    line-height: 1.15;
+  }
+
+  .policy-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #18181b;
+    margin: 24px 0 12px 0;
+  }
+
+  .policy-section p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #3f3f46;
+    margin: 0 0 16px 0;
+  }
+
+  .policy-section ul,
+  .policy-section ol {
+    margin: 0 0 18px 0;
+    padding-left: 24px;
+    color: #3f3f46;
+  }
+
+  .policy-section li {
+    font-size: 14px;
+    line-height: 1.65;
+    margin-bottom: 10px;
+  }
+
+  .policy-section a {
+    color: #e11d48;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .policy-section a:hover {
+    color: #be123c;
+  }
+
+  .policy-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #71717a;
+    background: #f4f4f5;
+    padding: 8px 16px;
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+
+  .meta-separator {
+    color: #d4d4d8;
+  }
+
+  /* Definitions */
+  .definition-list {
+    list-style: none;
+    padding-left: 0 !important;
+  }
+
+  .definition-list li {
+    background: #fafafa;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+
+  .definition-list strong {
+    color: #09090b;
+  }
+
+  /* Policy Boxes & Callouts */
+  .policy-box {
+    background: #fafafa;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+  }
+
+  .policy-box h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #09090b;
+    margin: 0 0 12px 0;
+  }
+
+  .policy-callout-warning {
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    border-left: 4px solid #f59e0b;
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #92400e;
+    margin: 20px 0;
+  }
+
+  .safety-box {
+    background: #fef2f2;
+    border-color: #fee2e2;
+    border-left: 4px solid #ef4444;
+  }
+
+  .safety-box h4 {
+    color: #991b1b;
+  }
+
+  .safety-box p,
+  .safety-box li {
+    color: #7f1d1d;
+  }
+
+  .nested-list {
+    margin: 8px 0 0 0 !important;
+    padding-left: 20px !important;
+  }
+
+  /* Step List */
+  .step-list {
+    padding-left: 20px;
+  }
+
+  .step-list li {
+    margin-bottom: 12px;
+  }
+
+  /* Care Grid */
+  .care-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .care-card {
+    background: #fafafa;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .care-card strong {
+    display: block;
+    font-size: 14px;
+    color: #09090b;
+    margin-bottom: 6px;
+  }
+
+  .care-card p {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #52525b;
+    margin: 0;
+  }
+
+  /* Grievance Card */
+  .grievance-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+
+  .grievance-header {
+    background: #18181b;
+    color: #ffffff;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .grievance-header h3 {
+    font-family: var(--font-display, Impact, sans-serif);
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .verified-pill {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    background: #22c55e;
+    color: #ffffff;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .grievance-grid {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .grievance-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .grievance-item.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .grievance-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #71717a;
+  }
+
+  .grievance-val {
+    font-size: 14px;
+    color: #18181b;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .grievance-val code {
+    background: #f4f4f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+  }
+
+  .grievance-footer {
+    background: #fafafa;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 12px 20px;
+  }
+
+  .grievance-footer p {
+    font-size: 12px;
+    color: #71717a;
+    margin: 0;
+  }
+
+  /* Responsive styles */
+  @media (max-width: 1024px) {
+    .legal-layout {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    .legal-sidebar {
+      display: none; /* Mobile navigation via table or inline jump */
+    }
+
+    .care-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .grievance-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .legal-header {
+      padding: 32px 0 24px;
+    }
+
+    .legal-content {
+      padding: 20px;
+    }
+
+    .statutory-notice-card {
+      flex-direction: column;
+      gap: 8px;
+    }
+  }
+</style>

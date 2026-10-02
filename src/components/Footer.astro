@@ -68,6 +68,8 @@ import { siteConfig } from '../lib/config/site';
           <li><a href="/cart">Shopping Bag</a></li>
           <li><a href="/account">My Account</a></li>
           <li><a href="/custom-3d">Upload STL / 3MF</a></li>
+          <li><a href="/terms-and-conditions">Terms & Conditions</a></li>
+          <li><a href="/refund-policy">Refund & Cancellation</a></li>
         </ul>
       </div>
 
@@ -103,7 +105,12 @@ import { siteConfig } from '../lib/config/site';
     <!-- Bottom Bar -->
     <div class="footer-bottom">
       <div class="footer-bottom-copy">
-        © {new Date().getFullYear()} THE MARSHANS. All rights reserved. Precision Made in India.
+        <span>© {new Date().getFullYear()} THE MARSHANS. All rights reserved. Precision Made in India.</span>
+        <span class="footer-bottom-legal">
+          <a href="/terms-and-conditions">Terms & Conditions</a>
+          <span class="legal-dot">•</span>
+          <a href="/refund-policy">Refund Policy</a>
+        </span>
       </div>
       <div class="footer-bottom-payment">
         <span class="payment-badge">UPI</span>
@@ -348,6 +355,30 @@ import { siteConfig } from '../lib/config/site';
   .footer-bottom-copy {
     font-size: 12px;
     color: #a1a1aa;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .footer-bottom-legal {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .footer-bottom-legal a {
+    color: #71717a;
+    transition: color 0.15s ease;
+  }
+
+  .footer-bottom-legal a:hover {
+    color: #18181b;
+    text-decoration: underline;
+  }
+
+  .legal-dot {
+    color: #d4d4d8;
   }
 
   .footer-bottom-payment {
