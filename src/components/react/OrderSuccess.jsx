@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 
 export default function OrderSuccess() {
   const [orderNumber, setOrderNumber] = useState('');
+  const [paymentId, setPaymentId] = useState('');
   const [total, setTotal] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      setOrderNumber(params.get('orderNumber') || 'MSH-89210-4412');
+      setOrderNumber(params.get('orderNumber') || '');
+      setPaymentId(params.get('paymentId') || '');
       setTotal(params.get('total') || '');
     }
   }, []);
@@ -28,10 +30,18 @@ export default function OrderSuccess() {
       </p>
 
       <div className="order-details-box">
-        <div className="detail-item">
-          <span className="detail-label">ORDER NUMBER</span>
-          <strong className="detail-val order-code">{orderNumber}</strong>
-        </div>
+        {orderNumber && (
+          <div className="detail-item">
+            <span className="detail-label">ORDER NUMBER</span>
+            <strong className="detail-val order-code">{orderNumber}</strong>
+          </div>
+        )}
+        {paymentId && (
+          <div className="detail-item">
+            <span className="detail-label">PAYMENT REF</span>
+            <strong className="detail-val payment-ref">{paymentId}</strong>
+          </div>
+        )}
         {total && (
           <div className="detail-item">
             <span className="detail-label">TOTAL PAID</span>

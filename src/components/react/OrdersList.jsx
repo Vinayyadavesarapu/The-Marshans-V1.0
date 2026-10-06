@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getOrders } from '../../lib/api/orders';
+import { getOrders, getOrderTracking } from '../../lib/api/orders';
 
 export default function OrdersList() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingInfo, setTrackingInfo] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -19,6 +21,18 @@ export default function OrdersList() {
     }
     load();
   }, []);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setTrackingLoading(true);
+      getOrderTracking(selectedOrder.id)
+        .then((data) => setTrackingInfo(data))
+        .catch(() => setTrackingInfo(null))
+        .finally(() => setTrackingLoading(false));
+    } else {
+      setTrackingInfo(null);
+    }
+  }, [selectedOrder]);
 
   if (loading) {
     return (
@@ -116,48 +130,101 @@ export default function OrdersList() {
             </div>
             <div className="modal-body">
               <div className="order-summary-mini">
-                <strong>#{selectedOrder.order_number || selectedOrder.id}</strong>
-                <span>Tracking Carrier: BlueDart / Delhivery Air Express</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <strong style={{ fontSize: '16px' }}>#{selectedOrder.order_number || selectedOrder.id}</strong>
+                  <span style={{
+                    textTransform: 'uppercase',
+                    fontSize: '11px',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    background: selectedOrder.status === 'Delivered' ? '#dcfce7' : '#e0f2fe',
+                    color: selectedOrder.status === 'Delivered' ? '#15803d' : '#0369a1',
+                    fontWeight: 700
+                  }}>
+                    {trackingInfo?.current_status || selectedOrder.status}
+                  </span>
+                </div>
+                <span>Courier: <strong>{trackingInfo?.courier || selectedOrder.courier || 'Velocity Air Express'}</strong></span>
+                {trackingInfo?.tracking_no ? (
+                  <span>AWB Consignment: <strong>{trackingInfo.tracking_no}</strong></span>
+                ) : (
+                  <span style={{ color: '#71717a' }}>AWB Consignment: <em>Assigned upon dispatch</em></span>
+                )}
+                {trackingInfo?.track_url && (
+                  <div style={{ marginTop: '8px' }}>
+                    <a
+                      href={trackingInfo.track_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '4px 10px' }}
+                    >
+                      Open Live Carrier Tracking ↗
+                    </a>
+                  </div>
+                )}
               </div>
 
-              {/* Progress Steps */}
-              <div className="tracking-timeline">
-                <div className="timeline-step step-complete">
-                  <div className="step-circle">✓</div>
-                  <div className="step-content">
-                    <strong>Order Verified & Placed</strong>
-                    <p>Parameters validated and assigned to Store #2 queue.</p>
+              {trackingLoading ? (
+                <div style={{ padding: '24px 0', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
+                  Connecting to live carrier telemetry...
+                </div>
+              ) : trackingInfo?.activities && trackingInfo.activities.length > 0 ? (
+                <div className="tracking-timeline">
+                  {trackingInfo.activities.map((act, idx) => (
+                    <div key={idx} className={`timeline-step ${idx === 0 ? 'step-active' : 'step-complete'}`}>
+                      <div className="step-circle">{idx === 0 ? '●' : '✓'}</div>
+                      <div className="step-content">
+                        <strong>{act.activity || act.status || 'Consignment Update'}</strong>
+                        {act.location && <p>Location: {act.location}</p>}
+                        {(act.date || act.time || act.timestamp) && (
+                          <p style={{ fontSize: '11px', color: '#a1a1aa' }}>
+                            {[act.date, act.time].filter(Boolean).join(' ')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="tracking-timeline">
+                  <div className="timeline-step step-complete">
+                    <div className="step-circle">✓</div>
+                    <div className="step-content">
+                      <strong>Order Verified & Placed</strong>
+                      <p>Parameters validated and assigned to Store #2 fabrication queue.</p>
+                    </div>
+                  </div>
+                  <div className={`timeline-step ${selectedOrder.status !== 'Order Placed' ? 'step-complete' : 'step-active'}`}>
+                    <div className="step-circle">{selectedOrder.status !== 'Order Placed' ? '✓' : '●'}</div>
+                    <div className="step-content">
+                      <strong>G-Code Sliced & Queued</strong>
+                      <p>High-resolution toolpath calibrated for 0.12mm layer height.</p>
+                    </div>
+                  </div>
+                  <div className={`timeline-step ${['Shipped', 'Delivered', 'Completed'].includes(selectedOrder.status) ? 'step-complete' : (selectedOrder.status === 'Processing' ? 'step-active' : '')}`}>
+                    <div className="step-circle">{['Shipped', 'Delivered', 'Completed'].includes(selectedOrder.status) ? '✓' : (selectedOrder.status === 'Processing' ? '●' : '○')}</div>
+                    <div className="step-content">
+                      <strong>Fabrication & UV Post-Curing</strong>
+                      <p>Running on Bambu / Formlabs array.</p>
+                    </div>
+                  </div>
+                  <div className={`timeline-step ${['Shipped', 'Delivered', 'Completed'].includes(selectedOrder.status) ? 'step-complete' : ''}`}>
+                    <div className="step-circle">{['Shipped', 'Delivered', 'Completed'].includes(selectedOrder.status) ? '✓' : '○'}</div>
+                    <div className="step-content">
+                      <strong>Micro-Sanded & QC Passed</strong>
+                      <p>Inspected for dimensional tolerance and safely packed.</p>
+                    </div>
+                  </div>
+                  <div className={`timeline-step ${selectedOrder.status === 'Delivered' ? 'step-complete' : (['Shipped', 'Completed'].includes(selectedOrder.status) ? 'step-active' : '')}`}>
+                    <div className="step-circle">{selectedOrder.status === 'Delivered' ? '✓' : (['Shipped', 'Completed'].includes(selectedOrder.status) ? '●' : '○')}</div>
+                    <div className="step-content">
+                      <strong>Dispatched via Velocity Air Express</strong>
+                      <p>Estimated transit time 48-72 hours across India.</p>
+                    </div>
                   </div>
                 </div>
-                <div className="timeline-step step-complete">
-                  <div className="step-circle">✓</div>
-                  <div className="step-content">
-                    <strong>G-Code Sliced & Queued</strong>
-                    <p>High-resolution toolpath calibrated for 0.12mm layer height.</p>
-                  </div>
-                </div>
-                <div className="timeline-step step-active">
-                  <div className="step-circle">●</div>
-                  <div className="step-content">
-                    <strong>Fabrication & UV Post-Curing</strong>
-                    <p>Currently running on Bambu / Formlabs array.</p>
-                  </div>
-                </div>
-                <div className="timeline-step">
-                  <div className="step-circle">○</div>
-                  <div className="step-content">
-                    <strong>Micro-Sanded & QC Passed</strong>
-                    <p>Inspected for tolerance and packaged in drop box.</p>
-                  </div>
-                </div>
-                <div className="timeline-step">
-                  <div className="step-circle">○</div>
-                  <div className="step-content">
-                    <strong>Dispatched via Air Express</strong>
-                    <p>Estimated transit time 48-72 hours across India.</p>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

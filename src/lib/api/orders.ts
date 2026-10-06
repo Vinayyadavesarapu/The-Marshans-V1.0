@@ -108,3 +108,44 @@ export async function createOrder(orderPayload: any): Promise<{
     };
   }
 }
+
+export interface TrackingActivity {
+  status?: string;
+  activity?: string;
+  location?: string;
+  date?: string;
+  time?: string;
+  timestamp?: string;
+}
+
+export interface OrderTracking {
+  order_id: number | string;
+  order_number: string;
+  fulfillment_status: string;
+  payment_status: string;
+  courier: string | null;
+  tracking_no: string | null;
+  current_status: string;
+  activities: TrackingActivity[];
+  track_url: string | null;
+  pickup_date: string | null;
+  delivered_date: string | null;
+}
+
+/**
+ * Fetch real-time order tracking details (including Velocity / courier updates)
+ */
+export async function getOrderTracking(orderId: string | number): Promise<OrderTracking | null> {
+  const clean = String(orderId).trim();
+  if (!clean) return null;
+
+  try {
+    const res = await apiClient<OrderTracking>(`/orders/${encodeURIComponent(clean)}/tracking`);
+    if (res && res.success && res.data) {
+      return res.data;
+    }
+  } catch (err) {
+    console.error('Failed to retrieve order tracking info:', err);
+  }
+  return null;
+}

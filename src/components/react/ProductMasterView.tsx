@@ -139,6 +139,14 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
     });
 
     if (res.requiresLogin) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('marshans:auth-error', {
+          detail: {
+            message: 'Please sign in to add collectibles to your shopping bag.',
+            redirect: window.location.pathname
+          }
+        }));
+      }
       setShowLoginModal(true);
       return;
     }

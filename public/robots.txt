@@ -13,4 +13,5 @@ Disallow: /login
 Disallow: /register
 Disallow: /api/
 
-Sitemap: https://themarshans.shop/sitemap.xml
+Sitemap: https://themarshans.shop/sitemap-index.xml
+Sitemap: https://themarshans.shop/sitemap-0.xml

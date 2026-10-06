@@ -9,6 +9,12 @@ import {
   getCachedShippingPolicy
 } from '../../lib/api/cart';
 import { createOrder } from '../../lib/api/orders';
+import {
+  createPaymentOrder,
+  verifyPaymentSignature,
+  loadRazorpayCheckoutScript
+} from '../../lib/api/payments';
+import { checkPincodeServiceability } from '../../lib/api/shipping';
 import { buildOrderPayload, CheckoutPayloadError } from '../../lib/api/checkoutPayload';
 import { SAVED_ADDRESS_KEY } from '../../lib/session/cache';
 import { onAuthStateChange } from '../../lib/firebase/client';
@@ -19,6 +25,8 @@ export default function CheckoutForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('upi');
+  const [serviceability, setServiceability] = useState(null);
+  const [pendingOrder, setPendingOrder] = useState(null);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -78,16 +86,37 @@ export default function CheckoutForm() {
       }
     } catch {}
 
+    // Pre-load Razorpay script in background for instant checkout response
+    loadRazorpayCheckoutScript().catch(() => {});
+
     return () => {
       unsub();
       window.removeEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
     };
   }, []);
 
+  // Check PIN serviceability when 6 digits are entered
+  useEffect(() => {
+    const pin = String(formData.postalCode || '').trim();
+    if (/^\d{6}$/.test(pin)) {
+      checkPincodeServiceability(pin, paymentMethod === 'cod' ? 'cod' : 'prepaid')
+        .then((res) => setServiceability(res))
+        .catch((err) => setServiceability({ serviceable: false, message: err?.message || 'Unable to verify delivery serviceability for this PIN code.' }));
+    } else {
+      setServiceability(null);
+    }
+  }, [formData.postalCode, paymentMethod]);
+
   const summary = getCartSummary(items, shippingPolicy);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setPendingOrder(null);
+  };
+
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    setPendingOrder(null);
   };
 
   const handleSubmit = async (e) => {
@@ -99,6 +128,11 @@ export default function CheckoutForm() {
       return;
     }
 
+    if (serviceability && serviceability.serviceable === false) {
+      setError(serviceability.message || 'Delivery is not available for the entered PIN code. Please enter a serviceable PIN code.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -106,22 +140,129 @@ export default function CheckoutForm() {
       // No prices/totals are sent: the backend recomputes everything from its own catalogue.
       const payload = buildOrderPayload(formData, items, paymentMethod);
 
-      const res = await createOrder(payload);
-
-      if (res.success) {
-        // Clear cart
-        clearCart();
-        // Redirect to confirmation
-        window.location.href = `/order-confirmation?orderNumber=${res.orderNumber}&total=${summary.total}`;
-      } else {
-        setError(res.error || 'Failed to place order. Please check connection and try again.');
+      // Handle COD (Cash on Delivery)
+      if (paymentMethod === 'cod') {
+        const res = await createOrder(payload);
+        if (res.success) {
+          clearCart();
+          setPendingOrder(null);
+          window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(res.orderNumber)}&total=${summary.total}`;
+        } else {
+          setLoading(false);
+          setError(res.error || 'Failed to place order. Please check connection and try again.');
+        }
+        return;
       }
+
+      // Handle Online Payment (UPI, Card, NetBanking via Razorpay Standard Checkout)
+      const scriptReady = await loadRazorpayCheckoutScript();
+      if (!scriptReady || typeof window === 'undefined' || !window.Razorpay) {
+        setError('Unable to initialize secure payment gateway. Please check your connection or choose Cash on Delivery.');
+        setLoading(false);
+        return;
+      }
+
+      // Step 1: Create or reuse pending online order in database
+      let orderId;
+      let orderNumber;
+
+      if (pendingOrder && pendingOrder.orderId) {
+        orderId = pendingOrder.orderId;
+        orderNumber = pendingOrder.orderNumber;
+      } else {
+        const orderRes = await createOrder(payload);
+        if (!orderRes.success) {
+          setError(orderRes.error || 'Failed to place order. Please check connection and try again.');
+          setLoading(false);
+          return;
+        }
+        orderId = orderRes.orderId;
+        orderNumber = orderRes.orderNumber;
+        setPendingOrder({ orderId, orderNumber });
+      }
+
+      // Step 2: Request authoritative payment order from backend
+      const payInit = await createPaymentOrder(orderId);
+      if (!payInit.success) {
+        setError(payInit.error || 'Failed to initiate secure payment order.');
+        setLoading(false);
+        return;
+      }
+
+      if (payInit.already_paid) {
+        clearCart();
+        setPendingOrder(null);
+        window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&total=${summary.total}`;
+        return;
+      }
+
+      const rzpKey = payInit.key_id || (typeof window !== 'undefined' && window.__PUBLIC_RAZORPAY_KEY_ID__) || import.meta.env.PUBLIC_RAZORPAY_KEY_ID;
+      if (!rzpKey) {
+        setError('Payment gateway configuration is missing. Please select Cash on Delivery or contact customer support.');
+        setLoading(false);
+        return;
+      }
+
+      // Step 3: Launch Razorpay Standard Checkout modal
+      const options = {
+        key: rzpKey,
+        amount: payInit.amount, // Authoritative paise from backend
+        currency: payInit.currency || 'INR',
+        name: 'THE MARSHANS',
+        description: `Order #${orderNumber}`,
+        order_id: payInit.gateway_order_id,
+        prefill: {
+          name: (formData.fullName || payInit.prefill?.name || '').trim(),
+          email: (formData.email || payInit.prefill?.email || '').trim(),
+          contact: (formData.phone || payInit.prefill?.contact || '').trim()
+        },
+        theme: {
+          color: '#09090b'
+        },
+        ...(payInit.checkout_config_id ? { checkout_config_id: payInit.checkout_config_id } : {}),
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            setError('Payment window was closed before completion. Your shopping bag is intact. You can retry payment below or choose Cash on Delivery.');
+          }
+        },
+        handler: async (response) => {
+          try {
+            setLoading(true);
+            const verifyRes = await verifyPaymentSignature({
+              order_id: orderId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            if (verifyRes.success && verifyRes.payment_status === 'paid') {
+              clearCart();
+              setPendingOrder(null);
+              window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&paymentId=${encodeURIComponent(response.razorpay_payment_id)}&total=${summary.total}`;
+            } else {
+              setError(verifyRes.error || 'Payment signature verification failed. If your money was deducted, our team will confirm your order shortly.');
+            }
+          } catch (vErr) {
+            console.error('Payment verification error:', vErr);
+            setError('Payment signature verification encountered a server error. Please contact customer support.');
+          } finally {
+            setLoading(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        setLoading(false);
+        setError(resp.error?.description || 'Payment was declined by the bank or gateway. Please try another payment method.');
+      });
+      rzp.open();
     } catch (err) {
       console.error(err);
       setError(err instanceof CheckoutPayloadError
         ? err.message
         : 'An unexpected error occurred while routing your order. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
@@ -267,6 +408,20 @@ export default function CheckoutForm() {
                   placeholder="PIN"
                   className="form-input"
                 />
+                {serviceability && (
+                  <div style={{
+                    fontSize: '11px',
+                    marginTop: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: serviceability.serviceable ? '#16a34a' : '#dc2626',
+                    fontWeight: 500
+                  }}>
+                    <span>{serviceability.serviceable ? '✓' : '✕'}</span>
+                    <span>{serviceability.message || (serviceability.serviceable ? 'Air Express delivery available' : 'Pincode not serviceable')}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -285,7 +440,7 @@ export default function CheckoutForm() {
                   name="paymentMethod"
                   value="upi"
                   checked={paymentMethod === 'upi'}
-                  onChange={() => setPaymentMethod('upi')}
+                  onChange={() => handlePaymentMethodChange('upi')}
                 />
                 <div className="payment-opt-info">
                   <strong>Instant UPI</strong>
@@ -300,7 +455,7 @@ export default function CheckoutForm() {
                   name="paymentMethod"
                   value="card"
                   checked={paymentMethod === 'card'}
-                  onChange={() => setPaymentMethod('card')}
+                  onChange={() => handlePaymentMethodChange('card')}
                 />
                 <div className="payment-opt-info">
                   <strong>Credit / Debit Card</strong>
@@ -315,7 +470,7 @@ export default function CheckoutForm() {
                   name="paymentMethod"
                   value="cod"
                   checked={paymentMethod === 'cod'}
-                  onChange={() => setPaymentMethod('cod')}
+                  onChange={() => handlePaymentMethodChange('cod')}
                 />
                 <div className="payment-opt-info">
                   <strong>Cash on Delivery (COD)</strong>

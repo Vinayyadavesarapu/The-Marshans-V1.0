@@ -188,3 +188,64 @@ export function calculateShipping(
     progressPercent
   };
 }
+
+export interface ServiceabilityResult {
+  serviceable: boolean;
+  pincode: string;
+  message?: string;
+  provider?: string;
+  etd?: string;
+  edd?: string;
+}
+
+/**
+ * Check customer PIN code serviceability with shipping backend / Velocity
+ */
+export async function checkPincodeServiceability(
+  pincode: string,
+  paymentMode: 'prepaid' | 'cod' = 'prepaid'
+): Promise<ServiceabilityResult> {
+  const cleanPin = String(pincode || '').trim();
+  if (!/^\d{6}$/.test(cleanPin)) {
+    return {
+      serviceable: false,
+      pincode: cleanPin,
+      message: 'A valid 6-digit PIN code is required.'
+    };
+  }
+
+  try {
+    const res = await apiClient<any>('/orders/serviceability', {
+      method: 'POST',
+      body: JSON.stringify({ pincode: cleanPin, payment_mode: paymentMode })
+    });
+
+    if (res && res.success && res.data) {
+      const isServ = Boolean(res.data.serviceable);
+      return {
+        serviceable: isServ,
+        pincode: cleanPin,
+        message: res.data.message || (isServ ? 'Delivery serviceable.' : 'Delivery is not available for this PIN code.'),
+        provider: res.data.provider,
+        etd: res.data.etd,
+        edd: res.data.edd
+      };
+    }
+  } catch (err: any) {
+    console.warn('[Shipping] Serviceability check failed:', err);
+    return {
+      serviceable: false,
+      pincode: cleanPin,
+      message: err?.message || 'Unable to verify delivery serviceability for this PIN code.',
+      provider: 'error'
+    };
+  }
+
+  return {
+    serviceable: false,
+    pincode: cleanPin,
+    message: 'Unable to verify delivery serviceability for this PIN code.',
+    provider: 'unverified'
+  };
+}
+
