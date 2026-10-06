@@ -120,10 +120,12 @@ test('4. checkPincodeServiceability sends pincode and payment_mode to /orders/se
       body: {
         success: true,
         data: {
+          status: 'serviceable',
           serviceable: true,
+          carriers: [{ carrier_id: 'CR1', carrier_name: 'Carrier One' }],
           pincode: '500090',
-          message: 'Express delivery available to 500090',
-          provider: 'velocity'
+          payment_mode: 'prepaid',
+          message: 'Delivery is available for this PIN code.'
         }
       }
     };
@@ -140,6 +142,7 @@ test('4. checkPincodeServiceability sends pincode and payment_mode to /orders/se
   // Invalid pincode is rejected client-side before network call
   const invalidRes = await checkPincodeServiceability('123');
   assert.equal(invalidRes.serviceable, false);
+  assert.equal(invalidRes.status, 'invalid_pin');
 });
 
 test('5. getOrderTracking requests /orders/:id/tracking and parses courier metadata and activities', async () => {

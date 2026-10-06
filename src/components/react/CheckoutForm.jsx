@@ -14,7 +14,13 @@ import {
   verifyPaymentSignature,
   loadRazorpayCheckoutScript
 } from '../../lib/api/payments';
-import { checkPincodeServiceability } from '../../lib/api/shipping';
+import {
+  checkPincodeServiceability,
+  evaluateCheckoutServiceability,
+  sanitizePincodeInput,
+  isValidPincode
+} from '../../lib/api/shipping';
+import { resolveImageUrl } from '../../lib/utils/media';
 import { buildOrderPayload, CheckoutPayloadError } from '../../lib/api/checkoutPayload';
 import { SAVED_ADDRESS_KEY } from '../../lib/session/cache';
 import { onAuthStateChange } from '../../lib/firebase/client';
@@ -26,6 +32,7 @@ export default function CheckoutForm() {
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [serviceability, setServiceability] = useState(null);
+  const [serviceabilityChecking, setServiceabilityChecking] = useState(false);
   const [pendingOrder, setPendingOrder] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -95,22 +102,30 @@ export default function CheckoutForm() {
     };
   }, []);
 
-  // Check PIN serviceability when 6 digits are entered
+  const serviceabilityMode = paymentMethod === 'cod' ? 'cod' : 'prepaid';
+
+  // Check PIN serviceability when 6 digits are entered (results for an older PIN/payment mode are ignored)
   useEffect(() => {
     const pin = String(formData.postalCode || '').trim();
-    if (/^\d{6}$/.test(pin)) {
-      checkPincodeServiceability(pin, paymentMethod === 'cod' ? 'cod' : 'prepaid')
-        .then((res) => setServiceability(res))
-        .catch((err) => setServiceability({ serviceable: false, message: err?.message || 'Unable to verify delivery serviceability for this PIN code.' }));
-    } else {
-      setServiceability(null);
-    }
-  }, [formData.postalCode, paymentMethod]);
+    setServiceability(null);
+    if (!isValidPincode(pin)) return;
+
+    let active = true;
+    setServiceabilityChecking(true);
+    checkPincodeServiceability(pin, serviceabilityMode)
+      .then((res) => { if (active) setServiceability(res); })
+      .finally(() => { if (active) setServiceabilityChecking(false); });
+    return () => {
+      active = false;
+    };
+  }, [formData.postalCode, serviceabilityMode]);
 
   const summary = getCartSummary(items, shippingPolicy);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name } = e.target;
+    const value = name === 'postalCode' ? sanitizePincodeInput(e.target.value) : e.target.value;
+    setFormData({ ...formData, [name]: value });
     setPendingOrder(null);
   };
 
@@ -128,8 +143,10 @@ export default function CheckoutForm() {
       return;
     }
 
-    if (serviceability && serviceability.serviceable === false) {
-      setError(serviceability.message || 'Delivery is not available for the entered PIN code. Please enter a serviceable PIN code.');
+    // Delivery must be verified as serviceable for this exact PIN and payment mode before any order is created
+    const deliveryCheck = evaluateCheckoutServiceability(serviceability, formData.postalCode, serviceabilityMode);
+    if (!deliveryCheck.allowed) {
+      setError(deliveryCheck.message);
       return;
     }
 
@@ -402,12 +419,22 @@ export default function CheckoutForm() {
                   id="postalCode"
                   name="postalCode"
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  title="Enter a 6-digit PIN code"
                   required
                   value={formData.postalCode}
                   onChange={handleChange}
                   placeholder="PIN"
                   className="form-input"
                 />
+                {serviceabilityChecking && !serviceability && (
+                  <div style={{ fontSize: '11px', marginTop: '6px', color: '#71717a', fontWeight: 500 }}>
+                    Checking delivery availability...
+                  </div>
+                )}
                 {serviceability && (
                   <div style={{
                     fontSize: '11px',
@@ -500,7 +527,7 @@ export default function CheckoutForm() {
             {items.map((item) => (
               <div key={item.id} className="checkout-item-compact">
                 <img
-                  src={item.imageUrl || '/assets/placeholders/product-placeholder.svg'}
+                  src={resolveImageUrl(item.imageUrl)}
                   alt={item.name}
                   className="checkout-item-img"
                 />

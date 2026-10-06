@@ -189,63 +189,108 @@ export function calculateShipping(
   };
 }
 
+export type ServiceabilityStatus = 'serviceable' | 'not_serviceable' | 'unavailable' | 'invalid_pin';
+export type ServiceabilityPaymentMode = 'prepaid' | 'cod';
+
+export interface ServiceabilityCarrier {
+  carrier_id: string | number | null;
+  carrier_name: string | null;
+}
+
 export interface ServiceabilityResult {
-  serviceable: boolean;
+  status: ServiceabilityStatus;
+  serviceable: boolean; // true ONLY for status === 'serviceable'
   pincode: string;
-  message?: string;
-  provider?: string;
-  etd?: string;
-  edd?: string;
+  paymentMode: ServiceabilityPaymentMode;
+  carriers: ServiceabilityCarrier[];
+  message: string;
+}
+
+export const SERVICEABILITY_MESSAGES: Record<ServiceabilityStatus, string> = {
+  serviceable: 'Delivery is available for this PIN code.',
+  not_serviceable: 'Delivery is not available for this PIN code.',
+  unavailable: 'Shipping serviceability is temporarily unavailable. Please try again later.',
+  invalid_pin: 'Please enter a valid 6-digit PIN code.'
+};
+
+/** Exactly six numeric digits. */
+export function isValidPincode(pincode: string): boolean {
+  return /^\d{6}$/.test(String(pincode || '').trim());
+}
+
+/** Keeps only digits and caps the value at six characters (for the PIN input). */
+export function sanitizePincodeInput(value: string): string {
+  return String(value || '').replace(/\D/g, '').slice(0, 6);
 }
 
 /**
- * Check customer PIN code serviceability with shipping backend / Velocity
+ * Check customer PIN code serviceability via the backend (which queries Velocity).
+ * The backend answers status 'serviceable' | 'not_serviceable' | 'unavailable'. Anything else
+ * (missing fields, request failure, unexpected shape) is treated as 'unavailable' — never as serviceable.
  */
 export async function checkPincodeServiceability(
   pincode: string,
-  paymentMode: 'prepaid' | 'cod' = 'prepaid'
+  paymentMode: ServiceabilityPaymentMode = 'prepaid'
 ): Promise<ServiceabilityResult> {
   const cleanPin = String(pincode || '').trim();
-  if (!/^\d{6}$/.test(cleanPin)) {
-    return {
-      serviceable: false,
-      pincode: cleanPin,
-      message: 'A valid 6-digit PIN code is required.'
-    };
+  const mode: ServiceabilityPaymentMode = paymentMode === 'cod' ? 'cod' : 'prepaid';
+  const result = (status: ServiceabilityStatus, carriers: ServiceabilityCarrier[] = []): ServiceabilityResult => ({
+    status,
+    serviceable: status === 'serviceable',
+    pincode: cleanPin,
+    paymentMode: mode,
+    carriers,
+    message: SERVICEABILITY_MESSAGES[status]
+  });
+
+  if (!isValidPincode(cleanPin)) {
+    return result('invalid_pin');
   }
 
   try {
     const res = await apiClient<any>('/orders/serviceability', {
       method: 'POST',
-      body: JSON.stringify({ pincode: cleanPin, payment_mode: paymentMode })
+      body: JSON.stringify({ pincode: cleanPin, payment_mode: mode })
     });
+    const data = res && res.success ? res.data : null;
 
-    if (res && res.success && res.data) {
-      const isServ = Boolean(res.data.serviceable);
-      return {
-        serviceable: isServ,
-        pincode: cleanPin,
-        message: res.data.message || (isServ ? 'Delivery serviceable.' : 'Delivery is not available for this PIN code.'),
-        provider: res.data.provider,
-        etd: res.data.etd,
-        edd: res.data.edd
-      };
+    if (data && data.status === 'serviceable' && data.serviceable === true && Array.isArray(data.carriers) && data.carriers.length > 0) {
+      return result('serviceable', data.carriers);
     }
-  } catch (err: any) {
+    if (data && data.status === 'not_serviceable') {
+      return result('not_serviceable');
+    }
+  } catch (err) {
     console.warn('[Shipping] Serviceability check failed:', err);
-    return {
-      serviceable: false,
-      pincode: cleanPin,
-      message: err?.message || 'Unable to verify delivery serviceability for this PIN code.',
-      provider: 'error'
-    };
   }
 
-  return {
-    serviceable: false,
-    pincode: cleanPin,
-    message: 'Unable to verify delivery serviceability for this PIN code.',
-    provider: 'unverified'
-  };
+  return result('unavailable');
 }
 
+/**
+ * Checkout gate: an order may be placed only when the latest serviceability result is 'serviceable'
+ * for the exact PIN and payment mode being submitted. Missing/in-flight/stale results block checkout.
+ */
+export function evaluateCheckoutServiceability(
+  result: ServiceabilityResult | null | undefined,
+  pincode: string,
+  paymentMode: ServiceabilityPaymentMode
+): { allowed: boolean; message: string } {
+  const cleanPin = String(pincode || '').trim();
+  if (!isValidPincode(cleanPin)) {
+    return { allowed: false, message: SERVICEABILITY_MESSAGES.invalid_pin };
+  }
+  if (!result || result.pincode !== cleanPin || result.paymentMode !== paymentMode) {
+    return { allowed: false, message: 'Checking delivery availability for this PIN code. Please wait a moment and try again.' };
+  }
+  if (result.status === 'serviceable' && result.serviceable === true) {
+    return { allowed: true, message: result.message };
+  }
+  if (result.status === 'not_serviceable') {
+    return { allowed: false, message: SERVICEABILITY_MESSAGES.not_serviceable };
+  }
+  if (result.status === 'invalid_pin') {
+    return { allowed: false, message: SERVICEABILITY_MESSAGES.invalid_pin };
+  }
+  return { allowed: false, message: SERVICEABILITY_MESSAGES.unavailable };
+}
