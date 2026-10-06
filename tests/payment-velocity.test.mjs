@@ -204,7 +204,10 @@ test('6. CheckoutForm.jsx handles both Razorpay Standard Checkout and Cash on De
   assert.ok(checkoutSrc.includes("paymentMethod === 'cod'"), 'CheckoutForm must have dedicated COD handling');
 
   // Serviceability check is integrated
-  assert.ok(checkoutSrc.includes('checkPincodeServiceability'), 'CheckoutForm must use checkPincodeServiceability');
+  // Velocity serviceability is temporarily bypassed at checkout (see checkout-direct-payment.test.mjs);
+  // the shipping.ts serviceability client itself is still covered by test 4 above.
+  assert.ok(!checkoutSrc.includes('checkPincodeServiceability'), 'CheckoutForm must not call the serviceability API while bypassed');
+  assert.ok(checkoutSrc.includes('isValidPincode(formData.postalCode)'), 'CheckoutForm must still validate the 6-digit PIN');
 });
 
 test('7. Store Isolation: Payment and shipping client calls strictly enforce Store 2 headers', async () => {

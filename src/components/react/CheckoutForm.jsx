@@ -15,10 +15,9 @@ import {
   loadRazorpayCheckoutScript
 } from '../../lib/api/payments';
 import {
-  checkPincodeServiceability,
-  evaluateCheckoutServiceability,
   sanitizePincodeInput,
-  isValidPincode
+  isValidPincode,
+  SERVICEABILITY_MESSAGES
 } from '../../lib/api/shipping';
 import { resolveImageUrl } from '../../lib/utils/media';
 import { buildOrderPayload, CheckoutPayloadError } from '../../lib/api/checkoutPayload';
@@ -31,8 +30,6 @@ export default function CheckoutForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('upi');
-  const [serviceability, setServiceability] = useState(null);
-  const [serviceabilityChecking, setServiceabilityChecking] = useState(false);
   const [pendingOrder, setPendingOrder] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -102,24 +99,6 @@ export default function CheckoutForm() {
     };
   }, []);
 
-  const serviceabilityMode = paymentMethod === 'cod' ? 'cod' : 'prepaid';
-
-  // Check PIN serviceability when 6 digits are entered (results for an older PIN/payment mode are ignored)
-  useEffect(() => {
-    const pin = String(formData.postalCode || '').trim();
-    setServiceability(null);
-    if (!isValidPincode(pin)) return;
-
-    let active = true;
-    setServiceabilityChecking(true);
-    checkPincodeServiceability(pin, serviceabilityMode)
-      .then((res) => { if (active) setServiceability(res); })
-      .finally(() => { if (active) setServiceabilityChecking(false); });
-    return () => {
-      active = false;
-    };
-  }, [formData.postalCode, serviceabilityMode]);
-
   const summary = getCartSummary(items, shippingPolicy);
 
   const handleChange = (e) => {
@@ -143,10 +122,10 @@ export default function CheckoutForm() {
       return;
     }
 
-    // Delivery must be verified as serviceable for this exact PIN and payment mode before any order is created
-    const deliveryCheck = evaluateCheckoutServiceability(serviceability, formData.postalCode, serviceabilityMode);
-    if (!deliveryCheck.allowed) {
-      setError(deliveryCheck.message);
+    // Velocity serviceability is temporarily bypassed at checkout: a valid 6-digit PIN proceeds straight to
+    // order creation and payment. (The backend serviceability endpoint and shipping.ts client remain in place.)
+    if (!isValidPincode(formData.postalCode)) {
+      setError(SERVICEABILITY_MESSAGES.invalid_pin);
       return;
     }
 
@@ -430,25 +409,6 @@ export default function CheckoutForm() {
                   placeholder="PIN"
                   className="form-input"
                 />
-                {serviceabilityChecking && !serviceability && (
-                  <div style={{ fontSize: '11px', marginTop: '6px', color: '#71717a', fontWeight: 500 }}>
-                    Checking delivery availability...
-                  </div>
-                )}
-                {serviceability && (
-                  <div style={{
-                    fontSize: '11px',
-                    marginTop: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    color: serviceability.serviceable ? '#16a34a' : '#dc2626',
-                    fontWeight: 500
-                  }}>
-                    <span>{serviceability.serviceable ? '✓' : '✕'}</span>
-                    <span>{serviceability.message || (serviceability.serviceable ? 'Air Express delivery available' : 'Pincode not serviceable')}</span>
-                  </div>
-                )}
               </div>
             </div>
           </div>

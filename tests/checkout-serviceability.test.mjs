@@ -93,7 +93,7 @@ test('16. PIN rejects fewer or more than 6 digits (and is capped on input)', asy
   assert.match(checkout, /sanitizePincodeInput\(e\.target\.value\)/, 'PIN input strips non-digits');
   assert.match(checkout, /maxLength=\{6\}/);
   assert.match(checkout, /inputMode="numeric"/);
-  assert.match(checkout, /evaluateCheckoutServiceability\(serviceability, formData\.postalCode, serviceabilityMode\)/, 'submit is gated');
+  assert.match(checkout, /if \(!isValidPincode\(formData\.postalCode\)\)/, 'submit is gated on a valid 6-digit PIN');
   assert.doesNotMatch(checkout, /serviceability && serviceability\.serviceable === false/, 'old permissive gate removed');
 });
 

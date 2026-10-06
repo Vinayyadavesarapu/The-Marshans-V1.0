@@ -41,8 +41,11 @@ const firebaseStubPlugin = {
 
 let counter = 0;
 
-/** Bundle + import a module relative to the Marshans project root (e.g. 'src/lib/api/orders.ts'). */
-export async function loadModule(relPath) {
+/**
+ * Bundle + import a module relative to the Marshans project root (e.g. 'src/lib/api/orders.ts').
+ * `plugins` lets a test stub extra bare imports (e.g. a minimal React runtime for a component).
+ */
+export async function loadModule(relPath, { plugins = [] } = {}) {
   const result = await build({
     entryPoints: [path.join(ROOT, relPath)],
     bundle: true,
@@ -52,7 +55,7 @@ export async function loadModule(relPath) {
     target: 'node22',
     logLevel: 'silent',
     define: { 'import.meta.env': '{}' },
-    plugins: [firebaseStubPlugin]
+    plugins: [...plugins, firebaseStubPlugin]
   });
   const code = `${result.outputFiles[0].text}\n//# unique=${++counter}-${Math.random()}`;
   return import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
