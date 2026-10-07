@@ -115,6 +115,12 @@ export default function AccountDashboard() {
                 <div className="order-price-info">
                   ₹{Number(ord.total_amount).toLocaleString('en-IN')}
                 </div>
+                <a
+                  href={`/account/orders?track=${ord.id}`}
+                  className="btn btn-outline btn-sm track-order-btn"
+                >
+                  Track Order →
+                </a>
               </div>
             ))}
           </div>
@@ -325,6 +331,8 @@ export default function AccountDashboard() {
           padding: 12px 16px;
           border-radius: 8px;
           background: #f8fafc;
+          flex-wrap: wrap;
+          gap: 12px;
         }
 
         .order-meta-info {
@@ -360,9 +368,29 @@ export default function AccountDashboard() {
           color: #09090b;
         }
 
+        .track-order-btn {
+          font-size: 12px;
+          padding: 6px 14px;
+          white-space: nowrap;
+          text-decoration: none;
+          font-weight: 700;
+        }
+
         @media (max-width: 860px) {
           .account-stats-grid, .account-sections-grid {
             grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .order-row-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+          }
+          .track-order-btn {
+            width: 100%;
+            text-align: center;
           }
         }
       ` }} />

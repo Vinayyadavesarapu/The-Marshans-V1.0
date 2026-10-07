@@ -23,6 +23,22 @@ export default function OrdersList() {
   }, []);
 
   useEffect(() => {
+    if (orders.length === 0) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const trackParam = params.get('track');
+      if (trackParam) {
+        const found = orders.find(
+          (o) => String(o.id) === String(trackParam) || String(o.order_number) === String(trackParam)
+        );
+        if (found) {
+          setSelectedOrder(found);
+        }
+      }
+    } catch {}
+  }, [orders]);
+
+  useEffect(() => {
     if (selectedOrder) {
       setTrackingLoading(true);
       getOrderTracking(selectedOrder.id)
@@ -111,9 +127,9 @@ export default function OrdersList() {
               <button
                 type="button"
                 onClick={() => setSelectedOrder(ord)}
-                className="btn btn-outline btn-sm"
+                className="btn btn-primary btn-sm track-order-action-btn"
               >
-                Track Fulfillment
+                Track Order →
               </button>
             </div>
           </div>
@@ -166,7 +182,7 @@ export default function OrdersList() {
               </div>
 
               {trackingLoading ? (
-                <div style={{ padding: '24px 0', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
+                <div style={{ padding: '36px 0', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
                   Connecting to live carrier telemetry...
                 </div>
               ) : trackingInfo?.activities && trackingInfo.activities.length > 0 ? (
@@ -186,43 +202,41 @@ export default function OrdersList() {
                     </div>
                   ))}
                 </div>
+              ) : trackingInfo?.tracking_no ? (
+                <div className="tracking-pending-state">
+                  <div className="pending-badge-row">
+                    <span className="courier-badge">{trackingInfo.courier || selectedOrder.courier || 'Velocity Air Express'}</span>
+                    <span className="consignment-tag">Consignment Registered</span>
+                  </div>
+                  <h4>Dispatched & In Transit</h4>
+                  <p>
+                    Waybill #{trackingInfo.tracking_no} is active with Velocity Air Express.
+                    Carrier checkpoint telemetry will update automatically as physical parcel scans occur at courier sorting hubs.
+                  </p>
+                  {trackingInfo?.track_url && (
+                    <div style={{ marginTop: '16px' }}>
+                      <a
+                        href={trackingInfo.track_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        Open Carrier Tracking Portal ↗
+                      </a>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <div className="tracking-timeline">
-                  <div className="timeline-step step-complete">
-                    <div className="step-circle">✓</div>
-                    <div className="step-content">
-                      <strong>Order Verified & Placed</strong>
-                      <p>Parameters validated and assigned to Store #2 fabrication queue.</p>
-                    </div>
+                <div className="tracking-pending-state">
+                  <div className="pending-badge-row">
+                    <span className="courier-badge">Status: {selectedOrder.status || 'Print Queued'}</span>
                   </div>
-                  <div className={`timeline-step ${selectedOrder.status !== 'Order Placed' ? 'step-complete' : 'step-active'}`}>
-                    <div className="step-circle">{selectedOrder.status !== 'Order Placed' ? '✓' : '●'}</div>
-                    <div className="step-content">
-                      <strong>G-Code Sliced & Queued</strong>
-                      <p>High-resolution toolpath calibrated for 0.12mm layer height.</p>
-                    </div>
-                  </div>
-                  <div className={`timeline-step ${['Shipped', 'Delivered', 'Completed'].includes(selectedOrder.status) ? 'step-complete' : (selectedOrder.status === 'Processing' ? 'step-active' : '')}`}>
-                    <div className="step-circle">{['Shipped', 'Delivered', 'Completed'].includes(selectedOrder.status) ? '✓' : (selectedOrder.status === 'Processing' ? '●' : '○')}</div>
-                    <div className="step-content">
-                      <strong>Fabrication & UV Post-Curing</strong>
-                      <p>Running on Bambu / Formlabs array.</p>
-                    </div>
-                  </div>
-                  <div className={`timeline-step ${['Shipped', 'Delivered', 'Completed'].includes(selectedOrder.status) ? 'step-complete' : ''}`}>
-                    <div className="step-circle">{['Shipped', 'Delivered', 'Completed'].includes(selectedOrder.status) ? '✓' : '○'}</div>
-                    <div className="step-content">
-                      <strong>Micro-Sanded & QC Passed</strong>
-                      <p>Inspected for dimensional tolerance and safely packed.</p>
-                    </div>
-                  </div>
-                  <div className={`timeline-step ${selectedOrder.status === 'Delivered' ? 'step-complete' : (['Shipped', 'Completed'].includes(selectedOrder.status) ? 'step-active' : '')}`}>
-                    <div className="step-circle">{selectedOrder.status === 'Delivered' ? '✓' : (['Shipped', 'Completed'].includes(selectedOrder.status) ? '●' : '○')}</div>
-                    <div className="step-content">
-                      <strong>Dispatched via Velocity Air Express</strong>
-                      <p>Estimated transit time 48-72 hours across India.</p>
-                    </div>
-                  </div>
+                  <h4>Fabrication & Fulfillment in Progress</h4>
+                  <p>
+                    Your artifact is currently queued in our print farm.
+                    Carrier tracking consignment details will appear here once dispatched via Velocity Air Express.
+                  </p>
                 </div>
               )}
             </div>
@@ -396,6 +410,8 @@ export default function OrdersList() {
           border-radius: 16px;
           max-width: 540px;
           width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
           padding: 32px;
           box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
         }
@@ -480,6 +496,62 @@ export default function OrdersList() {
           font-size: 12px;
           color: #71717a;
           margin: 2px 0 0 0;
+        }
+
+        .track-order-action-btn {
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          white-space: nowrap;
+        }
+
+        .tracking-pending-state {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 24px;
+          text-align: center;
+        }
+
+        .pending-badge-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 12px;
+          flex-wrap: wrap;
+        }
+
+        .courier-badge {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          background: #e0f2fe;
+          color: #0369a1;
+          padding: 3px 8px;
+          border-radius: 4px;
+        }
+
+        .consignment-tag {
+          font-size: 11px;
+          font-weight: 700;
+          background: #fef3c7;
+          color: #92400e;
+          padding: 3px 8px;
+          border-radius: 4px;
+        }
+
+        .tracking-pending-state h4 {
+          font-size: 16px;
+          font-weight: 700;
+          color: #09090b;
+          margin: 0 0 8px 0;
+        }
+
+        .tracking-pending-state p {
+          font-size: 13px;
+          color: #64748b;
+          line-height: 1.5;
+          margin: 0;
         }
       ` }} />
     </div>

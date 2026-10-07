@@ -3,26 +3,6 @@ import { siteConfig } from '../lib/config/site';
 ---
 
 <footer class="site-footer">
-  <div class="footer-newsletter-wrap">
-    <div class="container newsletter-inner">
-      <div class="newsletter-copy">
-        <h3 class="newsletter-title">JOIN THE MARSHAN DISPATCH</h3>
-        <p class="newsletter-sub">Get first access to limited 3D print drops, artist collaborations, and exclusive prototype releases.</p>
-      </div>
-      <form class="newsletter-form" id="newsletter-form" onsubmit="event.preventDefault(); alert('Welcome to the Marshan Dispatch. You are on the priority drop list!');">
-        <input
-          type="email"
-          placeholder="Enter your email address..."
-          required
-          class="newsletter-input"
-        />
-        <button type="submit" class="btn btn-primary newsletter-btn">
-          Subscribe
-        </button>
-      </form>
-    </div>
-  </div>
-
   <div class="container footer-main">
     <div class="footer-grid">
       <!-- Column 1: Brand & Philosophy -->
@@ -129,68 +109,6 @@ import { siteConfig } from '../lib/config/site';
     border-top: 1px solid rgba(0, 0, 0, 0.08);
     color: #18181b;
     margin-top: auto;
-  }
-
-  .footer-newsletter-wrap {
-    background-color: #f4f4f5;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    padding: 48px 0;
-  }
-
-  .newsletter-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 32px;
-    flex-wrap: wrap;
-  }
-
-  .newsletter-copy {
-    max-width: 520px;
-  }
-
-  .newsletter-title {
-    font-family: var(--font-display, Impact, sans-serif);
-    font-size: clamp(28px, 3.5vw, 40px);
-    letter-spacing: 0.05em;
-    color: #09090b;
-    margin-bottom: 8px;
-  }
-
-  .newsletter-sub {
-    font-size: 14px;
-    color: #71717a;
-    line-height: 1.5;
-    margin: 0;
-  }
-
-  .newsletter-form {
-    display: flex;
-    gap: 10px;
-    flex: 1 1 360px;
-    max-width: 480px;
-  }
-
-  .newsletter-input {
-    flex: 1;
-    height: 48px;
-    padding: 0 16px;
-    border-radius: var(--radius-sm, 6px);
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    background: #ffffff;
-    font-size: 14px;
-    outline: none;
-    font-family: var(--font-sans, sans-serif);
-    transition: border-color 0.2s ease;
-  }
-
-  .newsletter-input:focus {
-    border-color: #111111;
-  }
-
-  .newsletter-btn {
-    height: 48px;
-    white-space: nowrap;
   }
 
   .footer-main {

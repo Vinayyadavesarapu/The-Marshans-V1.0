@@ -22,6 +22,7 @@ import {
 import { resolveImageUrl } from '../../lib/utils/media';
 import { buildOrderPayload, CheckoutPayloadError } from '../../lib/api/checkoutPayload';
 import { SAVED_ADDRESS_KEY } from '../../lib/session/cache';
+import { getSavedAddresses, getActiveAddress, selectAddress } from '../../lib/session/addresses';
 import { onAuthStateChange } from '../../lib/firebase/client';
 
 export default function CheckoutForm() {
@@ -31,6 +32,8 @@ export default function CheckoutForm() {
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [pendingOrder, setPendingOrder] = useState(null);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -74,18 +77,20 @@ export default function CheckoutForm() {
     });
 
     try {
-      const savedAddress = localStorage.getItem(SAVED_ADDRESS_KEY);
-      if (savedAddress) {
-        const parsed = JSON.parse(savedAddress);
+      const addressList = getSavedAddresses();
+      setSavedAddresses(addressList);
+      const active = getActiveAddress();
+      if (active) {
+        setSelectedAddressId(active.id);
         setFormData((prev) => ({
           ...prev,
-          fullName: parsed.fullName || prev.fullName,
-          phone: parsed.phone || prev.phone,
-          addressLine1: parsed.addressLine1 || prev.addressLine1,
-          addressLine2: parsed.addressLine2 || prev.addressLine2,
-          city: parsed.city || prev.city,
-          state: parsed.state || prev.state,
-          postalCode: parsed.postalCode || prev.postalCode
+          fullName: active.fullName || prev.fullName,
+          phone: active.phone || prev.phone,
+          addressLine1: active.addressLine1 || prev.addressLine1,
+          addressLine2: active.addressLine2 || prev.addressLine2,
+          city: active.city || prev.city,
+          state: active.state || prev.state,
+          postalCode: active.postalCode || prev.postalCode
         }));
       }
     } catch {}
@@ -100,6 +105,35 @@ export default function CheckoutForm() {
   }, []);
 
   const summary = getCartSummary(items, shippingPolicy);
+
+  const handleSelectSavedAddress = (addr) => {
+    setSelectedAddressId(addr.id);
+    selectAddress(addr.id);
+    setFormData((prev) => ({
+      ...prev,
+      fullName: addr.fullName || '',
+      phone: addr.phone || '',
+      addressLine1: addr.addressLine1 || '',
+      addressLine2: addr.addressLine2 || '',
+      city: addr.city || '',
+      state: addr.state || '',
+      postalCode: addr.postalCode || ''
+    }));
+    setPendingOrder(null);
+  };
+
+  const handleUseNewAddress = () => {
+    setSelectedAddressId('custom');
+    setFormData((prev) => ({
+      ...prev,
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: ''
+    }));
+    setPendingOrder(null);
+  };
 
   const handleChange = (e) => {
     const { name } = e.target;
@@ -323,6 +357,57 @@ export default function CheckoutForm() {
               <span className="step-badge">2</span>
               <h3>Delivery Coordinates</h3>
             </div>
+
+            {savedAddresses.length > 0 && (
+              <div className="saved-addresses-selector">
+                <div className="selector-title-row">
+                  <span className="selector-label">Saved Delivery Coordinates</span>
+                  <a href="/account/profile" className="manage-addresses-link" target="_blank" rel="noopener noreferrer">
+                    Manage Addresses ↗
+                  </a>
+                </div>
+                <div className="saved-addresses-cards">
+                  {savedAddresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr.id;
+                    return (
+                      <div
+                        key={addr.id}
+                        className={`saved-addr-choice-card ${isSelected ? 'selected' : ''}`}
+                        onClick={() => handleSelectSavedAddress(addr)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectSavedAddress(addr); }}
+                      >
+                        <div className="addr-choice-header">
+                          <span className={`label-badge label-${addr.label?.toLowerCase() || 'home'}`}>
+                            {addr.label || 'Home'}
+                          </span>
+                          {addr.isDefault && <span className="default-mini-badge">DEFAULT</span>}
+                          <div className={`radio-dot ${isSelected ? 'active' : ''}`} />
+                        </div>
+                        <strong className="choice-name">{addr.fullName}</strong>
+                        <p className="choice-text">
+                          {addr.addressLine1}, {addr.city} - {addr.postalCode}
+                        </p>
+                      </div>
+                    );
+                  })}
+                  <div
+                    className={`saved-addr-choice-card new-addr-card ${selectedAddressId === 'custom' ? 'selected' : ''}`}
+                    onClick={handleUseNewAddress}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleUseNewAddress(); }}
+                  >
+                    <div className="new-addr-content">
+                      <span className="plus-icon">+</span>
+                      <strong>New Coordinates</strong>
+                      <p>Type custom shipping details below</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label" htmlFor="fullName">Recipient Full Name</label>
@@ -736,6 +821,150 @@ export default function CheckoutForm() {
           font-size: 12px;
           color: #52525b;
           line-height: 1.4;
+        }
+
+        .saved-addresses-selector {
+          margin-bottom: 24px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .selector-title-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
+
+        .selector-label {
+          font-size: 13px;
+          font-weight: 700;
+          color: #09090b;
+        }
+
+        .manage-addresses-link {
+          font-size: 12px;
+          color: #71717a;
+          text-decoration: underline;
+        }
+
+        .manage-addresses-link:hover {
+          color: #09090b;
+        }
+
+        .saved-addresses-cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 12px;
+        }
+
+        .saved-addr-choice-card {
+          border: 1px solid rgba(0, 0, 0, 0.12);
+          border-radius: 10px;
+          padding: 14px;
+          background: #fafafa;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          transition: all 0.15s ease;
+        }
+
+        .saved-addr-choice-card:hover {
+          border-color: #111111;
+          background: #ffffff;
+        }
+
+        .saved-addr-choice-card.selected {
+          border-color: #111111;
+          background: #ffffff;
+          box-shadow: 0 0 0 1px #111111;
+        }
+
+        .addr-choice-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 6px;
+          margin-bottom: 4px;
+        }
+
+        .default-mini-badge {
+          font-size: 9px;
+          font-weight: 800;
+          padding: 2px 5px;
+          background: #111111;
+          color: #ffffff;
+          border-radius: 3px;
+        }
+
+        .radio-dot {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          border: 1.5px solid #a1a1aa;
+          margin-left: auto;
+          position: relative;
+        }
+
+        .radio-dot.active {
+          border-color: #111111;
+        }
+
+        .radio-dot.active::after {
+          content: '';
+          position: absolute;
+          inset: 2.5px;
+          border-radius: 50%;
+          background: #111111;
+        }
+
+        .choice-name {
+          font-size: 13px;
+          color: #09090b;
+        }
+
+        .choice-text {
+          font-size: 11px;
+          color: #71717a;
+          margin: 0;
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .new-addr-card {
+          border-style: dashed;
+          background: #ffffff;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+        }
+
+        .new-addr-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .plus-icon {
+          font-size: 18px;
+          font-weight: 700;
+          color: #71717a;
+        }
+
+        .new-addr-card strong {
+          font-size: 12px;
+          color: #09090b;
+        }
+
+        .new-addr-card p {
+          font-size: 10px;
+          color: #a1a1aa;
+          margin: 0;
         }
 
         @media (max-width: 960px) {
