@@ -149,7 +149,7 @@ export default function CartView() {
         <div className="cart-items-feed">
           {items.map((item) => (
             <div key={item.id} className="cart-item-row">
-              <a href={`/product?slug=${encodeURIComponent(item.slug || item.productId)}&id=${item.productId}`} className="item-thumb-link">
+              <a href={`/product/${encodeURIComponent(item.slug || item.productId)}/`} className="item-thumb-link">
                 <img
                   src={resolveImageUrl(item.imageUrl)}
                   alt={item.name}
@@ -160,7 +160,7 @@ export default function CartView() {
               <div className="cart-item-core">
                 <div className="cart-item-headings">
                   <span className="cart-item-cat">{item.categoryName || 'Artifact'}</span>
-                  <a href={`/product?slug=${encodeURIComponent(item.slug || item.productId)}&id=${item.productId}`} className="cart-item-name-link">
+                  <a href={`/product/${encodeURIComponent(item.slug || item.productId)}/`} className="cart-item-name-link">
                     <h3>{item.name}</h3>
                   </a>
                   <div className="cart-item-options">

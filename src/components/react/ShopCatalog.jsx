@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import ProductCard from './ProductCard';
+import ProductListingGrid from './ProductListingGrid';
+import CollectionSearch from './collection/CollectionSearch';
+import CollectionSort from './collection/CollectionSort';
 import { getProducts } from '../../lib/api/products';
 import { fetchCategories, resolveBackendCategory } from '../../lib/api/categories';
 
@@ -17,7 +19,7 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
   const [loading, setLoading] = useState(initialProducts.length === 0);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('featured');
+  const [sortBy, setSortBy] = useState('price-asc');
   const [inStockOnly, setInStockOnly] = useState(false);
   // Live backend category id for the selected route slug (undefined while resolving, null if no match)
   const [selectedCategoryId, setSelectedCategoryId] = useState(undefined);
@@ -92,22 +94,27 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
       );
     }
 
-    // Filter by Stock
+    // Filter by Stock (missing stock means unknown availability, never 0 or out of stock)
     if (inStockOnly) {
-      list = list.filter((p) => (p.stock || 0) > 0);
+      list = list.filter((p) => (typeof p.stock === 'number' ? p.stock > 0 : true));
     }
 
-    // Sorting
-    if (sortBy === 'price-low') {
+    // Sorting (reliable options)
+    if (sortBy === 'price-asc') {
       list.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-high') {
+    } else if (sortBy === 'price-desc') {
       list.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'bestseller') {
-      list.sort((a, b) => (b.is_best_seller ? 1 : 0) - (a.is_best_seller ? 1 : 0));
+    } else if (sortBy === 'name-asc') {
+      list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sortBy === 'name-desc') {
+      list.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
     }
 
     return list;
   }, [products, selectedCategory, selectedCategoryId, searchQuery, sortBy, inStockOnly]);
+
+  // Avoid flashing the empty state while live products or the category id are still loading
+  const isResolving = loading || (selectedCategory !== 'all' && selectedCategoryId === undefined);
 
   const updateCategory = (catId) => {
     setSelectedCategory(catId);
@@ -142,44 +149,12 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
 
         {/* Search & Sort Controls */}
         <div className="catalog-right-controls">
-          <div className="catalog-search-wrap">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search catalog..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="catalog-search-input"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="catalog-clear-search"
-                aria-label="Clear search"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="catalog-sort-wrap">
-            <label htmlFor="sort-select" className="sort-label">Sort:</label>
-            <select
-              id="sort-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="sort-select"
-            >
-              <option value="featured">Featured</option>
-              <option value="bestseller">Bestsellers</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-            </select>
-          </div>
+          <CollectionSearch
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            placeholder="Search catalog..."
+          />
+          <CollectionSort sortBy={sortBy} onSortChange={setSortBy} />
         </div>
       </div>
 
@@ -200,13 +175,9 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
       </div>
 
       {/* Grid */}
-      <div className="catalog-grid">
-        {filteredProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      <ProductListingGrid products={filteredProducts} />
 
-      {filteredProducts.length === 0 && (
+      {filteredProducts.length === 0 && !isResolving && (
         <div className="catalog-empty-state">
           <div className="empty-icon">⚲</div>
           <h3>No matching artifacts found</h3>
@@ -214,7 +185,7 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
           <button
             type="button"
             onClick={() => {
-              setSelectedCategory('all');
+              updateCategory('all');
               setSearchQuery('');
             }}
             className="btn btn-outline"
@@ -231,7 +202,7 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
 
         .catalog-control-bar {
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           justify-content: space-between;
           gap: 20px;
           margin-bottom: 24px;
@@ -279,67 +250,21 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
 
         .catalog-right-controls {
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           gap: 12px;
-          flex-wrap: wrap;
         }
 
-        .catalog-search-wrap {
-          position: relative;
-          display: flex;
-          align-items: center;
-          background: #ffffff;
-          border: 1px solid rgba(0, 0, 0, 0.12);
-          border-radius: 8px;
-          padding: 0 12px;
-          height: 38px;
-          width: 220px;
+        .catalog-right-controls .collection-search-wrap,
+        .catalog-right-controls .collection-sort-wrap {
+          margin-bottom: 0;
         }
 
-        .catalog-search-input {
-          border: none;
-          outline: none;
-          background: transparent;
-          font-family: var(--font-sans, sans-serif);
-          font-size: 13px;
-          margin-left: 8px;
-          width: 100%;
-          color: #18181b;
+        .catalog-right-controls .collection-search-wrap {
+          width: 240px;
         }
 
-        .catalog-clear-search {
-          background: none;
-          border: none;
-          color: #a1a1aa;
-          cursor: pointer;
-          font-size: 12px;
-          padding: 2px;
-        }
-
-        .catalog-sort-wrap {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .sort-label {
-          font-size: 12px;
-          font-weight: 700;
-          color: #71717a;
-          text-transform: uppercase;
-        }
-
-        .sort-select {
-          height: 38px;
-          padding: 0 12px;
-          border-radius: 8px;
-          border: 1px solid rgba(0, 0, 0, 0.12);
-          background: #ffffff;
-          font-family: var(--font-sans, sans-serif);
-          font-size: 13px;
-          color: #18181b;
-          outline: none;
-          cursor: pointer;
+        .catalog-right-controls .collection-sort-wrap {
+          width: 200px;
         }
 
         .catalog-results-header {
@@ -363,12 +288,6 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
           font-size: 12px;
           font-weight: 700;
           cursor: pointer;
-        }
-
-        .catalog-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 24px;
         }
 
         .catalog-empty-state {
@@ -399,32 +318,29 @@ export default function ShopCatalog({ initialProducts = [], initialCategory = 'a
           max-width: 400px;
         }
 
-        @media (max-width: 1100px) {
-          .catalog-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-
         @media (max-width: 768px) {
-          .catalog-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-          }
-          .catalog-search-wrap {
-            width: 100%;
-          }
           .catalog-control-bar {
             flex-direction: column;
             align-items: stretch;
           }
-          .catalog-right-controls {
-            justify-content: space-between;
+          .catalog-right-controls .collection-search-wrap {
+            flex: 1 1 auto;
+            min-width: 0;
+            width: auto;
+          }
+          .catalog-right-controls .collection-sort-wrap {
+            flex: 0 0 auto;
+            width: 190px;
           }
         }
 
         @media (max-width: 480px) {
-          .catalog-grid {
-            grid-template-columns: 1fr;
+          .catalog-right-controls {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .catalog-right-controls .collection-sort-wrap {
+            width: 100%;
           }
         }
       ` }} />

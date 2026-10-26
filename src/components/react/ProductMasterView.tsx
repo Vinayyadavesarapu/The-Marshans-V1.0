@@ -43,7 +43,26 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
   );
 
   // 5. QUANTITY & CART FEEDBACK
-  const [quantity, setQuantity] = useState(1);
+  const isOutOfStock = typeof product.stock === 'number' && product.stock <= 0;
+  const maxQty = typeof product.stock === 'number' && product.stock > 0 ? Math.min(10, product.stock) : 10;
+  const [quantity, setQuantity] = useState(isOutOfStock ? 0 : 1);
+  const [qtyFeedback, setQtyFeedback] = useState<string | null>(null);
+
+  const handleDecreaseQty = () => {
+    if (isOutOfStock) return;
+    setQuantity((prev) => Math.max(1, prev - 1));
+    setQtyFeedback(null);
+  };
+
+  const handleIncreaseQty = () => {
+    if (isOutOfStock) return;
+    if (quantity >= maxQty) {
+      setQtyFeedback(`Maximum limit of ${maxQty} units reached`);
+      setTimeout(() => setQtyFeedback(null), 3000);
+      return;
+    }
+    setQuantity((prev) => Math.min(maxQty, prev + 1));
+  };
   const [added, setAdded] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'shipping'>('description');
@@ -119,6 +138,7 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
 
   // 8. ADD TO CART
   const handleAddToCart = async () => {
+    if (isOutOfStock || quantity <= 0) return;
     const res = await addToCart({
       productId: product.id,
       name: product.name,
@@ -185,7 +205,7 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
                     onClick={() => setSelectedMediaIdx(idx)}
                     className={`thumbnail-btn ${selectedMediaIdx === idx ? 'active' : ''} ${item.is_video ? 'is-video-thumb' : ''} ${item.is_360 ? 'is-360-thumb' : ''}`}
                   >
-                    <img src={item.image_url} alt="" className="thumb-img" />
+                    <img src={item.image_url} alt="" className="thumb-img" width={70} height={70} loading="lazy" decoding="async" />
                     {item.is_video && (
                       <div className="video-thumb-badge" aria-hidden="true">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff">
@@ -231,7 +251,11 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
                     src={activeMedia.image_url}
                     alt={`${product.name} frame ${selectedMediaIdx + 1}`}
                     className="gallery-active-image"
+                    width={800}
+                    height={840}
                     loading="eager"
+                    decoding="async"
+                    fetchPriority={selectedMediaIdx === 0 ? 'high' : 'auto'}
                   />
                 </div>
               )}
@@ -437,19 +461,21 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
 
         {/* Purchase Action Row: Quantity + ADD TO CART */}
         <div className="purchase-action-row">
-          <div className="stepper-box">
+          <div className="stepper-box" role="group" aria-label="Quantity selector">
             <button
               type="button"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              onClick={handleDecreaseQty}
+              disabled={isOutOfStock || quantity <= 1}
               className="stepper-btn"
               aria-label="Decrease quantity"
             >
               −
             </button>
-            <span className="stepper-val">{quantity}</span>
+            <span className="stepper-val" aria-live="polite">{quantity}</span>
             <button
               type="button"
-              onClick={() => setQuantity(quantity + 1)}
+              onClick={handleIncreaseQty}
+              disabled={isOutOfStock || quantity >= maxQty}
               className="stepper-btn"
               aria-label="Increase quantity"
             >
@@ -460,9 +486,12 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
           <button
             type="button"
             onClick={handleAddToCart}
-            className={`btn-add-to-cart ${added ? 'is-added' : ''}`}
+            disabled={isOutOfStock}
+            className={`btn-add-to-cart ${added ? 'is-added' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}`}
           >
-            {added ? (
+            {isOutOfStock ? (
+              <span className="btn-inner">OUT OF STOCK</span>
+            ) : added ? (
               <span className="btn-inner">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
@@ -482,6 +511,12 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
           </button>
         </div>
 
+        {qtyFeedback && (
+          <div className="qty-feedback-banner" role="status" aria-live="polite">
+            {qtyFeedback}
+          </div>
+        )}
+
         {/* 4-Pillar Assurance Strip */}
         <div className="assurance-strip">
           <div className="assurance-pillar">
@@ -493,8 +528,8 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
                 <circle cx="18.5" cy="18.5" r="2.5" />
               </svg>
             </div>
-            <span className="pillar-head">Free Shipping</span>
-            <span className="pillar-sub">on orders above ₹999</span>
+            <span className="pillar-head">Standard Delivery</span>
+            <span className="pillar-sub">₹50 flat rate across India</span>
           </div>
 
           <div className="assurance-pillar">
@@ -505,8 +540,8 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
                 <line x1="10" y1="12" x2="14" y2="12" />
               </svg>
             </div>
-            <span className="pillar-head">Easy Returns</span>
-            <span className="pillar-sub">7-day return policy</span>
+            <span className="pillar-head">7-Day Support</span>
+            <span className="pillar-sub">Defect & transit coverage</span>
           </div>
 
           <div className="assurance-pillar">
@@ -615,8 +650,8 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
 
             {activeTab === 'shipping' && (
               <div className="pane-shipping">
-                <h4>Complimentary Dispatch</h4>
-                <p>Every piece is individually fabricated and hand-finished in our studio within 24 to 48 hours. Orders above ₹999 receive complimentary expedited shipping across India.</p>
+                <h4>Standard Delivery</h4>
+                <p>Every piece is individually fabricated and hand-finished in our studio within 24 to 48 hours. Flat rate standard delivery of ₹50 across India.</p>
                 <h4>7-Day Defect Guarantee</h4>
                 <p>Because each artifact is a custom collectible, we inspect every millimeter before departure. If your artifact arrives with any fabrication defect, we provide a 100% free immediate replacement within 7 days of delivery.</p>
               </div>
@@ -872,8 +907,8 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
           width: 70px;
           height: 70px;
           border-radius: 12px;
-          background: #f7f6f4;
-          border: 1.5px solid transparent;
+          background: #ffffff;
+          border: 1.5px solid rgba(0, 0, 0, 0.08);
           padding: 0;
           cursor: pointer;
           overflow: hidden;
@@ -894,7 +929,9 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
         .thumb-img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          padding: 4px;
+          box-sizing: border-box;
           display: block;
         }
 
@@ -911,8 +948,9 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
         .gallery-primary-stage {
           position: relative;
           flex: 1;
+          min-width: 0;
           aspect-ratio: 1 / 1.05;
-          background: #f7f6f4;
+          background: #ffffff;
           border-radius: 24px;
           overflow: hidden;
           display: flex;
@@ -930,10 +968,13 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
           justify-content: center;
         }
 
+        /* Whole product stays visible (no cropping) on a white stage */
         .gallery-active-image {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          padding: 5%;
+          box-sizing: border-box;
           object-position: center;
           display: block;
           transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1262,6 +1303,20 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
           margin-bottom: 24px;
         }
 
+        .qty-feedback-banner {
+          font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+          font-size: 12px;
+          font-weight: 600;
+          color: #b45309;
+          background: #fffbeb;
+          border: 1px solid #fef3c7;
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin-top: -12px;
+          margin-bottom: 20px;
+          text-align: center;
+        }
+
         .stepper-box {
           display: flex;
           align-items: center;
@@ -1539,6 +1594,11 @@ export default function ProductMasterView({ product }: ProductMasterViewProps) {
 
           .gallery-sticky-wrapper {
             position: static;
+          }
+
+          .marshans-master-gallery {
+            max-width: 640px;
+            margin: 0 auto;
           }
         }
 

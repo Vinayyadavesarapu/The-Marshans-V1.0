@@ -1,5 +1,5 @@
 import React from 'react';
-import ProductCard from '../ProductCard';
+import ProductListingGrid from '../ProductListingGrid';
 import type { Product } from '../../../lib/api/products';
 import type { FilterState } from './CollectionFilters';
 
@@ -168,11 +168,7 @@ export default function CollectionProductGrid({
 
       {/* Main Product Grid */}
       {products.length > 0 ? (
-        <div className="collection-cards-grid">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <ProductListingGrid products={products} />
       ) : (
         <div className="collection-empty-state">
           <div className="empty-icon-wrap">
@@ -312,15 +308,6 @@ export default function CollectionProductGrid({
           padding: 4px 8px;
         }
 
-        /* Product Grid */
-        .collection-cards-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 20px;
-          width: 100%;
-          box-sizing: border-box;
-        }
-
         /* Empty State */
         .collection-empty-state {
           display: flex;
@@ -381,30 +368,9 @@ export default function CollectionProductGrid({
         }
 
         /* Responsive Breakpoints */
-        @media (max-width: 1380px) {
-          .collection-cards-grid {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 18px;
-          }
-        }
-
-        @media (max-width: 1024px) {
-          .collection-cards-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-          }
-        }
-
         @media (max-width: 900px) {
           .mobile-filter-trigger {
             display: inline-flex;
-          }
-        }
-
-        @media (max-width: 640px) {
-          .collection-cards-grid {
-            grid-template-columns: 1fr;
-            gap: 16px;
           }
         }
       `}</style>

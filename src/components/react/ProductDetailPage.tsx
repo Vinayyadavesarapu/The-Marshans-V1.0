@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProductMasterView from './ProductMasterView';
-import ProductCard from './ProductCard';
+import ProductListingGrid from './ProductListingGrid';
 import { getProductByIdOrSlug, getProducts, type Product } from '../../lib/api/products';
 
 export interface ProductDetailPageProps {
@@ -200,11 +200,7 @@ export default function ProductDetailPage({ initialProduct = null }: ProductDeta
               <span className="companion-eyebrow">CURATED EXPLORATION</span>
               <h2 className="companion-title">COMPANION ARTIFACTS</h2>
             </div>
-            <div className="companion-grid">
-              {relatedProducts.map((rel) => (
-                <ProductCard key={rel.id || rel.slug} product={rel} />
-              ))}
-            </div>
+            <ProductListingGrid products={relatedProducts} eagerCount={0} />
           </div>
         </section>
       )}

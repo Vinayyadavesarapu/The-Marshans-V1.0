@@ -7,6 +7,7 @@ import ProductDetailPage from '../../components/react/ProductDetailPage.tsx';
   title="Artifact Detail — THE MARSHANS | Precision 3D Printed Artifacts"
   description="Precision 3D printed artifacts, ambient luminous sculptures, collectible figures, and functional desk gear."
   type="product"
+  noindex={true}
 >
   <ProductDetailPage client:load />
 </Layout>
@@ -99,28 +100,7 @@ import ProductDetailPage from '../../components/react/ProductDetailPage.tsx';
     margin: 0;
   }
 
-  .companion-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-  }
-
-  @media (max-width: 1200px) {
-    .companion-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (max-width: 900px) {
-    .companion-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
   @media (max-width: 600px) {
-    .companion-grid {
-      grid-template-columns: 1fr;
-    }
     .product-page-root {
       padding-bottom: 64px;
     }

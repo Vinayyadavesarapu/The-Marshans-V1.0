@@ -12,7 +12,11 @@ export default defineConfig({
       filter: (page) =>
         !page.includes('/account') &&
         !page.includes('/checkout') &&
-        !page.includes('/order-confirmation')
+        !page.includes('/order-confirmation') &&
+        !page.includes('/cart') &&
+        !page.includes('/login') &&
+        !page.includes('/register') &&
+        page !== 'https://themarshans.shop/product/'
     })
   ]
 });

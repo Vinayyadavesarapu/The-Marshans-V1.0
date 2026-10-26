@@ -68,7 +68,7 @@ export default function CollectionPage({
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortOption>('featured');
+  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
   const [filters, setFilters] = useState<FilterState>({
     inStockOnly: false,
     bestSellersOnly: false,
@@ -172,9 +172,9 @@ export default function CollectionPage({
       );
     }
 
-    // 2. In Stock Only
+    // 2. In Stock Only (treat missing/unknown stock as available; never as 0 or out of stock)
     if (filters.inStockOnly) {
-      result = result.filter((p) => p.stock > 0);
+      result = result.filter((p) => (typeof p.stock === 'number' ? p.stock > 0 : true));
     }
 
     // 3. Best Sellers Only
@@ -203,18 +203,12 @@ export default function CollectionPage({
       );
     }
 
-    // 7. Sorting
+    // 7. Sorting (supported reliable options)
     result.sort((a, b) => {
       if (sortBy === 'price-asc') return a.price - b.price;
       if (sortBy === 'price-desc') return b.price - a.price;
-      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-      if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
-      if (sortBy === 'best-seller') {
-        if (a.is_best_seller === b.is_best_seller) return 0;
-        return a.is_best_seller ? -1 : 1;
-      }
-      // 'featured'
-      return 0;
+      if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+      return a.name.localeCompare(b.name);
     });
 
     return result;

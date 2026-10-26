@@ -73,7 +73,7 @@ export interface Product {
   weight_grams?: number | null;
   rating?: number;
   review_count?: number;
-  stock: number;
+  stock?: number | null;
   is_best_seller: boolean;
   featured: boolean;
   tags: string[];
@@ -271,7 +271,7 @@ export function formatBackendProduct(raw: any): Product {
     weight_grams: raw.weight_grams ? Number(raw.weight_grams) : null,
     rating: raw.rating !== undefined && raw.rating !== null ? Number(raw.rating) : undefined,
     review_count: raw.review_count !== undefined && raw.review_count !== null ? Number(raw.review_count) : undefined,
-    stock: typeof raw.stock === 'number' ? raw.stock : 0,
+    stock: typeof raw.stock === 'number' && !isNaN(raw.stock) ? raw.stock : undefined,
     is_best_seller: Boolean(raw.is_best_seller),
     featured: Boolean(raw.featured),
     tags: Array.isArray(raw.tags) ? raw.tags : [],

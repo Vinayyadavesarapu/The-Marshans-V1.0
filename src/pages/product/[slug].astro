@@ -4,7 +4,13 @@ import ProductDetailPage from '../../components/react/ProductDetailPage.tsx';
 import { getProducts } from '../../lib/api/products';
 
 export async function getStaticPaths() {
-  const { products } = await getProducts({ limit: 100 });
+  const { products, ok } = await getProducts({ limit: 100 });
+  if (!ok) {
+    throw new Error(
+      '[Build Failure] Failed to fetch product catalog from API (ok: false). ' +
+      'Product detail pages cannot be statically generated and would silently disappear.'
+    );
+  }
   return products.map((product) => ({
     params: { slug: product.slug },
     props: { product }
@@ -14,7 +20,28 @@ export async function getStaticPaths() {
 const { product } = Astro.props;
 
 if (!product) {
-  return Astro.redirect('/#home-carousel-section');
+  return Astro.redirect('/');
+}
+
+const canonicalUrl = `https://themarshans.shop/product/${product.slug}/`;
+const productTitle = `${product.name} — THE MARSHANS | ${product.category_name || 'Artifact'}`;
+const productDescription =
+  product.short_description ||
+  product.description ||
+  `Discover ${product.name}, a precision 3D-printed artifact by THE MARSHANS in the ${product.category_name || 'signature'} collection.`;
+
+const hasKnownStock = typeof product.stock === 'number' && !isNaN(product.stock);
+
+const offersObj: Record<string, any> = {
+  '@type': 'Offer',
+  'url': canonicalUrl,
+  'priceCurrency': 'INR',
+  'price': product.price,
+  'itemCondition': 'https://schema.org/NewCondition'
+};
+
+if (hasKnownStock) {
+  offersObj['availability'] = product.stock! > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
 }
 
 const productJsonLd = {
@@ -24,28 +51,14 @@ const productJsonLd = {
       '@type': 'Product',
       'name': product.name,
       'image': product.primary_image_url || undefined,
-      'description': product.short_description || product.description,
-      'sku': product.sku,
+      'description': productDescription,
+      'sku': product.sku || undefined,
       'brand': {
         '@type': 'Brand',
         'name': 'THE MARSHANS'
       },
-      'category': product.category_name,
-      'offers': {
-        '@type': 'Offer',
-        'url': `https://themarshans.shop/product/${product.slug}`,
-        'priceCurrency': 'INR',
-        'price': product.price,
-        'availability': product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        'itemCondition': 'https://schema.org/NewCondition'
-      },
-      ...(product.rating && product.review_count ? {
-        'aggregateRating': {
-          '@type': 'AggregateRating',
-          'ratingValue': product.rating,
-          'reviewCount': product.review_count
-        }
-      } : {})
+      'category': product.category_name || undefined,
+      'offers': offersObj
     },
     {
       '@type': 'BreadcrumbList',
@@ -56,17 +69,17 @@ const productJsonLd = {
           'name': 'Home',
           'item': 'https://themarshans.shop/'
         },
-        {
+        ...(product.category_slug ? [{
           '@type': 'ListItem',
           'position': 2,
-          'name': product.category_name,
-          'item': `https://themarshans.shop/categories/${product.category_slug}`
-        },
+          'name': product.category_name || 'Collection',
+          'item': `https://themarshans.shop/categories/${product.category_slug}/`
+        }] : []),
         {
           '@type': 'ListItem',
-          'position': 3,
+          'position': product.category_slug ? 3 : 2,
           'name': product.name,
-          'item': `https://themarshans.shop/product/${product.slug}`
+          'item': canonicalUrl
         }
       ]
     }
@@ -75,8 +88,9 @@ const productJsonLd = {
 ---
 
 <Layout
-  title={`${product.name} — THE MARSHANS | ${product.category_name}`}
-  description={product.short_description || product.description}
+  title={productTitle}
+  description={productDescription}
+  canonical={canonicalUrl}
   image={product.primary_image_url}
   type="product"
   jsonLd={productJsonLd}
@@ -84,7 +98,7 @@ const productJsonLd = {
   <ProductDetailPage client:load initialProduct={product} />
 </Layout>
 
-<style>
+<style is:global>
   .product-page-root {
     background-color: #ffffff;
     padding-bottom: 96px;
@@ -172,28 +186,7 @@ const productJsonLd = {
     margin: 0;
   }
 
-  .companion-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-  }
-
-  @media (max-width: 1200px) {
-    .companion-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (max-width: 900px) {
-    .companion-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
   @media (max-width: 600px) {
-    .companion-grid {
-      grid-template-columns: 1fr;
-    }
     .product-page-root {
       padding-bottom: 64px;
     }

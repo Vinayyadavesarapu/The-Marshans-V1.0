@@ -1,0 +1,804 @@
+{
+  "testedUrl": "http://localhost:4323/",
+  "timestamp": "2026-10-26T13:11:00.862Z",
+  "desktop": {
+    "desktop-1920x1080": {
+      "viewport": {
+        "name": "desktop-1920x1080",
+        "width": 1920,
+        "height": 1080
+      },
+      "screenshots": [
+        "desktop-1920x1080-01-hero.png",
+        "desktop-1920x1080-02-navbar-carousel.png",
+        "desktop-1920x1080-03-collection.png",
+        "desktop-1920x1080-04-footer.png"
+      ],
+      "hero": {
+        "heroFound": true,
+        "heroRect": {
+          "width": 1905,
+          "height": 1080
+        },
+        "videoFound": true,
+        "videoPlaying": true,
+        "videoSize": {
+          "width": 1920,
+          "height": 1080,
+          "elW": 1905,
+          "elH": 1080
+        },
+        "cloudCount": 5,
+        "titleText": "THE MARSHANS — Made to be Discovered.",
+        "horizontalOverflow": false
+      },
+      "navCarousel": {
+        "navbarFound": true,
+        "navLinks": [],
+        "navActions": [],
+        "navWrap": false,
+        "showcaseFound": true,
+        "cardCount": 5,
+        "cards": [
+          {
+            "title": "TEST-1",
+            "price": "₹100",
+            "width": 438,
+            "height": 442,
+            "imgNatural": {
+              "w": 1024,
+              "h": 1024
+            },
+            "imgRendered": {
+              "w": 359,
+              "h": 359
+            }
+          },
+          {
+            "title": "Custom Miniature Portrait Bust",
+            "price": "₹4,500",
+            "width": 335,
+            "height": 340,
+            "imgNatural": {
+              "w": 560,
+              "h": 493
+            },
+            "imgRendered": {
+              "w": 275,
+              "h": 275
+            }
+          },
+          {
+            "title": "AYODHYA GRAND TEMPLE",
+            "price": "₹6,000",
+            "width": 335,
+            "height": 340,
+            "imgNatural": {
+              "w": 508,
+              "h": 504
+            },
+            "imgRendered": {
+              "w": 275,
+              "h": 275
+            }
+          },
+          {
+            "title": "Marshans SpiralNest Lamp",
+            "price": "₹2,500₹3,500",
+            "width": 335,
+            "height": 340,
+            "imgNatural": {
+              "w": 383,
+              "h": 514
+            },
+            "imgRendered": {
+              "w": 275,
+              "h": 275
+            }
+          },
+          {
+            "title": "BloomWave Lamp",
+            "price": "₹1,500₹2,000",
+            "width": 335,
+            "height": 340,
+            "imgNatural": {
+              "w": 380,
+              "h": 500
+            },
+            "imgRendered": {
+              "w": 275,
+              "h": 275
+            }
+          }
+        ],
+        "horizontalOverflow": false
+      },
+      "collection": {
+        "bestSellersFound": false,
+        "bestSellerCount": 0,
+        "collectionHeadText": "The CollectionBrowse the full shop →",
+        "collectionCount": 6,
+        "horizontalOverflow": false
+      },
+      "footer": {
+        "footerFound": true,
+        "footerRect": {
+          "w": 1905,
+          "h": 455
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "desktop-1440x900": {
+      "viewport": {
+        "name": "desktop-1440x900",
+        "width": 1440,
+        "height": 900
+      },
+      "screenshots": [
+        "desktop-1440x900-01-hero.png",
+        "desktop-1440x900-02-navbar-carousel.png",
+        "desktop-1440x900-03-collection.png",
+        "desktop-1440x900-04-footer.png"
+      ],
+      "hero": {
+        "heroFound": true,
+        "heroRect": {
+          "width": 1425,
+          "height": 900
+        },
+        "videoFound": true,
+        "videoPlaying": true,
+        "videoSize": {
+          "width": 1920,
+          "height": 1080,
+          "elW": 1425,
+          "elH": 900
+        },
+        "cloudCount": 5,
+        "titleText": "THE MARSHANS — Made to be Discovered.",
+        "horizontalOverflow": false
+      },
+      "navCarousel": {
+        "navbarFound": true,
+        "navLinks": [],
+        "navActions": [],
+        "navWrap": false,
+        "showcaseFound": true,
+        "cardCount": 5,
+        "cards": [
+          {
+            "title": "TEST-1",
+            "price": "₹100",
+            "width": 328,
+            "height": 360,
+            "imgNatural": {
+              "w": 1024,
+              "h": 1024
+            },
+            "imgRendered": {
+              "w": 269,
+              "h": 269
+            }
+          },
+          {
+            "title": "Custom Miniature Portrait Bust",
+            "price": "₹4,500",
+            "width": 251,
+            "height": 300,
+            "imgNatural": {
+              "w": 560,
+              "h": 493
+            },
+            "imgRendered": {
+              "w": 206,
+              "h": 206
+            }
+          },
+          {
+            "title": "AYODHYA GRAND TEMPLE",
+            "price": "₹6,000",
+            "width": 251,
+            "height": 281,
+            "imgNatural": {
+              "w": 508,
+              "h": 504
+            },
+            "imgRendered": {
+              "w": 206,
+              "h": 206
+            }
+          },
+          {
+            "title": "Marshans SpiralNest Lamp",
+            "price": "₹2,500₹3,500",
+            "width": 251,
+            "height": 281,
+            "imgNatural": {
+              "w": 383,
+              "h": 514
+            },
+            "imgRendered": {
+              "w": 206,
+              "h": 206
+            }
+          },
+          {
+            "title": "BloomWave Lamp",
+            "price": "₹1,500₹2,000",
+            "width": 251,
+            "height": 281,
+            "imgNatural": {
+              "w": 380,
+              "h": 500
+            },
+            "imgRendered": {
+              "w": 206,
+              "h": 206
+            }
+          }
+        ],
+        "horizontalOverflow": false
+      },
+      "collection": {
+        "bestSellersFound": false,
+        "bestSellerCount": 0,
+        "collectionHeadText": "The CollectionBrowse the full shop →",
+        "collectionCount": 6,
+        "horizontalOverflow": false
+      },
+      "footer": {
+        "footerFound": true,
+        "footerRect": {
+          "w": 1425,
+          "h": 455
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "desktop-1366x768": {
+      "viewport": {
+        "name": "desktop-1366x768",
+        "width": 1366,
+        "height": 768
+      },
+      "screenshots": [
+        "desktop-1366x768-01-hero.png",
+        "desktop-1366x768-02-navbar-carousel.png",
+        "desktop-1366x768-03-collection.png",
+        "desktop-1366x768-04-footer.png"
+      ],
+      "hero": {
+        "heroFound": true,
+        "heroRect": {
+          "width": 1351,
+          "height": 768
+        },
+        "videoFound": true,
+        "videoPlaying": true,
+        "videoSize": {
+          "width": 1280,
+          "height": 720,
+          "elW": 1351,
+          "elH": 768
+        },
+        "cloudCount": 5,
+        "titleText": "THE MARSHANS — Made to be Discovered.",
+        "horizontalOverflow": false
+      },
+      "navCarousel": {
+        "navbarFound": true,
+        "navLinks": [],
+        "navActions": [],
+        "navWrap": false,
+        "showcaseFound": true,
+        "cardCount": 5,
+        "cards": [
+          {
+            "title": "TEST-1",
+            "price": "₹100",
+            "width": 311,
+            "height": 347,
+            "imgNatural": {
+              "w": 1024,
+              "h": 1024
+            },
+            "imgRendered": {
+              "w": 255,
+              "h": 255
+            }
+          },
+          {
+            "title": "Custom Miniature Portrait Bust",
+            "price": "₹4,500",
+            "width": 238,
+            "height": 290,
+            "imgNatural": {
+              "w": 560,
+              "h": 493
+            },
+            "imgRendered": {
+              "w": 195,
+              "h": 195
+            }
+          },
+          {
+            "title": "AYODHYA GRAND TEMPLE",
+            "price": "₹6,000",
+            "width": 238,
+            "height": 272,
+            "imgNatural": {
+              "w": 508,
+              "h": 504
+            },
+            "imgRendered": {
+              "w": 195,
+              "h": 195
+            }
+          },
+          {
+            "title": "Marshans SpiralNest Lamp",
+            "price": "₹2,500₹3,500",
+            "width": 238,
+            "height": 272,
+            "imgNatural": {
+              "w": 383,
+              "h": 514
+            },
+            "imgRendered": {
+              "w": 195,
+              "h": 195
+            }
+          },
+          {
+            "title": "BloomWave Lamp",
+            "price": "₹1,500₹2,000",
+            "width": 238,
+            "height": 272,
+            "imgNatural": {
+              "w": 380,
+              "h": 500
+            },
+            "imgRendered": {
+              "w": 195,
+              "h": 195
+            }
+          }
+        ],
+        "horizontalOverflow": false
+      },
+      "collection": {
+        "bestSellersFound": false,
+        "bestSellerCount": 0,
+        "collectionHeadText": "The CollectionBrowse the full shop →",
+        "collectionCount": 6,
+        "horizontalOverflow": false
+      },
+      "footer": {
+        "footerFound": true,
+        "footerRect": {
+          "w": 1351,
+          "h": 473
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "desktop-1280x800": {
+      "viewport": {
+        "name": "desktop-1280x800",
+        "width": 1280,
+        "height": 800
+      },
+      "screenshots": [
+        "desktop-1280x800-01-hero.png",
+        "desktop-1280x800-02-navbar-carousel.png",
+        "desktop-1280x800-03-collection.png",
+        "desktop-1280x800-04-footer.png"
+      ],
+      "hero": {
+        "heroFound": true,
+        "heroRect": {
+          "width": 1265,
+          "height": 800
+        },
+        "videoFound": true,
+        "videoPlaying": true,
+        "videoSize": {
+          "width": 1280,
+          "height": 720,
+          "elW": 1265,
+          "elH": 800
+        },
+        "cloudCount": 5,
+        "titleText": "THE MARSHANS — Made to be Discovered.",
+        "horizontalOverflow": false
+      },
+      "navCarousel": {
+        "navbarFound": true,
+        "navLinks": [],
+        "navActions": [],
+        "navWrap": false,
+        "showcaseFound": true,
+        "cardCount": 5,
+        "cards": [
+          {
+            "title": "TEST-1",
+            "price": "₹100",
+            "width": 291,
+            "height": 332,
+            "imgNatural": {
+              "w": 1024,
+              "h": 1024
+            },
+            "imgRendered": {
+              "w": 239,
+              "h": 239
+            }
+          },
+          {
+            "title": "Custom Miniature Portrait Bust",
+            "price": "₹4,500",
+            "width": 223,
+            "height": 280,
+            "imgNatural": {
+              "w": 560,
+              "h": 493
+            },
+            "imgRendered": {
+              "w": 183,
+              "h": 183
+            }
+          },
+          {
+            "title": "AYODHYA GRAND TEMPLE",
+            "price": "₹6,000",
+            "width": 223,
+            "height": 263,
+            "imgNatural": {
+              "w": 508,
+              "h": 504
+            },
+            "imgRendered": {
+              "w": 183,
+              "h": 183
+            }
+          },
+          {
+            "title": "Marshans SpiralNest Lamp",
+            "price": "₹2,500₹3,500",
+            "width": 223,
+            "height": 263,
+            "imgNatural": {
+              "w": 383,
+              "h": 514
+            },
+            "imgRendered": {
+              "w": 183,
+              "h": 183
+            }
+          },
+          {
+            "title": "BloomWave Lamp",
+            "price": "₹1,500₹2,000",
+            "width": 223,
+            "height": 263,
+            "imgNatural": {
+              "w": 380,
+              "h": 500
+            },
+            "imgRendered": {
+              "w": 183,
+              "h": 183
+            }
+          }
+        ],
+        "horizontalOverflow": false
+      },
+      "collection": {
+        "bestSellersFound": false,
+        "bestSellerCount": 0,
+        "collectionHeadText": "The CollectionBrowse the full shop →",
+        "collectionCount": 6,
+        "horizontalOverflow": false
+      },
+      "footer": {
+        "footerFound": true,
+        "footerRect": {
+          "w": 1265,
+          "h": 473
+        },
+        "horizontalOverflow": false
+      }
+    }
+  },
+  "mobile": {
+    "mobile-390x844": {
+      "viewport": {
+        "name": "mobile-390x844",
+        "width": 390,
+        "height": 844
+      },
+      "screenshots": [
+        "mobile-390x844-01-hero.png",
+        "mobile-390x844-02-navbar-carousel.png",
+        "mobile-390x844-03-collection.png",
+        "mobile-390x844-04-footer.png"
+      ],
+      "hero": {
+        "heroRect": {
+          "w": 390,
+          "h": 844
+        },
+        "videoRect": {
+          "w": 741,
+          "h": 417
+        },
+        "titleText": "THE MARSHANS — Made to be Discovered.",
+        "horizontalOverflow": false
+      },
+      "navCarousel": {
+        "navbarRect": {
+          "w": 390,
+          "h": 72
+        },
+        "navHorizontalOverflow": false,
+        "showcaseRect": {
+          "w": 390,
+          "h": 564
+        },
+        "cardCount": 5,
+        "cards": [
+          {
+            "title": "TEST-1",
+            "width": 250,
+            "height": 303
+          },
+          {
+            "title": "Custom Miniature Portrait Bust",
+            "width": 190,
+            "height": 260
+          },
+          {
+            "title": "AYODHYA GRAND TEMPLE",
+            "width": 190,
+            "height": 260
+          },
+          {
+            "title": "Marshans SpiralNest Lamp",
+            "width": 206,
+            "height": 260
+          },
+          {
+            "title": "BloomWave Lamp",
+            "width": 204,
+            "height": 242
+          }
+        ],
+        "horizontalOverflow": false
+      },
+      "collectionFooter": {
+        "collectionCardCount": 6,
+        "footerFound": true,
+        "horizontalOverflow": false,
+        "scrollWidth": 390,
+        "clientWidth": 390
+      }
+    },
+    "mobile-375x812": {
+      "viewport": {
+        "name": "mobile-375x812",
+        "width": 375,
+        "height": 812
+      },
+      "screenshots": [
+        "mobile-375x812-01-hero.png",
+        "mobile-375x812-02-navbar-carousel.png",
+        "mobile-375x812-03-collection.png",
+        "mobile-375x812-04-footer.png"
+      ],
+      "hero": {
+        "heroRect": {
+          "w": 375,
+          "h": 812
+        },
+        "videoRect": {
+          "w": 713,
+          "h": 401
+        },
+        "titleText": "THE MARSHANS — Made to be Discovered.",
+        "horizontalOverflow": false
+      },
+      "navCarousel": {
+        "navbarRect": {
+          "w": 375,
+          "h": 72
+        },
+        "navHorizontalOverflow": false,
+        "showcaseRect": {
+          "w": 375,
+          "h": 558
+        },
+        "cardCount": 5,
+        "cards": [
+          {
+            "title": "TEST-1",
+            "width": 240,
+            "height": 297
+          },
+          {
+            "title": "Custom Miniature Portrait Bust",
+            "width": 190,
+            "height": 260
+          },
+          {
+            "title": "AYODHYA GRAND TEMPLE",
+            "width": 190,
+            "height": 260
+          },
+          {
+            "title": "Marshans SpiralNest Lamp",
+            "width": 206,
+            "height": 260
+          },
+          {
+            "title": "BloomWave Lamp",
+            "width": 204,
+            "height": 242
+          }
+        ],
+        "horizontalOverflow": false
+      },
+      "collectionFooter": {
+        "collectionCardCount": 6,
+        "footerFound": true,
+        "horizontalOverflow": false,
+        "scrollWidth": 375,
+        "clientWidth": 375
+      }
+    },
+    "mobile-360x800": {
+      "viewport": {
+        "name": "mobile-360x800",
+        "width": 360,
+        "height": 800
+      },
+      "screenshots": [
+        "mobile-360x800-01-hero.png",
+        "mobile-360x800-02-navbar-carousel.png",
+        "mobile-360x800-03-collection.png",
+        "mobile-360x800-04-footer.png"
+      ],
+      "hero": {
+        "heroRect": {
+          "w": 360,
+          "h": 800
+        },
+        "videoRect": {
+          "w": 684,
+          "h": 385
+        },
+        "titleText": "THE MARSHANS — Made to be Discovered.",
+        "horizontalOverflow": false
+      },
+      "navCarousel": {
+        "navbarRect": {
+          "w": 360,
+          "h": 72
+        },
+        "navHorizontalOverflow": false,
+        "showcaseRect": {
+          "w": 360,
+          "h": 558
+        },
+        "cardCount": 5,
+        "cards": [
+          {
+            "title": "TEST-1",
+            "width": 240,
+            "height": 297
+          },
+          {
+            "title": "Custom Miniature Portrait Bust",
+            "width": 190,
+            "height": 260
+          },
+          {
+            "title": "AYODHYA GRAND TEMPLE",
+            "width": 190,
+            "height": 260
+          },
+          {
+            "title": "Marshans SpiralNest Lamp",
+            "width": 206,
+            "height": 260
+          },
+          {
+            "title": "BloomWave Lamp",
+            "width": 204,
+            "height": 242
+          }
+        ],
+        "horizontalOverflow": false
+      },
+      "collectionFooter": {
+        "collectionCardCount": 6,
+        "footerFound": true,
+        "horizontalOverflow": false,
+        "scrollWidth": 360,
+        "clientWidth": 360
+      }
+    },
+    "mobile-430x932": {
+      "viewport": {
+        "name": "mobile-430x932",
+        "width": 430,
+        "height": 932
+      },
+      "screenshots": [
+        "mobile-430x932-01-hero.png",
+        "mobile-430x932-02-navbar-carousel.png",
+        "mobile-430x932-03-collection.png",
+        "mobile-430x932-04-footer.png"
+      ],
+      "hero": {
+        "heroRect": {
+          "w": 430,
+          "h": 932
+        },
+        "videoRect": {
+          "w": 817,
+          "h": 460
+        },
+        "titleText": "THE MARSHANS — Made to be Discovered.",
+        "horizontalOverflow": false
+      },
+      "navCarousel": {
+        "navbarRect": {
+          "w": 430,
+          "h": 72
+        },
+        "navHorizontalOverflow": false,
+        "showcaseRect": {
+          "w": 430,
+          "h": 582
+        },
+        "cardCount": 5,
+        "cards": [
+          {
+            "title": "TEST-1",
+            "width": 275,
+            "height": 320
+          },
+          {
+            "title": "Custom Miniature Portrait Bust",
+            "width": 190,
+            "height": 260
+          },
+          {
+            "title": "AYODHYA GRAND TEMPLE",
+            "width": 190,
+            "height": 260
+          },
+          {
+            "title": "Marshans SpiralNest Lamp",
+            "width": 206,
+            "height": 260
+          },
+          {
+            "title": "BloomWave Lamp",
+            "width": 204,
+            "height": 242
+          }
+        ],
+        "horizontalOverflow": false
+      },
+      "collectionFooter": {
+        "collectionCardCount": 6,
+        "footerFound": true,
+        "horizontalOverflow": false,
+        "scrollWidth": 430,
+        "clientWidth": 430
+      }
+    }
+  }
+}

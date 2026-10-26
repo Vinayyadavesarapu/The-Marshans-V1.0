@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type SortOption = 'featured' | 'best-seller' | 'price-asc' | 'price-desc' | 'rating' | 'name-asc';
+export type SortOption = 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
 
 export interface CollectionSortProps {
   sortBy: SortOption;
@@ -9,12 +9,10 @@ export interface CollectionSortProps {
 }
 
 export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: 'featured', label: 'Featured Drops' },
-  { value: 'best-seller', label: 'Best Sellers' },
   { value: 'price-asc', label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'rating', label: 'Customer Rating' },
-  { value: 'name-asc', label: 'Alphabetical: A to Z' }
+  { value: 'name-asc', label: 'Alphabetical: A to Z' },
+  { value: 'name-desc', label: 'Alphabetical: Z to A' }
 ];
 
 export default function CollectionSort({

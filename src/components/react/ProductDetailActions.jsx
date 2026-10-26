@@ -23,9 +23,28 @@ export default function ProductDetailActions({ product, onColorChange }) {
   );
 
   // 5. QUANTITY & ACTIVE STATE
-  const [quantity, setQuantity] = useState(1);
+  const isOutOfStock = typeof product.stock === 'number' && product.stock <= 0;
+  const maxQty = typeof product.stock === 'number' && product.stock > 0 ? Math.min(10, product.stock) : 10;
+  const [quantity, setQuantity] = useState(isOutOfStock ? 0 : 1);
+  const [qtyFeedback, setQtyFeedback] = useState(null);
   const [added, setAdded] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
+
+  const handleDecreaseQty = () => {
+    if (isOutOfStock) return;
+    setQuantity((prev) => Math.max(1, prev - 1));
+    setQtyFeedback(null);
+  };
+
+  const handleIncreaseQty = () => {
+    if (isOutOfStock) return;
+    if (quantity >= maxQty) {
+      setQtyFeedback(`Maximum limit of ${maxQty} units reached`);
+      setTimeout(() => setQtyFeedback(null), 3000);
+      return;
+    }
+    setQuantity((prev) => Math.min(maxQty, prev + 1));
+  };
 
   // Handle color change and inform parent gallery if an image is mapped
   const handleColorSelect = (color) => {
@@ -45,6 +64,7 @@ export default function ProductDetailActions({ product, onColorChange }) {
 
   // Add to cart with complete selected configuration
   const handleAddToCart = (redirect = false) => {
+    if (isOutOfStock || quantity <= 0) return;
     addToCart({
       productId: product.id,
       name: product.name,
@@ -228,19 +248,21 @@ export default function ProductDetailActions({ product, onColorChange }) {
 
       {/* QUANTITY STEPPER & PRIMARY ADD TO CART CTA */}
       <div className="cta-purchase-row">
-        <div className="quantity-counter-box">
+        <div className="quantity-counter-box" role="group" aria-label="Quantity selector">
           <button
             type="button"
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            onClick={handleDecreaseQty}
+            disabled={isOutOfStock || quantity <= 1}
             className="qty-adjust-btn"
             aria-label="Decrease quantity"
           >
             −
           </button>
-          <span className="qty-digit">{quantity}</span>
+          <span className="qty-digit" aria-live="polite">{quantity}</span>
           <button
             type="button"
-            onClick={() => setQuantity(quantity + 1)}
+            onClick={handleIncreaseQty}
+            disabled={isOutOfStock || quantity >= maxQty}
             className="qty-adjust-btn"
             aria-label="Increase quantity"
           >
@@ -251,9 +273,12 @@ export default function ProductDetailActions({ product, onColorChange }) {
         <button
           type="button"
           onClick={() => handleAddToCart(false)}
-          className={`btn-add-to-cart-primary ${added ? 'added' : ''}`}
+          disabled={isOutOfStock}
+          className={`btn-add-to-cart-primary ${added ? 'added' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}`}
         >
-          {added ? (
+          {isOutOfStock ? (
+            <span className="btn-content-inner">OUT OF STOCK</span>
+          ) : added ? (
             <span className="btn-content-inner">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
@@ -273,6 +298,12 @@ export default function ProductDetailActions({ product, onColorChange }) {
         </button>
       </div>
 
+      {qtyFeedback && (
+        <div className="qty-feedback-banner" role="status" aria-live="polite">
+          {qtyFeedback}
+        </div>
+      )}
+
       {/* BRAND ASSURANCE 4-PILLAR GRID (Matches visual reference) */}
       <div className="brand-assurance-strip">
         <div className="assurance-pillar">
@@ -284,8 +315,8 @@ export default function ProductDetailActions({ product, onColorChange }) {
               <circle cx="18.5" cy="18.5" r="2.5" />
             </svg>
           </div>
-          <span className="pillar-title">Free Shipping</span>
-          <span className="pillar-sub">on orders above ₹999</span>
+          <span className="pillar-title">Standard Delivery</span>
+          <span className="pillar-sub">₹50 flat rate across India</span>
         </div>
 
         <div className="assurance-pillar">
@@ -296,8 +327,8 @@ export default function ProductDetailActions({ product, onColorChange }) {
               <line x1="10" y1="12" x2="14" y2="12" />
             </svg>
           </div>
-          <span className="pillar-title">Easy Returns</span>
-          <span className="pillar-sub">7-day return policy</span>
+          <span className="pillar-title">7-Day Support</span>
+          <span className="pillar-sub">Defect & transit coverage</span>
         </div>
 
         <div className="assurance-pillar">
@@ -427,8 +458,8 @@ export default function ProductDetailActions({ product, onColorChange }) {
           {activeTab === 'shipping' && (
             <div className="tab-pane-content">
               <div className="shipping-policy-block">
-                <h4>Complimentary Dispatch</h4>
-                <p>Every piece is individually fabricated and hand-finished in our studio within 24 to 48 hours. Orders above ₹999 receive complimentary expedited shipping across India.</p>
+                <h4>Standard Delivery</h4>
+                <p>Every piece is individually fabricated and hand-finished in our studio within 24 to 48 hours. Flat rate standard delivery of ₹50 across India.</p>
                 <h4>7-Day Defect Guarantee</h4>
                 <p>Because each artifact is a custom collectible, we inspect every millimeter before departure. If your artifact arrives with any fabrication defect, we provide a 100% free immediate replacement within 7 days of delivery.</p>
               </div>
@@ -596,6 +627,20 @@ export default function ProductDetailActions({ product, onColorChange }) {
           align-items: center;
           gap: 14px;
           margin-top: 10px;
+        }
+
+        .qty-feedback-banner {
+          font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+          font-size: 12px;
+          font-weight: 600;
+          color: #b45309;
+          background: #fffbeb;
+          border: 1px solid #fef3c7;
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin-top: 10px;
+          margin-bottom: 4px;
+          text-align: center;
         }
 
         .quantity-counter-box {

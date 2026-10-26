@@ -7,9 +7,11 @@ import { isItemInWishlist, toggleWishlistItem } from '../../lib/utils/wishlist';
 export interface ProductCardProps {
   product: Product;
   className?: string;
+  /** First-row listing cards load eagerly; everything else stays lazy */
+  imageLoading?: 'lazy' | 'eager';
 }
 
-export default function ProductCard({ product, className = '' }: ProductCardProps) {
+export default function ProductCard({ product, className = '', imageLoading = 'lazy' }: ProductCardProps) {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -30,11 +32,13 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
     return () => window.removeEventListener('marshans:wishlist-updated', handleWishlistEvent);
   }, [product?.id, product?.slug]);
 
+  const isOutOfStock = typeof product.stock === 'number' && product.stock <= 0;
+
   // Quick Add to Cart Handler
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (adding) return;
+    if (adding || isOutOfStock) return;
 
     setAdding(true);
     const res = await addToCart({
@@ -46,8 +50,8 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
       quantity: 1,
       imageUrl: resolveImageUrl(product.primary_image_url || product.images?.[0]?.image_url),
       categoryName: product.category_name,
-      material: product.materials?.[0]?.name || 'Standard PLA+',
-      finishing: product.finishing_options?.[0]?.name || 'Studio Finish'
+      material: product.materials?.[0]?.name,
+      finishing: product.finishing_options?.[0]?.name
     });
 
     setAdding(false);
@@ -109,87 +113,95 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
     '/assets/placeholders/product-placeholder.svg'
   );
 
-  const productHref = `/product?slug=${encodeURIComponent(product.slug || product.id)}&id=${product.id}`;
+  const productHref = `/product/${encodeURIComponent(product.slug || String(product.id))}/`;
 
   return (
-    <div className={`marshans-product-card-wrap ${className}`}>
-      <a href={productHref} className="marshans-card-anchor">
-        {/* TOP: Image & Status Badges */}
-        <div className="marshans-image-stage">
+    <article className={`marshans-product-card-wrap ${className}`}>
+      {/* TOP: Image & Status Badges */}
+      <div className="marshans-image-stage">
+        <a href={productHref} className="marshans-image-link" aria-label={product.name} tabIndex={-1}>
           <img
             src={imageUrl}
             alt={product.name}
-            loading="lazy"
+            width={600}
+            height={630}
+            loading={imageLoading}
+            decoding="async"
             className="marshans-product-img"
           />
+        </a>
 
-          {/* Top-Left Category Badge */}
-          <div className="marshans-badge-pill" aria-label={`Category: ${product.category_name}`}>
-            {formatBadgeText(product.category_name)}
+        {/* Top-Left Category Badge */}
+        <div className="marshans-badge-pill" aria-label={`Category: ${product.category_name}`}>
+          {formatBadgeText(product.category_name)}
+        </div>
+
+        {/* Top-Right Wishlist Button */}
+        <button
+          type="button"
+          className={`marshans-wishlist-btn ${isWishlisted ? 'is-active' : ''}`}
+          onClick={handleWishlistToggle}
+          aria-label={isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill={isWishlisted ? '#e11d48' : 'none'}
+            stroke={isWishlisted ? '#e11d48' : '#09090b'}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* BOTTOM: Information Panel */}
+      <div className="marshans-info-panel">
+        <div className="marshans-title-group">
+          <h3 className="marshans-product-title">
+            <a href={productHref} className="marshans-title-link">
+              {product.name}
+            </a>
+          </h3>
+          <span className="marshans-product-subtitle">{formatSubtitle()}</span>
+        </div>
+
+        <div className="marshans-bottom-row">
+          {/* Price */}
+          <div className="marshans-pricing-group">
+            <div className="marshans-price-display">
+              <span className="marshans-current-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
+              {product.compare_at_price && product.compare_at_price > product.price && (
+                <span className="marshans-compare-price">₹{Number(product.compare_at_price).toLocaleString('en-IN')}</span>
+              )}
+            </div>
           </div>
 
-          {/* Top-Right Wishlist Button */}
+          {/* Glowing Circular Cart Button */}
           <button
             type="button"
-            className={`marshans-wishlist-btn ${isWishlisted ? 'is-active' : ''}`}
-            onClick={handleWishlistToggle}
-            aria-label={isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+            className={`marshans-cart-action-btn ${added ? 'is-added' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}`}
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            aria-label={isOutOfStock ? `${product.name} is out of stock` : `Add ${product.name} to cart`}
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill={isWishlisted ? '#e11d48' : 'none'}
-              stroke={isWishlisted ? '#e11d48' : '#09090b'}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
+            {added ? (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1.5" />
+                <circle cx="20" cy="21" r="1.5" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
+            )}
           </button>
         </div>
-
-        {/* BOTTOM: Information Panel */}
-        <div className="marshans-info-panel">
-          <div className="marshans-title-group">
-            <h3 className="marshans-product-title">{product.name}</h3>
-            <span className="marshans-product-subtitle">{formatSubtitle()}</span>
-          </div>
-
-          <div className="marshans-bottom-row">
-            {/* Price */}
-            <div className="marshans-pricing-group">
-              <div className="marshans-price-display">
-                <span className="marshans-current-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
-                {product.compare_at_price && product.compare_at_price > product.price && (
-                  <span className="marshans-compare-price">₹{Number(product.compare_at_price).toLocaleString('en-IN')}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Glowing Circular Cart Button */}
-            <button
-              type="button"
-              className={`marshans-cart-action-btn ${added ? 'is-added' : ''}`}
-              onClick={handleAddToCart}
-              aria-label={`Add ${product.name} to cart`}
-            >
-              {added ? (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              ) : (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="9" cy="21" r="1.5" />
-                  <circle cx="20" cy="21" r="1.5" />
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-      </a>
+      </div>
 
       {/* Login Required Modal */}
       {showLoginModal && (
@@ -254,27 +266,53 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           box-shadow: 0 22px 48px -12px rgba(0, 0, 0, 0.12), 0 8px 20px -2px rgba(0, 0, 0, 0.05);
         }
 
-        .marshans-card-anchor {
-          display: flex;
-          flex-direction: column;
+        .marshans-image-link {
+          display: block;
+          width: 100%;
           height: 100%;
           text-decoration: none;
-          color: inherit;
         }
 
-        /* Top Image Stage */
+        .marshans-title-link {
+          color: inherit;
+          text-decoration: none;
+        }
+
+        .marshans-title-link:hover {
+          text-decoration: underline;
+        }
+
+        .marshans-image-link:focus-visible,
+        .marshans-title-link:focus-visible {
+          outline: none;
+        }
+
+        .marshans-product-card-wrap:focus-within:has(.marshans-title-link:focus-visible),
+        .marshans-product-card-wrap:focus-within:has(.marshans-image-link:focus-visible) {
+          box-shadow: 0 0 0 3px #09090b, 0 22px 48px -12px rgba(0, 0, 0, 0.12);
+        }
+
+        .marshans-wishlist-btn:focus-visible,
+        .marshans-cart-action-btn:focus-visible {
+          outline: 2px solid #09090b;
+          outline-offset: 3px;
+        }
+
+        /* Top Image Stage: whole product visible (no cropping) on white, ratio reserved against layout shift */
         .marshans-image-stage {
           position: relative;
           width: 100%;
           aspect-ratio: 1 / 1.05;
-          background: #f7f6f4;
+          background: #ffffff;
           overflow: hidden;
         }
 
         .marshans-product-img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          padding: 6%;
+          box-sizing: border-box;
           object-position: center;
           display: block;
           transition: transform 0.45s ease;
@@ -437,6 +475,14 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           background: #15803d;
           box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4), 0 0 22px 5px rgba(34, 197, 94, 0.35);
           transform: scale(1.05);
+        }
+
+        .marshans-cart-action-btn:disabled,
+        .marshans-cart-action-btn.is-out-of-stock {
+          opacity: 0.45;
+          cursor: not-allowed;
+          box-shadow: none;
+          transform: none;
         }
 
         @media (max-width: 480px) {
@@ -604,6 +650,6 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           to { opacity: 1; transform: scale(1); }
         }
       `}</style>
-    </div>
+    </article>
   );
 }

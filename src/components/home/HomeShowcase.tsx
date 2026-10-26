@@ -58,7 +58,7 @@ export function desktopOrder(count: number): number[] {
 }
 
 const formatPrice = (rupees: number) => `₹${Number(rupees || 0).toLocaleString('en-IN')}`;
-const productHref = (p: Product) => `/product?slug=${encodeURIComponent(p.slug || String(p.id))}&id=${p.id}`;
+const productHref = (p: Product) => `/product/${encodeURIComponent(p.slug || String(p.id))}/`;
 
 export interface HomeShowcaseProps {
   initialProducts?: Product[];
@@ -117,8 +117,8 @@ export default function HomeShowcase({ initialProducts = [] }: HomeShowcaseProps
       price: product.price,
       quantity: 1,
       imageUrl: resolveImageUrl(product.primary_image_url || product.images?.[0]?.image_url),
-      material: product.materials?.[0]?.name || 'Standard PLA+',
-      finishing: product.finishing_options?.[0]?.name || 'Studio Finish'
+      material: product.materials?.[0]?.name,
+      finishing: product.finishing_options?.[0]?.name
     });
     if (res?.requiresLogin) {
       // addToCart has stored the pending item; the existing login flow adds it after sign-in

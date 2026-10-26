@@ -127,7 +127,7 @@ export default function SearchModal() {
                   {filtered.map((item) => (
                     <a
                       key={item.id}
-                      href={`/product?slug=${encodeURIComponent(item.slug || item.id)}&id=${item.id}`}
+                      href={`/product/${encodeURIComponent(item.slug || item.id)}/`}
                       className="search-result-item"
                       onClick={() => setIsOpen(false)}
                     >

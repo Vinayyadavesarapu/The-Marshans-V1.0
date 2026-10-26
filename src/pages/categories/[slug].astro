@@ -44,7 +44,7 @@ const breadcrumbJsonLd = {
 <Layout
   title={`${meta.name} — ${meta.title} | THE MARSHANS`}
   description={meta.description}
-  image={meta.heroImage}
+  image={meta.heroImage || undefined}
   jsonLd={breadcrumbJsonLd}
 >
   <CollectionPage
