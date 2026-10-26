@@ -89,31 +89,19 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   // Format category badge text (spaced uppercase, e.g. L U M O)
   const formatBadgeText = (catName?: string) => {
     if (!catName) return 'M A R S H A N';
-    const clean = catName.split(' ')[0].toUpperCase();
-    return clean.split('').join(' ');
+    return catName.split(' ')[0].toUpperCase();
   };
 
   // Format subtitle (e.g. C O L L E C T I B L E   S T A T U E)
+  // Spaced-capital look comes from CSS letter-spacing, so words stay words (no collapsed gaps; readable by screen readers)
   const formatSubtitle = () => {
-    if (product.category_name?.toLowerCase().includes('lumo')) {
-      return 'A M B I E N T   I L L U M I N A T I O N';
-    }
-    if (product.category_name?.toLowerCase().includes('fandom')) {
-      return 'C O L L E C T I B L E   S T A T U E';
-    }
-    if (product.category_name?.toLowerCase().includes('mini')) {
-      return 'P O C K E T   D I O R A M A';
-    }
-    if (product.category_name?.toLowerCase().includes('utility')) {
-      return 'M O D U L A R   D E S K   G E A R';
-    }
-    if (product.category_name?.toLowerCase().includes('darshanam')) {
-      return 'S A C R E D   G E O M E T R Y';
-    }
-    return (product.category_name || '3D PRINTED ARTIFACT')
-      .toUpperCase()
-      .split('')
-      .join(' ');
+    const name = product.category_name?.toLowerCase() || '';
+    if (name.includes('lumo')) return 'Ambient Illumination';
+    if (name.includes('fandom')) return 'Collectible Statue';
+    if (name.includes('mini')) return 'Pocket Diorama';
+    if (name.includes('utility')) return 'Modular Desk Gear';
+    if (name.includes('darshanam')) return 'Sacred Geometry';
+    return product.category_name || '3D Printed Artifact';
   };
 
   const imageUrl = resolveImageUrl(
@@ -298,6 +286,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
 
         /* Category Badge (Pill) */
         .marshans-badge-pill {
+          white-space: nowrap;
           position: absolute;
           top: 16px;
           left: 16px;
@@ -307,7 +296,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           font-family: var(--font-sans, -apple-system, sans-serif);
           font-size: 11px;
           font-weight: 800;
-          letter-spacing: 0.22em;
+          letter-spacing: 0.42em;
           text-transform: uppercase;
           color: #09090b;
           box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
@@ -381,7 +370,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           font-family: var(--font-sans, -apple-system, sans-serif);
           font-size: 10px;
           font-weight: 600;
-          letter-spacing: 0.22em;
+          letter-spacing: 0.4em;
           text-transform: uppercase;
           color: #71717a;
         }

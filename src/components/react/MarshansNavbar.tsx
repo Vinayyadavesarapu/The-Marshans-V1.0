@@ -18,9 +18,22 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { label: 'Custom Forge', href: '/custom-3d' },
 ];
 
-export default function MarshansNavbar() {
+export interface MarshansNavbarProps {
+  /** 'pill' = floating green pill navigation used on the homepage; 'default' = standard white header. */
+  variant?: 'default' | 'pill';
+}
+
+export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [currentPath, setCurrentPath] = useState('');
+
+  // Resolved after hydration so the server-rendered markup stays identical
+  useEffect(() => {
+    setCurrentPath(window.location.pathname.replace(/\/+$/, '') || '/');
+  }, []);
+
+  const isActive = (href: string) => currentPath !== '' && (href === '/' ? currentPath === '/' : currentPath.startsWith(href));
 
   // Monitor scroll for subtle shadow boundary
   useEffect(() => {
@@ -52,7 +65,7 @@ export default function MarshansNavbar() {
   };
 
   return (
-    <header className={`marshans-navbar ${isScrolled ? 'is-scrolled' : ''}`}>
+    <header className={`marshans-navbar navbar--${variant} ${isScrolled ? 'is-scrolled' : ''}`}>
       <div className="navbar-container">
         {/* LEFT: MARSHANS LOGO */}
         <div className="navbar-left">
@@ -62,13 +75,15 @@ export default function MarshansNavbar() {
             className="navbar-brand"
             aria-label="THE MARSHANS Home"
           >
-            <img
-              src="/assets/brand/the-marshans-logo.png"
-              alt="THE MARSHANS"
-              className="navbar-logo-img"
-              width="180"
-              height="34"
-            />
+            <span className="navbar-logo-badge">
+              <img
+                src="/assets/brand/the-marshans-logo.png"
+                alt="THE MARSHANS"
+                className="navbar-logo-img"
+                width="180"
+                height="34"
+              />
+            </span>
           </a>
         </div>
 
@@ -79,7 +94,8 @@ export default function MarshansNavbar() {
               <li key={item.label} className="nav-item">
                 <a
                   href={item.href}
-                  className="nav-link"
+                  className={`nav-link ${isActive(item.href) ? 'is-active' : ''}`}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
                   onClick={item.label === 'Home' ? handleHomeClick : undefined}
                 >
                   {item.label}
@@ -482,6 +498,193 @@ export default function MarshansNavbar() {
           }
           .action-item.user-wrap {
             display: none; /* Accessible inside mobile drawer */
+          }
+        }
+
+        /* ==========================================================
+           PILL VARIANT (homepage) — original reference structure:
+           separate logo badge, all links inside one rounded pill,
+           search / sign-in / cart as individual rounded controls.
+           Flat neutral cream/white: no gradients, blur, gloss or shadows.
+           The bar itself is transparent and scrolls with the page.
+           ========================================================== */
+        .navbar--pill {
+          --ink: #1f1c18;
+          --ink-soft: #4a453f;
+          --surface: #fbf8f3;        /* soft cream, just lighter than the page */
+          --surface-hover: #ffffff;
+          --rim: rgba(31, 28, 24, 0.12);
+          --rim-strong: rgba(31, 28, 24, 0.22);
+          position: static; /* scrolls naturally with the page (the shared default is sticky) */
+          background: transparent;
+          border-bottom: none;
+          padding: 12px clamp(10px, 2vw, 24px);
+        }
+
+        .navbar--pill.is-scrolled {
+          box-shadow: none;
+        }
+
+        .navbar--pill .navbar-container {
+          height: 64px;
+          max-width: 1360px;
+          padding: 0 14px 0 16px;
+          background: transparent;
+        }
+
+        /* Separate logo on the left */
+        .navbar--pill .navbar-logo-badge {
+          display: inline-flex;
+          align-items: center;
+          background: var(--surface);
+          border: 1px solid var(--rim);
+          border-radius: 12px;
+          padding: 6px 10px;
+        }
+
+        .navbar--pill .navbar-logo-img {
+          height: 26px;
+          max-width: 70px;
+          mix-blend-mode: multiply; /* the logo file has an opaque white ground: let the cream surface show through */
+        }
+
+        .navbar--pill .navbar-brand:focus-visible,
+        .navbar--pill .nav-link:focus-visible,
+        .navbar--pill .mobile-menu-toggle:focus-visible,
+        .navbar--pill .navbar-right a:focus-visible,
+        .navbar--pill .navbar-right button:focus-visible {
+          outline: 2px solid var(--ink);
+          outline-offset: 3px;
+          border-radius: 999px;
+        }
+
+        /* All seven links side by side inside one rounded pill */
+        .navbar--pill .nav-links-list {
+          gap: 2px;
+          padding: 5px;
+          border-radius: 999px;
+          background: var(--surface);
+          border: 1px solid var(--rim);
+          box-shadow: none;
+        }
+
+        .navbar--pill .nav-link {
+          display: inline-block;
+          padding: 7px 13px;
+          border: 1px solid transparent;
+          border-radius: 999px;
+          background: none;
+          color: var(--ink-soft);
+          font-size: 13px;
+          font-weight: 600;
+          transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+        }
+
+        .navbar--pill .nav-link::after {
+          display: none;
+        }
+
+        .navbar--pill .nav-link:hover {
+          color: var(--ink);
+          background: rgba(31, 28, 24, 0.05);
+        }
+
+        /* Active page: a clean white pill with a fine rim */
+        .navbar--pill .nav-link.is-active {
+          color: var(--ink);
+          background: var(--surface-hover);
+          border-color: var(--rim-strong);
+          box-shadow: none;
+        }
+
+        .navbar--pill .navbar-right {
+          gap: 8px;
+        }
+
+        /* Search / cart: rounded square controls; sign-in: rounded pill */
+        .navbar--pill .header-icon-btn,
+        .navbar--pill .user-avatar-btn,
+        .navbar--pill .header-user-btn,
+        .navbar--pill .mobile-menu-toggle {
+          color: var(--ink);
+          background: var(--surface);
+          border: 1px solid var(--rim);
+          border-radius: 12px;
+          box-shadow: none;
+          min-width: 40px;
+          height: 40px;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.18s ease, border-color 0.18s ease;
+        }
+
+        .navbar--pill .header-icon-btn,
+        .navbar--pill .user-avatar-btn,
+        .navbar--pill .header-user-btn {
+          display: inline-flex;
+        }
+
+        .navbar--pill .header-user-btn,
+        .navbar--pill .user-avatar-btn {
+          border-radius: 999px;
+          padding: 0 12px;
+        }
+
+        .navbar--pill .header-icon-btn:hover,
+        .navbar--pill .user-avatar-btn:hover,
+        .navbar--pill .header-user-btn:hover,
+        .navbar--pill .mobile-menu-toggle:hover {
+          background: var(--surface-hover);
+          border-color: var(--rim-strong);
+        }
+
+        .navbar--pill .navbar-right svg {
+          stroke: currentColor;
+        }
+
+        .navbar--pill .header-user-btn,
+        .navbar--pill .user-btn-label,
+        .navbar--pill .user-name {
+          color: var(--ink);
+        }
+
+        .navbar--pill .cart-count-badge {
+          background-color: var(--ink);
+          color: #ffffff;
+          box-shadow: none;
+        }
+
+        @media (max-width: 1240px) {
+          .navbar--pill .nav-link {
+            padding: 7px 10px;
+            font-size: 12.5px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .navbar--pill {
+            padding: 8px 10px;
+          }
+          .navbar--pill .navbar-container {
+            height: 56px;
+            padding: 0 8px 0 10px;
+          }
+          .navbar--pill .navbar-logo-img {
+            height: 22px;
+          }
+          .navbar--pill .header-icon-btn,
+          .navbar--pill .mobile-menu-toggle {
+            min-width: 38px;
+            height: 38px;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .navbar--pill .nav-link,
+          .navbar--pill .header-icon-btn,
+          .navbar--pill .header-user-btn,
+          .navbar--pill .mobile-menu-toggle {
+            transition: none;
           }
         }
       `}</style>

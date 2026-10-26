@@ -1,23 +1,294 @@
 ---
 import MarshansNavbar from './react/MarshansNavbar.tsx';
-import HomeCarousel from './home/HomeCarousel.tsx';
+
+/**
+ * THE MARSHANS — Cinematic home hero (the single hero implementation)
+ *
+ * Layers (back → front): poster frame → hero video (fades in once playing) → depth clouds → bottom fade.
+ * Motion:
+ *   - Intro: every cloud layer descends and grows toward the viewer, staggered by depth (CSS keyframes).
+ *   - Scroll: layers keep travelling DOWNWARD at depth-dependent speeds and scale up (parallax), then fade
+ *     into the showcase section. Driven by one rAF-throttled --hero-p custom property (0 → 1).
+ * Performance: the start-frame poster is the LCP image; the video (video-only H.264, fast-start: 1080p 1.8 MB /
+ * 720p 0.8 MB) is attached once that poster has loaded and is skipped for reduced-motion and Save-Data / 2G.
+ * Hand-off: when the video reaches `ended` (it never loops), the page smoothly scrolls once to the navbar below,
+ * revealing the navigation and carousel. Scrolling is never locked during playback.
+ * Seal: after the hand-off (video ended, visitor chose to continue, or no video could play), the first time the visitor
+ * is at or below the navbar the hero is sealed — hidden and inert but keeping its layout space (no layout shift) — and
+ * a passive scroll floor keeps the scroll position at or below the navbar until the page is refreshed.
+ */
+const HERO = '/assets/hero/home/optimized';
 ---
 
 <div class="hero-page-flow">
-  <!-- ==========================================
-       1. MAIN NAVIGATION
-       ========================================== -->
-  <section class="hero-navbar-section" id="home-navbar" aria-label="Main Navigation">
-    <MarshansNavbar client:load />
+  <h1 id="home-hero-title" class="mh-sr-only">THE MARSHANS — Made to be Discovered.</h1>
+
+  <section class="mh-hero" id="home-hero" data-mh-hero aria-labelledby="home-hero-title">
+    <!-- Runs before first paint. Poster choice: if the video will play → its first frame (the video reveals the
+         headline itself); reduced motion / Save-Data / 2G / no JS → the final frame, which contains the headline.
+         Scroll restoration is manual so a refresh always restarts the hero experience at the top. -->
+    <script is:inline>
+      (function () {
+        var hero = document.currentScript.parentElement;
+        var c = navigator.connection;
+        var constrained = c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || ''));
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+        var nav = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+        var returning = false;
+        try {
+          returning = !!nav && nav.type === 'back_forward' && sessionStorage.getItem('mh-hero-sealed') === '1';
+          if (!returning) sessionStorage.removeItem('mh-hero-sealed'); // fresh load / refresh restarts the hero
+        } catch (e) {}
+        if (returning) hero.classList.add('is-sealed');
+        else if (!constrained && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) hero.classList.add('mh-will-play');
+      })();
+    </script>
+
+    <div class="mh-hero__stage">
+      <picture>
+        <source media="(max-width: 960px)" srcset={`${HERO}/hero-start-960.webp`} type="image/webp" />
+        <img
+          class="mh-hero__poster mh-hero__poster--start"
+          src={`${HERO}/hero-start-1920.webp`}
+          width="1920"
+          height="1080"
+          alt=""
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+      <picture>
+        <source media="(max-width: 960px)" srcset={`${HERO}/hero-poster-960.webp`} type="image/webp" />
+        <img
+          class="mh-hero__poster mh-hero__poster--end"
+          src={`${HERO}/hero-poster-1920.webp`}
+          width="1920"
+          height="1080"
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+      <video
+        class="mh-hero__video"
+        data-src-large={`${HERO}/hero-1080.mp4`}
+        data-src-small={`${HERO}/hero-720.mp4`}
+        muted
+        playsinline
+        preload="none"
+        disablepictureinpicture
+        aria-hidden="true"
+        tabindex="-1"
+      ></video>
+    </div>
+
+    <div class="mh-hero__clouds" aria-hidden="true">
+      <div class="mh-cloud mh-cloud--far">
+        <img
+          src={`${HERO}/cloud-secondary-1200.webp`}
+          srcset={`${HERO}/cloud-secondary-1200.webp 1200w, ${HERO}/cloud-secondary-2400.webp 2400w`}
+          sizes="(max-width: 768px) 200vw, 120vw"
+          width="2400" height="1200" alt="" decoding="async" fetchpriority="low"
+        />
+      </div>
+      <div class="mh-cloud mh-cloud--left">
+        <img
+          src={`${HERO}/cloud-primary-800.webp`}
+          srcset={`${HERO}/cloud-primary-800.webp 800w, ${HERO}/cloud-primary-1600.webp 1600w`}
+          sizes="(max-width: 768px) 110vw, 62vw"
+          width="1600" height="800" alt="" decoding="async" fetchpriority="low"
+        />
+      </div>
+      <div class="mh-cloud mh-cloud--right">
+        <img
+          src={`${HERO}/cloud-primary-800.webp`}
+          srcset={`${HERO}/cloud-primary-800.webp 800w, ${HERO}/cloud-primary-1600.webp 1600w`}
+          sizes="(max-width: 768px) 110vw, 58vw"
+          width="1600" height="800" alt="" decoding="async" fetchpriority="low"
+        />
+      </div>
+      <div class="mh-cloud mh-cloud--near">
+        <img
+          src={`${HERO}/cloud-primary-800.webp`}
+          srcset={`${HERO}/cloud-primary-800.webp 800w, ${HERO}/cloud-primary-1600.webp 1600w`}
+          sizes="(max-width: 768px) 170vw, 90vw"
+          width="1600" height="800" alt="" decoding="async" fetchpriority="low"
+        />
+      </div>
+    </div>
+
+    <div class="mh-hero__fade" aria-hidden="true"></div>
+
+    <a class="mh-hero__cue" href="#home-navbar">
+      <span>Discover the collection</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 5v14M5 12l7 7 7-7" />
+      </svg>
+    </a>
   </section>
 
-  <!-- ==========================================
-       2. HOME CAROUSEL
-       ========================================== -->
-  <section class="home-carousel-section" id="home-carousel-section" aria-label="Home Exhibition Carousel">
-    <HomeCarousel client:load />
-  </section>
+  <!-- Navbar sits directly below the hero as an ordinary section: it scrolls with the page (never fixed or docked). -->
+  <div class="hero-navbar-slot" data-mh-nav-slot>
+    <section class="hero-navbar-section" id="home-navbar" aria-label="Main Navigation" tabindex="-1">
+      <MarshansNavbar client:load variant="pill" />
+    </section>
+  </div>
 </div>
+
+<script>
+  const hero = document.querySelector<HTMLElement>('[data-mh-hero]');
+  if (hero) {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const video = hero.querySelector<HTMLVideoElement>('.mh-hero__video');
+    const navSlot = document.querySelector<HTMLElement>('[data-mh-nav-slot]');
+    const navTargetTop = () => Math.round(navSlot ? navSlot.getBoundingClientRect().top + window.scrollY : hero.offsetHeight);
+
+    // 0. Position: a fresh load or refresh starts at the top with the hero (unless a #hash targets a section);
+    //    a back/forward return restores where the visitor was.
+    const navType = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)?.type;
+    try {
+      const saved = navType === 'back_forward' ? sessionStorage.getItem('mh-home-scroll') : null;
+      if (saved !== null) window.scrollTo(0, Number(saved) || 0);
+      else if (!location.hash) window.scrollTo(0, 0);
+    } catch { /* storage unavailable: browser default */ }
+    window.addEventListener('pagehide', () => {
+      try { sessionStorage.setItem('mh-home-scroll', String(Math.round(window.scrollY))); } catch { /* ignore */ }
+    });
+
+    // Smooth glide that the visitor can always take over. It is driven frame by frame, so any wheel/touch/key/pointer
+    // input simply stops further frames and the visitor's own scroll applies untouched (nothing is reset or
+    // prevented). Listeners are passive and removed when the glide ends.
+    const USER_INPUT = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
+    const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const glideTo = (top: number) => {
+      if (reduceMotion) { window.scrollTo({ top, behavior: 'auto' }); return; }
+      const from = window.scrollY;
+      const distance = top - from;
+      if (Math.abs(distance) < 2) return;
+      const duration = Math.min(1100, Math.max(550, Math.abs(distance) * 0.9));
+      let cancelled = false;
+      let startedAt = 0;
+      const release = () => USER_INPUT.forEach((type) => window.removeEventListener(type, stop));
+      const stop = () => { cancelled = true; release(); };
+      USER_INPUT.forEach((type) => window.addEventListener(type, stop, { passive: true }));
+      const step = (now: number) => {
+        if (cancelled) return;
+        if (!startedAt) startedAt = now;
+        const progress = Math.min(1, (now - startedAt) / duration);
+        window.scrollTo({ top: from + distance * easeInOutCubic(progress), behavior: 'instant' as ScrollBehavior });
+        if (progress < 1) requestAnimationFrame(step);
+        else release();
+      };
+      requestAnimationFrame(step);
+    };
+
+    // Seal: the moment the visitor is at or past the hero boundary (the navbar's top edge) — by the automatic hand-off,
+    // the continue link or their own scrolling, before or after the video ends — the hero is sealed for the rest of
+    // the visit: hidden + inert but keeping its layout space (no layout shift), with a scroll floor at the navbar. The
+    // navbar itself stays an ordinary section that scrolls away with the page. A refresh starts over.
+    let floorTop: number | null = null;
+    const sealed = () => floorTop !== null;
+    const seal = () => {
+      if (sealed()) return;
+      floorTop = navTargetTop();
+      hero.classList.add('is-sealed');
+      hero.setAttribute('inert', '');
+      hero.setAttribute('aria-hidden', 'true');
+      video?.pause();
+      try { sessionStorage.setItem('mh-hero-sealed', '1'); } catch { /* ignore */ }
+    };
+
+    // 1. Hand-off: once per page load, when the video ends, glide to the navbar — only if the visitor is still at the
+    //    top of the hero. If they have scrolled away on their own, they are in control and nothing is forced.
+    let advanced = false;
+    const advanceToNavbar = () => {
+      if (advanced || sealed()) return;
+      advanced = true;
+      if (window.scrollY > 8) return;
+      glideTo(navTargetTop());
+    };
+
+    // 2. Video: one source, attached as soon as the first-paint poster has loaded (it stays the LCP image).
+    //    Never requested for reduced motion or Save-Data / 2G.
+    if (video && hero.classList.contains('mh-will-play')) {
+      let started = false;
+      const startVideo = () => {
+        if (started) return;
+        started = true;
+        const conn = (navigator as any).connection;
+        const slowish = Boolean(conn && conn.effectiveType === '3g');
+        const wantsLarge = !slowish && window.innerWidth * Math.min(window.devicePixelRatio || 1, 2) > 1400;
+        // Any playback failure — or a connection too slow to start within 2.5 s — abandons the video (cancelling the
+        // download) and keeps a polished static hero: the final-frame poster, which contains the headline.
+        let fellBack = false;
+        const fallBack = () => {
+          if (fellBack) return;
+          fellBack = true;
+          window.clearTimeout(giveUp);
+          hero.classList.remove('mh-will-play', 'is-video-playing');
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+        };
+        const giveUp = window.setTimeout(() => { if (!hero.classList.contains('is-video-playing')) fallBack(); }, 2500);
+        video.addEventListener('playing', () => {
+          if (fellBack) return;
+          window.clearTimeout(giveUp);
+          hero.classList.add('is-video-playing');
+        }, { once: true });
+        video.addEventListener('ended', () => { if (!fellBack) advanceToNavbar(); }, { once: true });
+        video.addEventListener('error', fallBack, { once: true });
+        video.src = (wantsLarge ? video.dataset.srcLarge : video.dataset.srcSmall) || '';
+        video.play().catch(fallBack);
+      };
+      const poster = hero.querySelector<HTMLImageElement>('.mh-hero__poster--start');
+      if (!poster || poster.complete) requestAnimationFrame(startVideo);
+      else {
+        poster.addEventListener('load', () => requestAnimationFrame(startVideo), { once: true });
+        poster.addEventListener('error', startVideo, { once: true });
+      }
+    }
+
+    // 3. "Discover the collection": the accessible way to continue at any time (also when the video is skipped).
+    //    Works as a plain #home-navbar link without JavaScript; enhanced here with smooth scrolling + focus hand-off.
+    hero.querySelector<HTMLAnchorElement>('.mh-hero__cue')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      advanced = true; // a manual continue replaces the automatic hand-off
+      glideTo(navTargetTop());
+      document.getElementById('home-navbar')?.focus({ preventScroll: true });
+    });
+
+    // 4. One passive scroll handler for the hero:
+    //    - sealed: keep the position at or below the navbar (the floor);
+    //    - not sealed: seal as soon as the hero boundary is reached, otherwise update the cloud parallax (≤ 1×/frame).
+    let parallaxQueued = false;
+    const updateParallax = () => {
+      parallaxQueued = false;
+      if (sealed()) return;
+      const h = hero.offsetHeight || window.innerHeight;
+      hero.style.setProperty('--hero-p', Math.min(Math.max(window.scrollY / h, 0), 1).toFixed(4));
+    };
+    const onScroll = () => {
+      if (sealed()) {
+        if (window.scrollY < (floorTop as number) - 1) window.scrollTo({ top: floorTop as number, behavior: 'instant' as ScrollBehavior });
+        return;
+      }
+      if (window.scrollY >= navTargetTop() - 1) { seal(); return; }
+      if (!reduceMotion && !parallaxQueued) {
+        parallaxQueued = true;
+        requestAnimationFrame(updateParallax);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', () => { if (sealed()) floorTop = navTargetTop(); onScroll(); }, { passive: true });
+
+    // A back/forward return to a sealed page keeps it sealed (position restored above); otherwise check where we are
+    // (e.g. a #hash link that lands below the hero) and set the initial parallax.
+    if (hero.classList.contains('is-sealed')) seal();
+    onScroll();
+    if (!reduceMotion) updateParallax();
+  }
+</script>
 
 <style>
   .hero-page-flow {
@@ -26,33 +297,277 @@ import HomeCarousel from './home/HomeCarousel.tsx';
     flex-direction: column;
     margin: 0;
     padding: 0;
-    border: none;
-    border-radius: 0;
+  }
+
+  /* Navbar below the hero: a normal in-flow section that scrolls with the page */
+  .hero-navbar-slot {
+    position: relative;
+    background: #f6eee4;
   }
 
   .hero-navbar-section {
+    position: static;
     width: 100%;
     margin: 0;
     padding: 0;
-    position: sticky;
-    top: 0;
-    z-index: 50;
   }
 
-  .home-carousel-section {
-    width: 100%;
-    margin: 0;
-    padding: 2rem 0 2rem;
-    box-sizing: border-box;
+  .mh-hero {
+    --hero-p: 0;
+    --mh-cream: #f6eee4;
     position: relative;
-    z-index: 5;
-    border: none;
+    width: 100%;
+    height: 100vh;
+    height: 100svh; /* small-viewport unit: stable while mobile browser bars show/hide (no jumps) */
+    min-height: 480px;
+    margin: 0;
+    border: 0;
     border-radius: 0;
+    overflow: hidden;
+    background: var(--mh-cream);
+    isolation: isolate;
   }
 
-  @media (max-width: 768px) {
-    .home-carousel-section {
-      padding: 1.5rem 0 1.5rem;
+  /* Sealed after the hand-off: invisible but still occupying its space, so nothing below moves */
+  .mh-hero.is-sealed {
+    visibility: hidden;
+  }
+
+  .mh-hero.is-sealed * {
+    animation-play-state: paused !important;
+  }
+
+  .hero-navbar-section:focus {
+    outline: none;
+  }
+
+  .mh-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* --- Stage: poster + video (identical framing so the cross-fade is seamless) --- */
+  .mh-hero__stage {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    transform-origin: 50% 40%;
+    scale: calc(1 + var(--hero-p) * 0.08);
+    translate: 0 calc(var(--hero-p) * 6vh);
+    will-change: scale, translate;
+  }
+
+  .mh-hero__poster,
+  .mh-hero__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 45%;
+    display: block;
+  }
+
+  /* Poster selection: start frame only while the video is expected to play; otherwise the final frame */
+  .mh-hero__poster--start {
+    display: none;
+  }
+
+  .mh-hero.mh-will-play .mh-hero__poster--start {
+    display: block;
+  }
+
+  .mh-hero.mh-will-play .mh-hero__poster--end {
+    display: none;
+  }
+
+  .mh-hero__video {
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  .mh-hero.is-video-playing .mh-hero__video {
+    opacity: 1;
+  }
+
+  /* --- Clouds: outer element = scroll parallax, inner img = intro descent + idle drift --- */
+  .mh-hero__clouds {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: calc(1 - var(--hero-p) * 0.85);
+  }
+
+  .mh-cloud {
+    position: absolute;
+    translate: 0 calc(var(--hero-p) * var(--depth) * 1vh);
+    scale: calc(1 + var(--hero-p) * var(--grow));
+    transform-origin: 50% 100%;
+    will-change: translate, scale;
+  }
+
+  .mh-cloud img {
+    display: block;
+    width: 100%;
+    height: auto;
+    opacity: 0;
+    animation:
+      mh-cloud-arrive var(--arrive-dur) cubic-bezier(0.16, 0.7, 0.12, 1) var(--arrive-delay) forwards,
+      mh-cloud-drift var(--drift-dur) ease-in-out calc(var(--arrive-delay) + var(--arrive-dur)) infinite alternate;
+  }
+
+  .mh-cloud--far {
+    --depth: 12; --grow: 0.1; --arrive-dur: 2.2s; --arrive-delay: 0.1s; --drift-dur: 14s; --drift-x: 1.2vw;
+    width: 120vw;
+    left: -10vw;
+    top: 63%;
+    opacity: 0.7;
+  }
+
+  .mh-cloud--left {
+    --depth: 22; --grow: 0.18; --arrive-dur: 2s; --arrive-delay: 0.35s; --drift-dur: 11s; --drift-x: -1.6vw;
+    width: 52vw;
+    left: -14vw;
+    top: 60%;
+  }
+
+  .mh-cloud--right {
+    --depth: 26; --grow: 0.2; --arrive-dur: 2s; --arrive-delay: 0.5s; --drift-dur: 12.5s; --drift-x: 1.8vw;
+    width: 48vw;
+    right: -12vw;
+    top: 64%;
+  }
+
+  .mh-cloud--right img {
+    scale: -1 1;
+  }
+
+  .mh-cloud--near {
+    --depth: 38; --grow: 0.3; --arrive-dur: 1.8s; --arrive-delay: 0.7s; --drift-dur: 9s; --drift-x: -2.2vw;
+    width: 90vw;
+    left: 5vw;
+    top: 76%;
+  }
+
+  /* Arrive: from above and far away, descending toward the viewer (never moves back up) */
+  @keyframes mh-cloud-arrive {
+    from { opacity: 0; transform: translate3d(0, -9vh, 0) scale(0.82); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  @keyframes mh-cloud-drift {
+    from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+    to   { opacity: 1; transform: translate3d(var(--drift-x), 0.6vh, 0) scale(1.015); }
+  }
+
+  /* --- Transition into the showcase --- */
+  .mh-hero__fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 34%;
+    z-index: 3;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(246, 238, 228, 0) 0%, rgba(246, 238, 228, 0.7) 55%, var(--mh-cream) 100%);
+  }
+
+  .mh-hero__cue {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(18px, 4vh, 40px);
+    z-index: 4;
+    translate: -50% 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(23, 61, 39, 0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #1f3d2b;
+    font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    opacity: calc(1 - var(--hero-p) * 3);
+    transition: background 0.2s ease;
+  }
+
+  .mh-hero__cue:hover {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .mh-hero__cue:focus-visible {
+    outline: 3px solid #2f6b45;
+    outline-offset: 3px;
+  }
+
+  .mh-hero__cue svg {
+    animation: mh-cue-bob 1.8s ease-in-out infinite;
+  }
+
+  @keyframes mh-cue-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(3px); }
+  }
+
+  /* --- Portrait tablet / mobile: the headline is baked into the 16:9 frame (≈24.5%–75% of its width), so the
+         frame is drawn at 190% of the viewport width and centred, keeping the whole headline visible. --- */
+  @media (max-width: 960px) and (orientation: portrait), (max-width: 640px) {
+    /* Full-screen portrait: the sky colours from the frame's edges fill the screen, and the 16:9 frame (drawn at
+       190% width so the whole headline stays in view) dissolves into them at its top and bottom. */
+    .mh-hero {
+      background: linear-gradient(180deg, #e6dcd0 0%, #ece2d6 30%, #f4e8da 62%, var(--mh-cream) 100%);
+    }
+
+    .mh-hero__stage {
+      inset: auto -45%;
+      /* frame height = 190% × 9/16 of the width ≈ 1.07 × 100vw; its headline sits ~37% down the frame, so this puts
+         the headline at ~42% of the screen height on phones and portrait tablets alike */
+      top: calc(42% - 39.5vw);
+      aspect-ratio: 16 / 9;
+      -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 80%, transparent 100%);
+      mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 80%, transparent 100%);
+    }
+
+    .mh-cloud--far { width: 200vw; left: -50vw; top: 58%; }
+    .mh-cloud--left { width: 110vw; left: -42vw; top: 60%; }
+    .mh-cloud--right { width: 104vw; right: -40vw; top: 63%; }
+    .mh-cloud--near { width: 170vw; left: -35vw; top: 74%; }
+
+    .mh-hero__cue span {
+      font-size: 11px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mh-hero__stage,
+    .mh-cloud {
+      translate: none;
+      scale: none;
+    }
+
+    .mh-cloud img {
+      animation: none;
+      opacity: 1;
+    }
+
+    .mh-hero__cue svg {
+      animation: none;
     }
   }
 </style>
