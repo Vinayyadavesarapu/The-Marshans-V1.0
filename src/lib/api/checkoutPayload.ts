@@ -34,6 +34,7 @@ export interface CheckoutCartItem {
 export interface OrderPayload {
   store_id: number;
   payment_method: string;
+  coupon_code?: string;
   shipping_address: {
     name: string;
     phone: string;
@@ -57,7 +58,8 @@ export class CheckoutPayloadError extends Error {
 export function buildOrderPayload(
   form: CheckoutFormValues,
   cartItems: CheckoutCartItem[],
-  paymentMethod: string
+  paymentMethod: string,
+  couponCode?: string
 ): OrderPayload {
   const items = (cartItems || []).map((item) => {
     const productId = Number(item.marshansProductId || item.productId);
@@ -75,10 +77,14 @@ export function buildOrderPayload(
   const line1 = (form.addressLine1 || '').trim();
   const line2 = (form.addressLine2 || '').trim();
   const email = (form.email || '').trim();
+  const normalizedCoupon = typeof couponCode === 'string' && couponCode.trim()
+    ? couponCode.trim().toUpperCase()
+    : undefined;
 
   return {
     store_id: siteConfig.storeId,
     payment_method: paymentMethod,
+    ...(normalizedCoupon ? { coupon_code: normalizedCoupon } : {}),
     shipping_address: {
       name: (form.fullName || '').trim(),
       phone: (form.phone || '').trim(),

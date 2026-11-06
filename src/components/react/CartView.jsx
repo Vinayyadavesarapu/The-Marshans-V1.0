@@ -13,15 +13,22 @@ import {
 import { onAuthStateChange } from '../../lib/firebase/client';
 import { resolveImageUrl } from '../../lib/utils/media';
 import { isCustomForgeOnly } from '../../config/launchMode';
+import {
+  getAppliedCoupon,
+  saveAppliedCoupon,
+  clearAppliedCoupon,
+  validateCouponApi,
+  calculateCouponDiscount
+} from '../../lib/api/coupons';
 
 export default function CartView() {
   const [items, setItems] = useState([]);
   const [shippingPolicy, setShippingPolicy] = useState(getCachedShippingPolicy());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(getAppliedCoupon());
   const [promoCode, setPromoCode] = useState('');
-  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState('');
-  const [promoApplied, setPromoApplied] = useState('');
 
   const isLaunch = isCustomForgeOnly();
 
@@ -52,6 +59,11 @@ export default function CartView() {
       }
     });
 
+    const handleCouponUpdate = (e) => {
+      setAppliedCoupon(e.detail || null);
+    };
+    window.addEventListener('marshans:coupon-updated', handleCouponUpdate);
+
     const handleUpdate = (e) => {
       setItems(e.detail?.items || getLocalCart());
     };
@@ -61,27 +73,51 @@ export default function CartView() {
       unsub();
       window.removeEventListener('marshans:cart-updated', handleUpdate);
       window.removeEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
+      window.removeEventListener('marshans:coupon-updated', handleCouponUpdate);
     };
   }, []);
 
-  const subtotalAmount = items.reduce((s, it) => s + (it.price * it.quantity), 0);
-  const shippingCalc = calculateShipping(subtotalAmount, shippingPolicy);
   const summary = getCartSummary(items, shippingPolicy);
-  const finalDiscount = promoDiscount;
-  const finalTotal = Math.max(0, summary.total - finalDiscount);
+  const couponDiscount = calculateCouponDiscount(appliedCoupon, summary.subtotal);
+  const netMerchandise = Math.max(0, summary.subtotal - couponDiscount);
+  const finalTotal = netMerchandise + summary.shipping;
 
-  const handleApplyPromo = (e) => {
+  // Auto-remove coupon if subtotal falls below required minimum spend
+  useEffect(() => {
+    if (appliedCoupon && summary.subtotal > 0 && summary.subtotal < appliedCoupon.minOrderValueRupees) {
+      const minVal = appliedCoupon.minOrderValueRupees;
+      clearAppliedCoupon();
+      setAppliedCoupon(null);
+      setPromoError(`Coupon ${appliedCoupon.code} removed: minimum order of ₹${minVal.toLocaleString('en-IN')} required.`);
+    }
+  }, [summary.subtotal, appliedCoupon]);
+
+  const handleApplyPromo = async (e) => {
     e.preventDefault();
     setPromoError('');
     const code = promoCode.trim().toUpperCase();
-
-    if (code === 'MARSHAN10' || code === 'FIRSTDROP' || code === 'CHIPAKK') {
-      const discount = Math.round(summary.subtotal * 0.1);
-      setPromoDiscount(discount);
-      setPromoApplied(code);
-    } else {
-      setPromoError('Invalid promotion code.');
+    if (!code) {
+      setPromoError('Please enter a coupon code.');
+      return;
     }
+
+    setPromoLoading(true);
+    const result = await validateCouponApi(code, summary.subtotal);
+    setPromoLoading(false);
+    if (result.success && result.coupon) {
+      setAppliedCoupon(result.coupon);
+      saveAppliedCoupon(result.coupon);
+      setPromoCode('');
+      setPromoError('');
+    } else {
+      setPromoError(result.error || 'Invalid promotion code.');
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedCoupon(null);
+    clearAppliedCoupon();
+    setPromoError('');
   };
 
   if (items.length === 0) {
@@ -264,10 +300,28 @@ export default function CartView() {
             <span>{summary.shipping === 0 ? <strong style={{ color: '#15803d' }}>FREE</strong> : `₹${summary.shipping}`}</span>
           </div>
 
-          {promoApplied && (
+          {appliedCoupon && couponDiscount > 0 && (
             <div className="summary-line promo-line">
-              <span>Code ({promoApplied}) -10%</span>
-              <span className="discount-val">−₹{finalDiscount.toLocaleString('en-IN')}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>Coupon ({appliedCoupon.code})</span>
+                <button
+                  type="button"
+                  onClick={handleRemovePromo}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#dc2626',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: 0,
+                    textDecoration: 'underline'
+                  }}
+                  aria-label="Remove coupon"
+                >
+                  Remove
+                </button>
+              </div>
+              <span className="discount-val">−₹{couponDiscount.toLocaleString('en-IN')}</span>
             </div>
           )}
 
@@ -292,17 +346,63 @@ export default function CartView() {
             ← Continue Shopping
           </a>
 
-          {/* Promo Code Input */}
-          <form onSubmit={handleApplyPromo} className="promo-form">
-            <input
-              type="text"
-              placeholder="Promo code (e.g. MARSHAN10)"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              className="promo-input"
-            />
-            <button type="submit" className="btn btn-outline btn-sm">Apply</button>
-          </form>
+          {/* Promo / Coupon Code Section */}
+          {appliedCoupon ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              margin: '16px 0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '15px' }}>🎟️</span>
+                <div>
+                  <strong style={{ fontSize: '13px', color: '#166534', fontFamily: 'monospace' }}>{appliedCoupon.code}</strong>
+                  <span style={{ fontSize: '12px', color: '#15803d', marginLeft: '6px', fontWeight: 600 }}>
+                    ({appliedCoupon.discountType === 'percent' ? `${appliedCoupon.discountValue}% OFF` : `₹${appliedCoupon.discountRupees.toLocaleString('en-IN')} OFF`})
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemovePromo}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#dc2626',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ Remove
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleApplyPromo} className="promo-form">
+              <input
+                type="text"
+                placeholder="Promo code (e.g. MARS105)"
+                value={promoCode}
+                onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(''); }}
+                className="promo-input"
+                disabled={promoLoading}
+                autoComplete="off"
+                spellCheck="false"
+              />
+              <button
+                type="submit"
+                className="btn btn-outline btn-sm"
+                disabled={promoLoading || !promoCode.trim()}
+              >
+                {promoLoading ? 'Applying...' : 'Apply'}
+              </button>
+            </form>
+          )}
           {promoError && <span className="promo-error-msg">{promoError}</span>}
 
           {/* Guarantees */}

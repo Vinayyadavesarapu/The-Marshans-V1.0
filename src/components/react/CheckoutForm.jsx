@@ -22,6 +22,13 @@ import {
 } from '../../lib/api/shipping';
 import { resolveImageUrl } from '../../lib/utils/media';
 import { buildOrderPayload, CheckoutPayloadError } from '../../lib/api/checkoutPayload';
+import {
+  getAppliedCoupon,
+  saveAppliedCoupon,
+  clearAppliedCoupon,
+  validateCouponApi,
+  calculateCouponDiscount
+} from '../../lib/api/coupons';
 import { SAVED_ADDRESS_KEY } from '../../lib/session/cache';
 import { getSavedAddresses, getActiveAddress, selectAddress } from '../../lib/session/addresses';
 import { onAuthStateChange } from '../../lib/firebase/client';
@@ -35,6 +42,10 @@ export default function CheckoutForm() {
   const [pendingOrder, setPendingOrder] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [appliedCoupon, setAppliedCoupon] = useState(getAppliedCoupon());
+  const [couponInput, setCouponInput] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -59,6 +70,11 @@ export default function CheckoutForm() {
       if (e.detail) setShippingPolicy(e.detail);
     };
     window.addEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
+
+    const handleCouponUpdate = (e) => {
+      setAppliedCoupon(e.detail || null);
+    };
+    window.addEventListener('marshans:coupon-updated', handleCouponUpdate);
 
     const unsub = onAuthStateChange((user) => {
       if (user) {
@@ -102,10 +118,53 @@ export default function CheckoutForm() {
     return () => {
       unsub();
       window.removeEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
+      window.removeEventListener('marshans:coupon-updated', handleCouponUpdate);
     };
   }, []);
 
   const summary = getCartSummary(items, shippingPolicy);
+  const couponDiscount = calculateCouponDiscount(appliedCoupon, summary.subtotal);
+  const netMerchandise = Math.max(0, summary.subtotal - couponDiscount);
+  const finalPayableTotal = netMerchandise + summary.shipping;
+
+  // Auto-remove coupon if cart drops below required minimum spend
+  useEffect(() => {
+    if (appliedCoupon && summary.subtotal > 0 && summary.subtotal < appliedCoupon.minOrderValueRupees) {
+      const minVal = appliedCoupon.minOrderValueRupees;
+      clearAppliedCoupon();
+      setAppliedCoupon(null);
+      setCouponError(`Coupon ${appliedCoupon.code} removed: minimum order of ₹${minVal.toLocaleString('en-IN')} required.`);
+    }
+  }, [summary.subtotal, appliedCoupon]);
+
+  const handleApplyCoupon = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setCouponError('');
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponError('Please enter a coupon code.');
+      return;
+    }
+    setCouponLoading(true);
+    const result = await validateCouponApi(code, summary.subtotal);
+    setCouponLoading(false);
+    if (result.success && result.coupon) {
+      setAppliedCoupon(result.coupon);
+      saveAppliedCoupon(result.coupon);
+      setCouponInput('');
+      setCouponError('');
+      setPendingOrder(null);
+    } else {
+      setCouponError(result.error || 'Failed to apply coupon.');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    clearAppliedCoupon();
+    setCouponError('');
+    setPendingOrder(null);
+  };
 
   const handleSelectSavedAddress = (addr) => {
     setSelectedAddressId(addr.id);
@@ -320,15 +379,16 @@ export default function CheckoutForm() {
       // -------------------------------------------------------------
       // Contract-shaped payload (shipping_address.{name,phone,address,city,state,pincode}, items[].product_id).
       // No prices/totals are sent: the backend recomputes everything from its own catalogue.
-      const payload = buildOrderPayload(formData, items, paymentMethod);
+      const payload = buildOrderPayload(formData, items, paymentMethod, appliedCoupon?.code);
 
       // Handle COD (Cash on Delivery)
       if (paymentMethod === 'cod') {
         const res = await createOrder(payload);
         if (res.success) {
           clearCart();
+          clearAppliedCoupon();
           setPendingOrder(null);
-          window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(res.orderNumber)}&total=${summary.total}`;
+          window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(res.orderNumber)}&total=${finalPayableTotal}`;
         } else {
           setLoading(false);
           setError(res.error || 'Failed to place order. Please check connection and try again.');
@@ -373,8 +433,9 @@ export default function CheckoutForm() {
 
       if (payInit.already_paid) {
         clearCart();
+        clearAppliedCoupon();
         setPendingOrder(null);
-        window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&total=${summary.total}`;
+        window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&total=${finalPayableTotal}`;
         return;
       }
 
@@ -420,8 +481,9 @@ export default function CheckoutForm() {
 
             if (verifyRes.success && verifyRes.payment_status === 'paid') {
               clearCart();
+              clearAppliedCoupon();
               setPendingOrder(null);
-              window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&paymentId=${encodeURIComponent(response.razorpay_payment_id)}&total=${summary.total}`;
+              window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&paymentId=${encodeURIComponent(response.razorpay_payment_id)}&total=${finalPayableTotal}`;
             } else {
               setError(verifyRes.error || 'Payment signature verification failed. If your money was deducted, our team will confirm your order shortly.');
             }
@@ -770,10 +832,66 @@ export default function CheckoutForm() {
 
           <div className="summary-divider" />
 
+          {/* Coupon / Promo Code Entry & Status */}
+          <div className="checkout-coupon-section">
+            {appliedCoupon ? (
+              <div className="checkout-applied-coupon-card">
+                <div className="applied-coupon-info">
+                  <span className="applied-coupon-badge">🎟️ {appliedCoupon.code}</span>
+                  <span className="applied-coupon-discount">
+                    {appliedCoupon.discountType === 'percent'
+                      ? `${appliedCoupon.discountValue}% OFF`
+                      : `₹${Number(appliedCoupon.discountRupees).toLocaleString('en-IN')} OFF`}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="applied-coupon-remove-btn"
+                  aria-label="Remove coupon"
+                >
+                  ✕ Remove
+                </button>
+              </div>
+            ) : (
+              <div className="checkout-coupon-input-group">
+                <input
+                  type="text"
+                  placeholder="Enter coupon code (e.g. MARS105)"
+                  value={couponInput}
+                  onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCoupon(e); } }}
+                  className="checkout-coupon-input"
+                  disabled={couponLoading}
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading || !couponInput.trim()}
+                  className="checkout-coupon-apply-btn"
+                >
+                  {couponLoading ? 'APPLYING...' : 'APPLY'}
+                </button>
+              </div>
+            )}
+            {couponError && <div className="checkout-coupon-error">{couponError}</div>}
+          </div>
+
+          <div className="summary-divider" />
+
           <div className="summary-line">
             <span>Subtotal</span>
             <span>₹{summary.subtotal.toLocaleString('en-IN')}</span>
           </div>
+
+          {appliedCoupon && couponDiscount > 0 && (
+            <div className="summary-line coupon-line">
+              <span style={{ color: '#15803d', fontWeight: 600 }}>Coupon ({appliedCoupon.code})</span>
+              <span className="coupon-discount-val" style={{ color: '#15803d', fontWeight: 700 }}>−₹{couponDiscount.toLocaleString('en-IN')}</span>
+            </div>
+          )}
 
           <div className="summary-line">
             <span>Standard Air Delivery</span>
@@ -784,7 +902,7 @@ export default function CheckoutForm() {
 
           <div className="summary-line total-line">
             <span>Final Amount</span>
-            <span className="total-val">₹{summary.total.toLocaleString('en-IN')}</span>
+            <span className="total-val">₹{finalPayableTotal.toLocaleString('en-IN')}</span>
           </div>
 
           <div className="guarantee-points">
@@ -1177,6 +1295,123 @@ export default function CheckoutForm() {
           font-size: 10px;
           color: #a1a1aa;
           margin: 0;
+        }
+
+        .checkout-coupon-section {
+          margin: 14px 0;
+        }
+
+        .checkout-coupon-input-group {
+          display: flex;
+          gap: 8px;
+          align-items: stretch;
+        }
+
+        .checkout-coupon-input {
+          flex: 1;
+          background: #fafafa;
+          border: 1px solid rgba(0, 0, 0, 0.15);
+          border-radius: 8px;
+          padding: 10px 14px;
+          font-size: 13px;
+          font-family: monospace;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #09090b;
+          transition: all 0.2s ease;
+        }
+
+        .checkout-coupon-input:focus {
+          outline: none;
+          background: #ffffff;
+          border-color: #09090b;
+          box-shadow: 0 0 0 1px #09090b;
+        }
+
+        .checkout-coupon-apply-btn {
+          background: #14251a;
+          color: #ffffff;
+          border: none;
+          border-radius: 8px;
+          padding: 0 16px;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .checkout-coupon-apply-btn:hover:not(:disabled) {
+          background: #000000;
+        }
+
+        .checkout-coupon-apply-btn:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+
+        .checkout-applied-coupon-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          border-radius: 8px;
+          padding: 10px 14px;
+        }
+
+        .applied-coupon-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .applied-coupon-badge {
+          font-family: monospace;
+          font-weight: 700;
+          font-size: 13px;
+          color: #166534;
+          background: #dcfce7;
+          border: 1px solid #86efac;
+          border-radius: 4px;
+          padding: 2px 6px;
+        }
+
+        .applied-coupon-discount {
+          font-size: 12px;
+          font-weight: 700;
+          color: #15803d;
+        }
+
+        .applied-coupon-remove-btn {
+          background: none;
+          border: none;
+          color: #dc2626;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          padding: 4px;
+          transition: opacity 0.15s ease;
+        }
+
+        .applied-coupon-remove-btn:hover {
+          opacity: 0.7;
+          text-decoration: underline;
+        }
+
+        .checkout-coupon-error {
+          margin-top: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #b91c1c;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 6px;
+          padding: 6px 10px;
         }
 
         @media (max-width: 960px) {
