@@ -31,7 +31,8 @@ import {
   saveAppliedCoupon,
   clearAppliedCoupon,
   validateCouponApi,
-  calculateCouponDiscount
+  calculateCouponDiscount,
+  normalizeCoupon
 } from '../../lib/api/coupons';
 import { SAVED_ADDRESS_KEY } from '../../lib/session/cache';
 import { getSavedAddresses, getActiveAddress, selectAddress } from '../../lib/session/addresses';
@@ -76,9 +77,10 @@ export default function CheckoutForm() {
     window.addEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
 
     const handleCouponUpdate = (e) => {
-      setAppliedCoupon(e.detail || null);
+      setAppliedCoupon(e.detail ? normalizeCoupon(e.detail) : null);
     };
     window.addEventListener('marshans:coupon-updated', handleCouponUpdate);
+    setAppliedCoupon(getAppliedCoupon());
 
     const unsub = onAuthStateChange((user) => {
       if (user) {
@@ -127,19 +129,26 @@ export default function CheckoutForm() {
   }, []);
 
   const summary = getCartSummary(items, shippingPolicy);
-  const couponDiscount = calculateCouponDiscount(appliedCoupon, summary.subtotal);
-  const netMerchandise = Math.max(0, summary.subtotal - couponDiscount);
-  const finalPayableTotal = netMerchandise + summary.shipping;
+  const grossSubtotal = Math.max(0, Number(summary.subtotal) || 0);
+  const couponDiscount = calculateCouponDiscount(appliedCoupon, grossSubtotal);
+  const shippingFee = Math.max(0, Number(summary.shipping) || 0);
+  const netMerchandise = Math.max(0, grossSubtotal - couponDiscount);
+  const finalPayableTotal = Math.max(0, netMerchandise + shippingFee);
 
   // Auto-remove coupon if cart drops below required minimum spend
   useEffect(() => {
-    if (appliedCoupon && summary.subtotal > 0 && summary.subtotal < appliedCoupon.minOrderValueRupees) {
+    if (
+      appliedCoupon &&
+      Number(appliedCoupon.minOrderValueRupees) > 0 &&
+      grossSubtotal > 0 &&
+      grossSubtotal < appliedCoupon.minOrderValueRupees
+    ) {
       const minVal = appliedCoupon.minOrderValueRupees;
       clearAppliedCoupon();
       setAppliedCoupon(null);
       setCouponError(`Coupon ${appliedCoupon.code} removed: minimum order of ₹${minVal.toLocaleString('en-IN')} required.`);
     }
-  }, [summary.subtotal, appliedCoupon]);
+  }, [grossSubtotal, appliedCoupon]);
 
   const handleApplyCoupon = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -150,7 +159,7 @@ export default function CheckoutForm() {
       return;
     }
     setCouponLoading(true);
-    const result = await validateCouponApi(code, summary.subtotal);
+    const result = await validateCouponApi(code, grossSubtotal);
     setCouponLoading(false);
     if (result.success && result.coupon) {
       setAppliedCoupon(result.coupon);
@@ -911,28 +920,41 @@ export default function CheckoutForm() {
           <div className="summary-divider" />
 
           <div className="summary-line">
-            <span>Subtotal</span>
-            <span>₹{summary.subtotal.toLocaleString('en-IN')}</span>
+            <span>Product Subtotal</span>
+            <span>₹{grossSubtotal.toLocaleString('en-IN')}</span>
           </div>
 
           {appliedCoupon && couponDiscount > 0 && (
             <div className="summary-line coupon-line">
-              <span style={{ color: '#15803d', fontWeight: 600 }}>Coupon ({appliedCoupon.code})</span>
-              <span className="coupon-discount-val" style={{ color: '#15803d', fontWeight: 700 }}>−₹{couponDiscount.toLocaleString('en-IN')}</span>
+              <div className="coupon-label-group">
+                <span className="coupon-tag-badge">🎟️ {appliedCoupon.code}</span>
+                <span className="coupon-disc-text">
+                  {appliedCoupon.discountType === 'percent'
+                    ? `Coupon Discount (${appliedCoupon.discountValue}%)`
+                    : 'Coupon Discount'}
+                </span>
+              </div>
+              <span className="coupon-discount-val">−₹{couponDiscount.toLocaleString('en-IN')}</span>
             </div>
           )}
 
           <div className="summary-line">
             <span>Standard Air Delivery</span>
-            <span>{summary.shipping === 0 ? <strong style={{ color: '#15803d' }}>FREE</strong> : `₹${summary.shipping}`}</span>
+            <span>{shippingFee === 0 ? <strong className="free-shipping-text">FREE</strong> : `₹${shippingFee}`}</span>
           </div>
 
           <div className="summary-divider" />
 
-          <div className="summary-line total-line">
-            <span>Final Amount</span>
+          <div className="summary-line total-line final-payable-line">
+            <span className="total-label">Final Payable</span>
             <span className="total-val">₹{finalPayableTotal.toLocaleString('en-IN')}</span>
           </div>
+
+          {appliedCoupon && couponDiscount > 0 && (
+            <div className="coupon-savings-callout">
+              <span>🎉 You save <strong>₹{couponDiscount.toLocaleString('en-IN')}</strong> on this order</span>
+            </div>
+          )}
 
           <div className="guarantee-points">
             <div>🛡️ <strong>Quality Inspection Guarantee:</strong> Every print tested for dimensional tolerance.</div>
@@ -1134,6 +1156,103 @@ export default function CheckoutForm() {
           font-size: 13px;
           font-weight: 700;
           color: #09090b;
+        }
+
+        .summary-title {
+          font-family: var(--font-display, Impact, sans-serif);
+          font-size: 20px;
+          letter-spacing: 0.05em;
+          color: #09090b;
+          margin: 0 0 18px 0;
+        }
+
+        .summary-line {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          font-size: 14px;
+          color: #52525b;
+          margin-bottom: 12px;
+          line-height: 1.4;
+        }
+
+        .summary-divider {
+          height: 1px;
+          background: #f4f4f5;
+          margin: 16px 0;
+        }
+
+        .coupon-line {
+          color: #15803d;
+          font-weight: 600;
+        }
+
+        .coupon-label-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .coupon-tag-badge {
+          font-family: monospace;
+          font-size: 11px;
+          font-weight: 700;
+          color: #166534;
+          background: #dcfce7;
+          border: 1px solid #86efac;
+          border-radius: 4px;
+          padding: 1px 5px;
+        }
+
+        .coupon-disc-text {
+          font-size: 13px;
+        }
+
+        .coupon-discount-val {
+          font-weight: 700;
+          color: #15803d;
+          font-size: 14px;
+        }
+
+        .free-shipping-text {
+          color: #15803d;
+          font-weight: 700;
+        }
+
+        .total-line {
+          font-size: 16px;
+          font-weight: 800;
+          color: #09090b;
+          margin-bottom: 6px;
+        }
+
+        .final-payable-line {
+          padding-top: 4px;
+        }
+
+        .total-label {
+          font-size: 16px;
+          font-weight: 800;
+          color: #09090b;
+        }
+
+        .total-val {
+          font-size: 24px;
+          font-weight: 800;
+          color: #09090b;
+          letter-spacing: -0.02em;
+        }
+
+        .coupon-savings-callout {
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin-top: 8px;
+          margin-bottom: 8px;
+          font-size: 12px;
+          color: #166534;
+          text-align: center;
         }
 
         .cf-online-only-note {

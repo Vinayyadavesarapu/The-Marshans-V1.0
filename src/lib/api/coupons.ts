@@ -21,6 +21,72 @@ export interface ValidatedCoupon {
 const APPLIED_COUPON_STORAGE_KEY = 'marshans_applied_coupon';
 
 /**
+ * Normalizes any coupon data shape (camelCase, snake_case, backend response, or partial session object)
+ * into a type-safe, validated ValidatedCoupon contract with guaranteed numbers.
+ */
+export function normalizeCoupon(raw: any): ValidatedCoupon | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const code = String(raw.code || '').trim().toUpperCase();
+  if (!code) return null;
+
+  const rawType = String(raw.discountType || raw.discount_type || 'percent').toLowerCase();
+  const isPercent = rawType.includes('percent');
+  const discountType: 'percent' | 'fixed' = isPercent ? 'percent' : 'fixed';
+
+  const discountValue = Number(raw.discountValue ?? raw.discount_value) || 0;
+
+  // Resolve discount in rupees accurately, checking all possible field names
+  let discountRupees = Number(
+    raw.discountRupees ??
+    raw.discount_rupees ??
+    raw.discount_value_rupees ??
+    raw.discount ??
+    raw.discount_amount ??
+    0
+  );
+  if (isNaN(discountRupees) || discountRupees < 0) discountRupees = 0;
+
+  // If fixed discount and discountRupees was not populated directly, resolve from discountValue
+  if (!isPercent && discountRupees === 0 && discountValue > 0) {
+    discountRupees = discountValue > 10000 ? Math.round(discountValue / 100) : discountValue;
+  }
+
+  // Resolve minimum order spend in rupees (protecting against paise values > 10000)
+  let minOrderVal = Number(
+    raw.minOrderValueRupees ??
+    raw.min_order_value_rupees ??
+    0
+  );
+  if (minOrderVal === 0 && (raw.minOrderValue !== undefined || raw.min_order_value !== undefined)) {
+    const rawMin = Number(raw.minOrderValue ?? raw.min_order_value) || 0;
+    minOrderVal = rawMin > 10000 ? Math.round(rawMin / 100) : rawMin;
+  }
+  if (isNaN(minOrderVal) || minOrderVal < 0) minOrderVal = 0;
+
+  // Resolve maximum discount ceiling in rupees
+  let maxDiscount: number | null = null;
+  const rawMax = raw.maxDiscountAmountRupees !== undefined ? raw.maxDiscountAmountRupees : raw.max_discount_amount_rupees;
+  if (rawMax !== undefined && rawMax !== null) {
+    maxDiscount = Number(rawMax);
+    if (isNaN(maxDiscount) || maxDiscount <= 0) maxDiscount = null;
+  } else if (raw.max_discount_amount !== undefined && raw.max_discount_amount !== null) {
+    const numMax = Number(raw.max_discount_amount);
+    maxDiscount = numMax > 10000 ? Math.round(numMax / 100) : numMax;
+    if (isNaN(maxDiscount) || maxDiscount <= 0) maxDiscount = null;
+  }
+
+  return {
+    id: raw.id ?? code,
+    code,
+    discountType,
+    discountValue,
+    discountRupees,
+    minOrderValueRupees: minOrderVal,
+    maxDiscountAmountRupees: maxDiscount
+  };
+}
+
+/**
  * Retrieve active customer coupon from browser session
  */
 export function getAppliedCoupon(): ValidatedCoupon | null {
@@ -29,9 +95,7 @@ export function getAppliedCoupon(): ValidatedCoupon | null {
     const raw = sessionStorage.getItem(APPLIED_COUPON_STORAGE_KEY) || localStorage.getItem(APPLIED_COUPON_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed.code === 'string') {
-      return parsed;
-    }
+    return normalizeCoupon(parsed);
   } catch {}
   return null;
 }
@@ -42,17 +106,17 @@ export function getAppliedCoupon(): ValidatedCoupon | null {
 export function saveAppliedCoupon(coupon: ValidatedCoupon | null): void {
   if (typeof window === 'undefined') return;
   try {
-    if (coupon) {
-      const serialized = JSON.stringify(coupon);
+    const normalized = normalizeCoupon(coupon);
+    if (normalized) {
+      const serialized = JSON.stringify(normalized);
       sessionStorage.setItem(APPLIED_COUPON_STORAGE_KEY, serialized);
       localStorage.setItem(APPLIED_COUPON_STORAGE_KEY, serialized);
+      window.dispatchEvent(new CustomEvent('marshans:coupon-updated', { detail: normalized }));
     } else {
       sessionStorage.removeItem(APPLIED_COUPON_STORAGE_KEY);
       localStorage.removeItem(APPLIED_COUPON_STORAGE_KEY);
+      window.dispatchEvent(new CustomEvent('marshans:coupon-updated', { detail: null }));
     }
-  } catch {}
-  try {
-    window.dispatchEvent(new CustomEvent('marshans:coupon-updated', { detail: coupon }));
   } catch {}
 }
 
@@ -86,24 +150,18 @@ export async function validateCouponApi(
     });
 
     if (res && res.success && res.data) {
-      const data = res.data;
-      const validated: ValidatedCoupon = {
-        id: data.id,
-        code: String(data.code || cleanCode).toUpperCase(),
-        discountType: data.discount_type || 'percent',
-        discountValue: Number(data.discount_value) || 0,
-        discountRupees: Number(data.discount_rupees !== undefined ? data.discount_rupees : (data.discount || 0)),
-        minOrderValueRupees: Number(data.min_order_value_rupees !== undefined ? data.min_order_value_rupees : 0),
-        maxDiscountAmountRupees: data.max_discount_amount_rupees !== undefined && data.max_discount_amount_rupees !== null
-          ? Number(data.max_discount_amount_rupees)
-          : null
-      };
-      return { success: true, coupon: validated };
+      const validated = normalizeCoupon({
+        ...res.data,
+        code: cleanCode
+      });
+      if (validated) {
+        return { success: true, coupon: validated };
+      }
     }
 
     return {
       success: false,
-      error: res.error || 'Invalid or inactive coupon code.'
+      error: res?.error || 'Invalid or inactive coupon code.'
     };
   } catch (err: any) {
     return {
@@ -114,22 +172,26 @@ export async function validateCouponApi(
 }
 
 /**
- * Calculate rupee discount amount from an authoritative validated coupon and gross subtotal
+ * Calculate rupee discount amount from an authoritative validated coupon and gross subtotal.
+ * Always returns a non-negative finite integer, capped at gross subtotal.
  */
 export function calculateCouponDiscount(coupon: ValidatedCoupon | null, subtotalRupees: number): number {
-  if (!coupon || !coupon.code || subtotalRupees <= 0) return 0;
-  if (coupon.minOrderValueRupees && subtotalRupees < coupon.minOrderValueRupees) return 0;
+  const norm = normalizeCoupon(coupon);
+  const subtotal = Math.max(0, Math.round(Number(subtotalRupees) || 0));
+  if (!norm || subtotal <= 0) return 0;
+  if (norm.minOrderValueRupees > 0 && subtotal < norm.minOrderValueRupees) return 0;
 
   let discount = 0;
-  if (coupon.discountType === 'percent') {
-    discount = Math.round((subtotalRupees * coupon.discountValue) / 100);
+  if (norm.discountType === 'percent') {
+    discount = Math.round((subtotal * norm.discountValue) / 100);
   } else {
-    discount = Math.round(coupon.discountRupees);
+    discount = Math.round(norm.discountRupees);
   }
 
-  if (coupon.maxDiscountAmountRupees && discount > coupon.maxDiscountAmountRupees) {
-    discount = coupon.maxDiscountAmountRupees;
+  if (norm.maxDiscountAmountRupees !== null && norm.maxDiscountAmountRupees !== undefined && discount > norm.maxDiscountAmountRupees) {
+    discount = norm.maxDiscountAmountRupees;
   }
 
-  return Math.min(Math.max(0, discount), subtotalRupees);
+  if (isNaN(discount) || !isFinite(discount) || discount < 0) return 0;
+  return Math.min(Math.round(discount), subtotal);
 }

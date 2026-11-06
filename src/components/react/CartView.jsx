@@ -18,7 +18,8 @@ import {
   saveAppliedCoupon,
   clearAppliedCoupon,
   validateCouponApi,
-  calculateCouponDiscount
+  calculateCouponDiscount,
+  normalizeCoupon
 } from '../../lib/api/coupons';
 
 export default function CartView() {
@@ -36,6 +37,7 @@ export default function CartView() {
     // 1. Initial cached items
     setItems(getLocalCart());
     setIsAuthenticated(isCustomerAuthenticated());
+    setAppliedCoupon(getAppliedCoupon());
 
     // 2. Fetch authoritative backend shipping policy
     getShippingPolicy().then((policy) => {
@@ -60,7 +62,7 @@ export default function CartView() {
     });
 
     const handleCouponUpdate = (e) => {
-      setAppliedCoupon(e.detail || null);
+      setAppliedCoupon(e.detail ? normalizeCoupon(e.detail) : null);
     };
     window.addEventListener('marshans:coupon-updated', handleCouponUpdate);
 
@@ -78,19 +80,26 @@ export default function CartView() {
   }, []);
 
   const summary = getCartSummary(items, shippingPolicy);
-  const couponDiscount = calculateCouponDiscount(appliedCoupon, summary.subtotal);
-  const netMerchandise = Math.max(0, summary.subtotal - couponDiscount);
-  const finalTotal = netMerchandise + summary.shipping;
+  const grossSubtotal = Math.max(0, Number(summary.subtotal) || 0);
+  const couponDiscount = calculateCouponDiscount(appliedCoupon, grossSubtotal);
+  const shippingFee = Math.max(0, Number(summary.shipping) || 0);
+  const netMerchandise = Math.max(0, grossSubtotal - couponDiscount);
+  const finalTotal = Math.max(0, netMerchandise + shippingFee);
 
   // Auto-remove coupon if subtotal falls below required minimum spend
   useEffect(() => {
-    if (appliedCoupon && summary.subtotal > 0 && summary.subtotal < appliedCoupon.minOrderValueRupees) {
+    if (
+      appliedCoupon &&
+      Number(appliedCoupon.minOrderValueRupees) > 0 &&
+      grossSubtotal > 0 &&
+      grossSubtotal < appliedCoupon.minOrderValueRupees
+    ) {
       const minVal = appliedCoupon.minOrderValueRupees;
       clearAppliedCoupon();
       setAppliedCoupon(null);
       setPromoError(`Coupon ${appliedCoupon.code} removed: minimum order of ₹${minVal.toLocaleString('en-IN')} required.`);
     }
-  }, [summary.subtotal, appliedCoupon]);
+  }, [grossSubtotal, appliedCoupon]);
 
   const handleApplyPromo = async (e) => {
     e.preventDefault();
@@ -102,7 +111,7 @@ export default function CartView() {
     }
 
     setPromoLoading(true);
-    const result = await validateCouponApi(code, summary.subtotal);
+    const result = await validateCouponApi(code, grossSubtotal);
     setPromoLoading(false);
     if (result.success && result.coupon) {
       setAppliedCoupon(result.coupon);
@@ -291,19 +300,28 @@ export default function CartView() {
           <h3 className="summary-title">ORDER SUMMARY</h3>
 
           <div className="summary-line">
-            <span>Subtotal ({summary.itemCount} {summary.itemCount === 1 ? 'item' : 'items'})</span>
-            <span>₹{summary.subtotal.toLocaleString('en-IN')}</span>
-          </div>
-
-          <div className="summary-line">
-            <span>Standard Air Delivery</span>
-            <span>{summary.shipping === 0 ? <strong style={{ color: '#15803d' }}>FREE</strong> : `₹${summary.shipping}`}</span>
+            <span>Product Subtotal ({summary.itemCount} {summary.itemCount === 1 ? 'item' : 'items'})</span>
+            <span>₹{grossSubtotal.toLocaleString('en-IN')}</span>
           </div>
 
           {appliedCoupon && couponDiscount > 0 && (
             <div className="summary-line promo-line">
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>Coupon ({appliedCoupon.code})</span>
+                <span style={{
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: '#166534',
+                  background: '#dcfce7',
+                  border: '1px solid #86efac',
+                  borderRadius: '4px',
+                  padding: '1px 5px'
+                }}>🎟️ {appliedCoupon.code}</span>
+                <span>
+                  {appliedCoupon.discountType === 'percent'
+                    ? `Coupon Discount (${appliedCoupon.discountValue}%)`
+                    : 'Coupon Discount'}
+                </span>
                 <button
                   type="button"
                   onClick={handleRemovePromo}
@@ -325,12 +343,33 @@ export default function CartView() {
             </div>
           )}
 
+          <div className="summary-line">
+            <span>Standard Air Delivery</span>
+            <span>{shippingFee === 0 ? <strong style={{ color: '#15803d' }}>FREE</strong> : `₹${shippingFee}`}</span>
+          </div>
+
           <div className="summary-divider" />
 
           <div className="summary-line total-line">
-            <span>Estimated Total</span>
+            <span>Final Payable</span>
             <span className="total-val">₹{finalTotal.toLocaleString('en-IN')}</span>
           </div>
+
+          {appliedCoupon && couponDiscount > 0 && (
+            <div style={{
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              marginTop: '8px',
+              marginBottom: '12px',
+              fontSize: '12px',
+              color: '#166534',
+              textAlign: 'center'
+            }}>
+              🎉 You save <strong>₹{couponDiscount.toLocaleString('en-IN')}</strong> on this order
+            </div>
+          )}
 
           <span className="summary-gst-note">Inclusive of all taxes & insurance</span>
 
