@@ -1,10 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import HeroIntro from '../components/HeroIntro.astro';
+import HomeCategoryDiscovery from '../components/home/HomeCategoryDiscovery.astro';
 import HomeShowcase from '../components/home/HomeShowcase.tsx';
-import HomeBestSellers from '../components/home/HomeBestSellers.tsx';
+import HomeLadyJusticeFeature from '../components/home/HomeLadyJusticeFeature.astro';
 import HomeProductSection from '../components/react/HomeProductSection.tsx';
 import { getProducts } from '../lib/api/products';
+import { isCustomForgeOnly } from '../config/launchMode';
+
+// Centralized launch-mode guard: redirect old retail homepage to Custom Forge landing page
+if (isCustomForgeOnly()) {
+  return Astro.redirect('/custom-3d', 302);
+}
 
 const { products } = await getProducts({ limit: 12 });
 ---
@@ -12,18 +19,20 @@ const { products } = await getProducts({ limit: 12 });
 <Layout
   title="THE MARSHANS — Made to be Discovered | Precision 3D Printed Artifacts"
   description="Precision 3D printed artifacts, ambient luminous sculptures, collectible figures, and functional desk gear."
-  hideHeader={true}
 >
-  <!-- 1. Pill navigation + cinematic cloud/video hero -->
-  <HeroIntro />
+  <!-- 1. Cinematic cloud/video hero, rendered above the shared site navbar (2. Layout's sticky Header) -->
+  <HeroIntro slot="before-header" />
 
-  <!-- 2. Full-width featured product carousel (real Store 2 products, refreshed live) -->
-  <HomeShowcase client:idle initialProducts={products} />
+  <!-- 3. Category discovery carousel: the collections, not products -->
+  <HomeCategoryDiscovery />
 
-  <!-- 3. Best Sellers: only products flagged is_best_seller in Admin (hidden until any are flagged) -->
-  <HomeBestSellers client:idle initialProducts={products} />
+  <!-- 4. New Arrivals showcase carousel -->
+  <HomeShowcase client:visible={{ rootMargin: "600px" }} initialProducts={products} />
 
-  <!-- 4. Homepage catalogue (runtime capable) -->
+  <!-- 5. Lady Justice Custom Forge Feature Banner -->
+  <HomeLadyJusticeFeature />
+
+  <!-- 6. Homepage catalogue (runtime capable) -->
   <div class="home-catalogue-head">
     <h2 class="home-catalogue-title">The Collection</h2>
     <a class="home-catalogue-link" href="/shop">Browse the full shop →</a>
@@ -32,6 +41,11 @@ const { products } = await getProducts({ limit: 12 });
 </Layout>
 
 <style is:global>
+  /* The homepage's cream page background (previously painted only behind the navbar); the transparent navbar shows it */
+  :root {
+    --page-bg: #f6eee4;
+  }
+
   .home-catalogue-head {
     width: 100%;
     margin: 0;

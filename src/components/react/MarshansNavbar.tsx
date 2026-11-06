@@ -2,31 +2,28 @@ import React, { useState, useEffect } from 'react';
 import SearchModal from './SearchModal.jsx';
 import HeaderUserNav from './HeaderUserNav.jsx';
 import CartBadge from './CartBadge.jsx';
+import {
+  RETAIL_NAV_ITEMS,
+  getNavItems,
+  getLogoHref,
+  isCustomForgeOnly,
+  type NavItem
+} from '../../config/launchMode';
 
-export interface NavItem {
-  label: string;
-  href: string;
-}
-
-export const MAIN_NAV_ITEMS: NavItem[] = [
-  { label: 'Home', href: '/' },
-  { label: 'LUMO', href: '/categories/lumo' },
-  { label: 'Fandom Tribe', href: '/categories/fandom-tribe' },
-  { label: 'Mini Tales', href: '/categories/minitales' },
-  { label: 'Utility Co.', href: '/categories/utility-co' },
-  { label: 'Darshanam', href: '/categories/darshanam' },
-  { label: 'Custom Forge', href: '/custom-3d' },
-];
+export type { NavItem } from '../../config/launchMode';
+export const MAIN_NAV_ITEMS: NavItem[] = RETAIL_NAV_ITEMS;
 
 export interface MarshansNavbarProps {
-  /** 'pill' = floating green pill navigation used on the homepage; 'default' = standard white header. */
+  /** Ignored: every page renders the same pill navbar. Kept so older call sites still type-check. */
   variant?: 'default' | 'pill';
 }
 
-export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarProps) {
+export default function MarshansNavbar(_props: MarshansNavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
+
+  const logoHref = getLogoHref();
+  const navItems = getNavItems();
 
   // Resolved after hydration so the server-rendered markup stays identical
   useEffect(() => {
@@ -34,15 +31,6 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
   }, []);
 
   const isActive = (href: string) => currentPath !== '' && (href === '/' ? currentPath === '/' : currentPath.startsWith(href));
-
-  // Monitor scroll for subtle shadow boundary
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 30);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -56,7 +44,18 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
     };
   }, [mobileMenuOpen]);
 
-  // Handle Home link click smoothly
+  // Handle Logo & Home link clicks smoothly
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const isTargetPage = logoHref === '/'
+      ? (window.location.pathname === '/' || window.location.pathname === '')
+      : window.location.pathname.startsWith(logoHref);
+
+    if (isTargetPage) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (window.location.pathname === '/' || window.location.pathname === '') {
       e.preventDefault();
@@ -65,15 +64,15 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
   };
 
   return (
-    <header className={`marshans-navbar navbar--${variant} ${isScrolled ? 'is-scrolled' : ''}`}>
+    <header className="marshans-navbar navbar--pill">
       <div className="navbar-container">
         {/* LEFT: MARSHANS LOGO */}
         <div className="navbar-left">
           <a
-            href="/"
-            onClick={handleHomeClick}
+            href={logoHref}
+            onClick={handleLogoClick}
             className="navbar-brand"
-            aria-label="THE MARSHANS Home"
+            aria-label={isCustomForgeOnly() ? 'THE MARSHANS Custom Forge' : 'THE MARSHANS Home'}
           >
             <span className="navbar-logo-badge">
               <img
@@ -90,13 +89,13 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
         {/* CENTER: DESKTOP NAVIGATION LINKS */}
         <nav className="navbar-center" aria-label="Main Navigation">
           <ul className="nav-links-list">
-            {MAIN_NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <li key={item.label} className="nav-item">
                 <a
                   href={item.href}
                   className={`nav-link ${isActive(item.href) ? 'is-active' : ''}`}
                   aria-current={isActive(item.href) ? 'page' : undefined}
-                  onClick={item.label === 'Home' ? handleHomeClick : undefined}
+                  onClick={item.label === 'Home' ? handleHomeClick : (item.href === logoHref ? handleLogoClick : undefined)}
                 >
                   {item.label}
                 </a>
@@ -156,15 +155,15 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
       >
         <div className="mobile-panel-header">
           <a
-            href="/#home-carousel-section"
+            href={logoHref}
             className="mobile-drawer-brand"
             onClick={(e) => {
               setMobileMenuOpen(false);
-              handleHomeClick(e);
+              handleLogoClick(e);
             }}
           >
             <img
-              src="/assets/branding/marshans-logo.png"
+              src="/assets/brand/the-marshans-logo.png"
               alt="THE MARSHANS"
               className="navbar-logo-img"
               width="150"
@@ -186,22 +185,28 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
 
         <nav className="mobile-panel-nav" aria-label="Mobile Navigation">
           <ul className="mobile-links-list">
-            {MAIN_NAV_ITEMS.map((item) => (
-              <li key={item.label} className="mobile-link-item">
-                <a
-                  href={item.href}
-                  className="mobile-nav-link"
-                  onClick={(e) => {
-                    setMobileMenuOpen(false);
-                    if (item.label === 'Home') {
-                      handleHomeClick(e);
-                    }
-                  }}
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
+            {navItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <li key={item.label} className="mobile-link-item">
+                  <a
+                    href={item.href}
+                    className={`mobile-nav-link ${active ? 'is-active' : ''}`}
+                    aria-current={active ? 'page' : undefined}
+                    onClick={(e) => {
+                      setMobileMenuOpen(false);
+                      if (item.label === 'Home') {
+                        handleHomeClick(e);
+                      } else if (item.href === logoHref) {
+                        handleLogoClick(e);
+                      }
+                    }}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              );
+            })}
             <li className="mobile-divider" role="separator" />
             <li className="mobile-link-item">
               <a
@@ -229,12 +234,7 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           z-index: 50;
           background-color: #ffffff;
           border-bottom: 1px solid rgba(0, 0, 0, 0.07);
-          transition: box-shadow 0.2s ease;
           box-sizing: border-box;
-        }
-
-        .marshans-navbar.is-scrolled {
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
 
         .navbar-container {
@@ -302,7 +302,6 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           letter-spacing: 0.01em;
           color: #27272a;
           text-decoration: none;
-          transition: color 0.15s ease;
           padding: 6px 2px;
           position: relative;
         }
@@ -320,7 +319,6 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           width: 0;
           height: 1.5px;
           background-color: #09090b;
-          transition: width 0.2s ease;
         }
 
         .nav-link:hover::after {
@@ -349,7 +347,6 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           color: #18181b;
           border-radius: 8px;
           line-height: 0;
-          transition: background-color 0.15s ease;
         }
 
         .mobile-menu-toggle:hover {
@@ -364,7 +361,6 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           z-index: 99;
           opacity: 0;
           pointer-events: none;
-          transition: opacity 0.25s ease;
         }
 
         .mobile-panel-backdrop.open {
@@ -382,7 +378,6 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           background-color: #ffffff;
           z-index: 100;
           transform: translateX(100%);
-          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
           box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
           display: flex;
           flex-direction: column;
@@ -446,12 +441,19 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           text-decoration: none;
           padding: 12px 14px;
           border-radius: 10px;
-          transition: background-color 0.15s ease, color 0.15s ease;
         }
 
         .mobile-nav-link:hover, .mobile-nav-link:active {
           background-color: #f4f4f5;
           color: #000000;
+        }
+
+        .mobile-nav-link.is-active {
+          background-color: #f4f4f5;
+          color: #000000;
+          font-weight: 700;
+          border-left: 3px solid #1f1c18;
+          padding-left: 11px;
         }
 
         .mobile-divider {
@@ -502,11 +504,13 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
         }
 
         /* ==========================================================
-           PILL VARIANT (homepage) — original reference structure:
+           PILL NAVBAR (every page) — original homepage reference structure:
            separate logo badge, all links inside one rounded pill,
            search / sign-in / cart as individual rounded controls.
            Flat neutral cream/white: no gradients, blur, gloss or shadows.
-           The bar itself is transparent and scrolls with the page.
+           The bar itself is transparent (no full-width background) and
+           visually static: no transitions, transforms or entrance effects.
+           Stickiness comes from the wrapper in Header.astro.
            ========================================================== */
         .navbar--pill {
           --ink: #1f1c18;
@@ -515,14 +519,15 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           --surface-hover: #ffffff;
           --rim: rgba(31, 28, 24, 0.12);
           --rim-strong: rgba(31, 28, 24, 0.22);
-          position: static; /* scrolls naturally with the page (the shared default is sticky) */
+          position: static; /* the sticky wrapper in Header.astro positions the bar */
           background: transparent;
           border-bottom: none;
           padding: 12px clamp(10px, 2vw, 24px);
         }
 
-        .navbar--pill.is-scrolled {
-          box-shadow: none;
+        /* global.css gives every link a colour/opacity transition; the navbar's links stay static */
+        .marshans-navbar a {
+          transition: none;
         }
 
         .navbar--pill .navbar-container {
@@ -577,7 +582,6 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           color: var(--ink-soft);
           font-size: 13px;
           font-weight: 600;
-          transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
         }
 
         .navbar--pill .nav-link::after {
@@ -615,7 +619,17 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           height: 40px;
           align-items: center;
           justify-content: center;
-          transition: background-color 0.18s ease, border-color 0.18s ease;
+          transition: none;
+        }
+
+        /* Controls come from SearchModal / HeaderUserNav / CartBadge, which carry their own hover lifts and count
+           bump; inside the navbar they stay still */
+        .navbar--pill .header-icon-btn:hover,
+        .navbar--pill .user-avatar-btn:hover,
+        .navbar--pill .cart-count-badge,
+        .navbar--pill .cart-count-badge.bump {
+          transform: none;
+          transition: none;
         }
 
         .navbar--pill .header-icon-btn,
@@ -676,15 +690,6 @@ export default function MarshansNavbar({ variant = 'default' }: MarshansNavbarPr
           .navbar--pill .mobile-menu-toggle {
             min-width: 38px;
             height: 38px;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .navbar--pill .nav-link,
-          .navbar--pill .header-icon-btn,
-          .navbar--pill .header-user-btn,
-          .navbar--pill .mobile-menu-toggle {
-            transition: none;
           }
         }
       `}</style>

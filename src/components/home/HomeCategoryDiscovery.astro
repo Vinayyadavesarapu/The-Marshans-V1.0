@@ -1,0 +1,915 @@
+---
+/**
+ * THE MARSHANS — Homepage category discovery: "a gallery of six worlds" (collections, not products).
+ *
+ * Composition: each category is an arched gallery niche with its artwork standing in front of it, breaking the frame,
+ * on a shared floor line. The featured world is large; the next two recede to the right — smaller and higher, towards
+ * a horizon — like rooms further down a corridor. Editorial type (index, name, line, way in) sits on the left;
+ * an exhibition-style index rail of all six worlds runs along the bottom.
+ *
+ * Motion: a camera dolly. On each change the featured arch grows past the camera and dissolves to the left while the
+ * next arch travels forward into the featured place; the type wipes through masks and the room's light shifts to the
+ * new world's tint. Everything animates transform / opacity only (GPU), between discrete positions (data-pos) — no
+ * layout work per frame and no React. Auto-advances every --dwell (driven by the rail's progress line, so pausing the
+ * line pauses the carousel); pauses on hover, keyboard focus, off-screen and in background tabs; has prev / next /
+ * pause controls, arrow keys and horizontal swipe (touch-action: pan-y keeps vertical page scrolling native).
+ * prefers-reduced-motion: no auto-advance, no camera moves, no parallax — worlds simply cross-fade.
+ *
+ * Artwork: transparent PNGs at /assets/home/category-discovery/<slug>.png. Replace the files (any size; they are
+ * contained and bottom-aligned on the floor) — no code change needed.
+ *
+ * Scene: the section is pulled up behind the sticky navbar (by --site-nav-h, set in Header.astro) on the page cream.
+ */
+interface DiscoveryCategory {
+  slug: string;
+  name: string;
+  href: string;
+  blurb: string;
+  /** "r g b" of the category colour (categoriesConfig), used for the world's tint and light */
+  rgb: string;
+}
+
+const ASSET_DIR = '/assets/home/category-discovery';
+
+const CATEGORIES: DiscoveryCategory[] = [
+  { slug: 'lumo', name: 'LUMO', href: '/categories/lumo', blurb: 'Ambient lamps and light sculptures for softly lit spaces.', rgb: '2 132 199' },
+  { slug: 'fandom-tribe', name: 'Fandom Tribe', href: '/categories/fandom-tribe', blurb: 'Collectible figures and statues inspired by the worlds fans love.', rgb: '147 51 234' },
+  { slug: 'minitales', name: 'Mini Tales', href: '/categories/minitales', blurb: 'Pocket-sized miniatures and dioramas that each tell a small story.', rgb: '190 18 60' },
+  { slug: 'utility-co', name: 'Utility Co.', href: '/categories/utility-co', blurb: 'Practical desk gear and organisers for everyday use.', rgb: '21 128 61' },
+  { slug: 'darshanam', name: 'Darshanam', href: '/categories/darshanam', blurb: 'Temple models and sacred architecture inspired by Indian heritage.', rgb: '180 83 9' },
+  { slug: 'custom-forge', name: 'Custom Forge', href: '/custom-3d', blurb: 'Bring your own idea and have it 3D printed to order.', rgb: '67 56 202' },
+];
+
+const N = CATEGORIES.length;
+const pad = (n: number) => String(n).padStart(2, '0');
+/** Position of world i when world `active` is featured: 0 featured, 1–2 receding, behind (just passed), ahead (hidden) */
+const posOf = (i: number, active = 0) => {
+  const o = (i - active + N) % N;
+  return o <= 2 ? String(o) : o === N - 1 ? 'behind' : 'ahead';
+};
+---
+
+<section
+  class="hd"
+  id="home-discovery"
+  aria-roledescription="carousel"
+  aria-labelledby="home-discovery-title"
+  style={`--world: rgb(${CATEGORIES[0].rgb})`}
+  data-discovery
+>
+  <div class="hd__inner">
+    <header class="hd__head">
+      <p class="hd__eyebrow" aria-hidden="true"><span class="hd__eyebrow-rule"></span>The Marshans universes</p>
+      <h2 id="home-discovery-title" class="hd__title">Six worlds to explore</h2>
+      <div class="hd__controls">
+        <button type="button" class="hd__btn" data-discovery-step="-1" aria-label="Previous world">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <button type="button" class="hd__btn" data-discovery-pause aria-pressed="false" aria-label="Pause automatic rotation" hidden>
+          <svg class="hd__icon-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+          <svg class="hd__icon-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10-6.5a1 1 0 0 0 0-1.72l-10-6.5A1 1 0 0 0 8 5.5z" /></svg>
+        </button>
+        <button type="button" class="hd__btn" data-discovery-step="1" aria-label="Next world">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- The corridor of arches (decorative; the same worlds are reachable through the copy and the index rail) -->
+    <div class="hd__stage" data-discovery-stage aria-hidden="true">
+      <div class="hd__corridor">
+        {CATEGORIES.map((cat, i) => (
+          <div class="hd__world" data-arch data-pos={posOf(i)} data-href={cat.href} style={`--rgb: ${cat.rgb}`}>
+            <span class="hd__floor"></span>
+            <span class="hd__frame"></span>
+            <span class="hd__art">
+              <img
+                src={`${ASSET_DIR}/${cat.slug}.png`}
+                alt=""
+                width="800"
+                height="600"
+                loading="lazy"
+                decoding="async"
+                draggable="false"
+              />
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Editorial copy: all six stacked in one grid cell (no layout shift); only the featured one is live -->
+    <div class="hd__copy" data-discovery-copy aria-live="off">
+      {CATEGORIES.map((cat, i) => (
+        <div
+          class:list={['hd__slide', { 'is-active': i === 0 }]}
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`${i + 1} of ${N}: ${cat.name}`}
+          aria-hidden={i === 0 ? undefined : 'true'}
+          inert={i === 0 ? undefined : true}
+          data-slide
+        >
+          <p class="hd__index"><span class="hd__mask"><span class="hd__line" style="--d: 0ms">{pad(i + 1)}<span class="hd__index-of"> / {pad(N)}</span></span></span></p>
+          <h3 class="hd__name"><span class="hd__mask"><span class="hd__line" style="--d: 90ms">{cat.name}</span></span></h3>
+          <p class="hd__blurb"><span class="hd__mask"><span class="hd__line" style="--d: 220ms">{cat.blurb}</span></span></p>
+          <p class="hd__cta-wrap"><span class="hd__mask"><span class="hd__line" style="--d: 320ms">
+            <a class="hd__cta" href={cat.href}>
+              <span>Explore {cat.name}</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </span></span></p>
+        </div>
+      ))}
+    </div>
+
+    <!-- Exhibition index: every world; the current one carries the progress line -->
+    <ol class="hd__rail" aria-label="Choose a world">
+      {CATEGORIES.map((cat, i) => (
+        <li>
+          <button
+            type="button"
+            class:list={['hd__tick', { 'is-active': i === 0 }]}
+            aria-current={i === 0 ? 'true' : undefined}
+            aria-label={`Show ${cat.name}`}
+            data-tick
+          >
+            <span class="hd__tick-track"><span class="hd__tick-fill" data-tick-fill></span></span>
+            <span class="hd__tick-label" aria-hidden="true"><span class="hd__tick-num">{pad(i + 1)}</span>{cat.name}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-discovery]');
+
+  if (root) {
+    const arches = Array.from(root.querySelectorAll<HTMLElement>('[data-arch]'));
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('[data-slide]'));
+    const ticks = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-tick]'));
+    const copy = root.querySelector<HTMLElement>('[data-discovery-copy]')!;
+    const stage = root.querySelector<HTMLElement>('[data-discovery-stage]')!;
+    const pauseBtn = root.querySelector<HTMLButtonElement>('[data-discovery-pause]')!;
+    const N = arches.length;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const LEAVE_MS = 1100; // how long the outgoing copy keeps its exit wipe
+
+    let active = 0;
+    let leaveTimer = 0;
+
+    const posOf = (i: number) => {
+      const o = (i - active + N) % N;
+      return o <= 2 ? String(o) : o === N - 1 ? 'behind' : 'ahead';
+    };
+
+    // ——— Showing a world: every position is CSS; this only flips attributes / classes ———
+    const go = (next: number, dir: 1 | -1) => {
+      const prev = active;
+      active = (next + N) % N;
+      if (active === prev) return;
+      root.dataset.dir = String(dir);
+
+      arches.forEach((arch, i) => { arch.dataset.pos = posOf(i); });
+      root.style.setProperty('--world', `rgb(${arches[active].style.getPropertyValue('--rgb')})`);
+
+      window.clearTimeout(leaveTimer);
+      slides.forEach((slide, i) => {
+        const on = i === active;
+        slide.classList.toggle('is-active', on);
+        slide.classList.toggle('is-leaving', i === prev);
+        slide.inert = !on;
+        if (on) slide.removeAttribute('aria-hidden'); else slide.setAttribute('aria-hidden', 'true');
+      });
+      leaveTimer = window.setTimeout(() => slides[prev].classList.remove('is-leaving'), LEAVE_MS);
+
+      ticks.forEach((tick, i) => {
+        tick.classList.remove('is-active');
+        if (i === active) tick.setAttribute('aria-current', 'true'); else tick.removeAttribute('aria-current');
+      });
+      void ticks[active].offsetWidth; // restart the progress line from zero
+      ticks[active].classList.add('is-active');
+    };
+    const step = (dir: 1 | -1) => go(active + dir, dir);
+
+    // ——— Auto-advance: the active progress line's animation is the timer, so a paused line is a paused carousel ———
+    root.addEventListener('animationend', (e) => {
+      if ((e.target as HTMLElement).matches?.('[data-tick-fill]') && !reduceMotion.matches) step(1);
+    });
+
+    const reasons = new Set<string>();
+    const syncPaused = () => {
+      const paused = reasons.size > 0 || reduceMotion.matches;
+      root.toggleAttribute('data-paused', paused);
+      // Announce changes only while it is not rotating on its own (WAI carousel pattern)
+      copy.setAttribute('aria-live', paused ? 'polite' : 'off');
+    };
+    const pause = (why: string, on: boolean) => { if (on) reasons.add(why); else reasons.delete(why); syncPaused(); };
+
+    const syncMotion = () => {
+      pauseBtn.hidden = reduceMotion.matches;
+      syncPaused();
+    };
+    reduceMotion.addEventListener('change', syncMotion);
+    syncMotion();
+
+    pauseBtn.addEventListener('click', () => {
+      const userPaused = !reasons.has('user');
+      pause('user', userPaused);
+      pauseBtn.setAttribute('aria-pressed', String(userPaused));
+      pauseBtn.setAttribute('aria-label', userPaused ? 'Resume automatic rotation' : 'Pause automatic rotation');
+    });
+
+    root.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') pause('hover', true); });
+    root.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') pause('hover', false); });
+    root.addEventListener('focusin', () => pause('focus', true));
+    root.addEventListener('focusout', (e) => { if (!root.contains(e.relatedTarget as Node | null)) pause('focus', false); });
+    document.addEventListener('visibilitychange', () => pause('hidden', document.hidden));
+
+    // ——— Controls ———
+    root.querySelectorAll<HTMLButtonElement>('[data-discovery-step]').forEach((btn) => {
+      btn.addEventListener('click', () => step(Number(btn.dataset.discoveryStep) < 0 ? -1 : 1));
+    });
+    ticks.forEach((tick, i) => tick.addEventListener('click', () => go(i, i < active ? -1 : 1)));
+    root.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      if (!(e.target as HTMLElement).closest('.hd__controls, .hd__rail')) return;
+      e.preventDefault(); // only arrow keys on the carousel's own controls
+      step(e.key === 'ArrowRight' ? 1 : -1);
+    });
+    // Arches: the featured one opens its world, a receding one is brought forward
+    arches.forEach((arch, i) => arch.addEventListener('click', () => {
+      if (i === active) window.location.href = arch.dataset.href!;
+      else go(i, ((i - active + N) % N) <= N / 2 ? 1 : -1);
+    }));
+
+    // ——— Swipe (touch / pen): horizontal drags step; touch-action: pan-y leaves vertical scrolling to the browser ———
+    let sx = 0, sy = 0, axis: '' | 'x' | 'y' = '', dragging = false;
+    const endDrag = () => {
+      dragging = false; axis = '';
+      root.classList.remove('is-dragging');
+      root.style.setProperty('--drag', '0px');
+    };
+    [stage, copy].forEach((el) => {
+      el.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse') return;
+        dragging = true; axis = ''; sx = e.clientX; sy = e.clientY;
+      }, { passive: true });
+      el.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - sx, dy = e.clientY - sy;
+        if (!axis && Math.hypot(dx, dy) > 8) axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        if (axis === 'x') {
+          root.classList.add('is-dragging');
+          root.style.setProperty('--drag', `${Math.max(-120, Math.min(120, dx * 0.5))}px`);
+        }
+      }, { passive: true });
+      el.addEventListener('pointerup', (e) => {
+        if (dragging && axis === 'x' && Math.abs(e.clientX - sx) > 40) step(e.clientX < sx ? 1 : -1);
+        endDrag();
+      }, { passive: true });
+      el.addEventListener('pointercancel', endDrag, { passive: true });
+    });
+
+    // ——— Depth parallax (fine pointers only): layers drift by different amounts; one eased rAF loop ———
+    let mx = 0, my = 0, tx = 0, ty = 0, raf = 0;
+    const drift = () => {
+      mx += (tx - mx) * 0.08; my += (ty - my) * 0.08;
+      root.style.setProperty('--mx', mx.toFixed(3));
+      root.style.setProperty('--my', my.toFixed(3));
+      raf = Math.abs(tx - mx) + Math.abs(ty - my) > 0.002 ? requestAnimationFrame(drift) : 0;
+    };
+    root.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse' || !finePointer.matches || reduceMotion.matches) return;
+      const r = root.getBoundingClientRect();
+      tx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      ty = ((e.clientY - r.top) / r.height) * 2 - 1;
+      if (!raf) raf = requestAnimationFrame(drift);
+    }, { passive: true });
+    root.addEventListener('pointerleave', () => { tx = 0; ty = 0; if (!raf) raf = requestAnimationFrame(drift); });
+
+    // ——— Entrance + off-screen pause ———
+    // The first arrival plays the camera settling in (only if the section was not already on screen at load).
+    if (!reduceMotion.matches && root.getBoundingClientRect().top > window.innerHeight * 0.5) root.dataset.intro = 'pending';
+    pause('offscreen', true);
+    new IntersectionObserver(([entry]) => {
+      pause('offscreen', !entry.isIntersecting);
+      if (entry.isIntersecting && root.dataset.intro === 'pending') root.dataset.intro = 'done';
+    }, { threshold: 0.35 }).observe(root);
+
+    // Transitions are enabled only after the first paint, so the initial positions never animate in from nowhere
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('is-ready')));
+  }
+</script>
+
+<style>
+  @property --world {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgb(2 132 199);
+  }
+
+  .hd {
+    --ink: #1f1c18;
+    --ink-soft: #5f574e; /* 5.6:1 on the cream */
+    --cream: #f6eee4;
+    --ease-camera: cubic-bezier(0.6, 0.04, 0.22, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --dwell: 7s;
+    --gutter: clamp(1.25rem, 4vw, 4rem);
+    --floor: clamp(1.25rem, 3.5vh, 2.25rem);
+    --arch-w: clamp(220px, min(27vw, calc((100svh - var(--site-nav-h, 88px) - 300px) * 0.8)), 460px);
+    --mx: 0;
+    --my: 0;
+    --drag: 0px;
+
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100svh;
+    /* the scene starts behind the sticky navbar: no strip, no gap */
+    margin-top: calc(-1 * var(--site-nav-h, 88px));
+    padding: calc(var(--site-nav-h, 88px) + clamp(1rem, 3vh, 2.25rem)) 0 clamp(1.75rem, 4.5vh, 3rem);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--cream);
+    color: var(--ink);
+    transition: --world 1.6s ease;
+  }
+
+  /* The room's light: one soft pool behind the featured world, tinted by it (kept well below the navbar) */
+  .hd::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: 54%;
+    top: 56%;
+    width: min(110vmin, 1100px);
+    aspect-ratio: 1;
+    translate: calc(-50% + var(--mx) * -18px) calc(-50% + var(--my) * -12px);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--world) 13%, transparent), transparent);
+    pointer-events: none;
+  }
+
+  .hd__inner {
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 var(--gutter);
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(300px, 0.8fr) 1.5fr;
+    grid-template-areas:
+      'head head'
+      'copy stage'
+      'rail rail';
+    align-items: center;
+    column-gap: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  /* ——— Head ——— */
+  .hd__head {
+    grid-area: head;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 0.35rem 1rem;
+    margin-bottom: clamp(0.5rem, 2vh, 1.5rem);
+  }
+
+  .hd__eyebrow {
+    grid-column: 1;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-sans, 'Manrope', sans-serif);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .hd__eyebrow-rule {
+    width: 36px;
+    height: 1px;
+    background: currentColor;
+  }
+
+  .hd__title {
+    grid-column: 1;
+    margin: 0;
+    font-family: var(--font-sans, 'Manrope', sans-serif);
+    font-size: clamp(20px, 1.7vw, 26px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .hd__controls {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .hd__btn {
+    width: 44px;
+    height: 44px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(31, 28, 24, 0.22);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+
+  .hd__btn:hover {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--cream);
+  }
+
+  .hd__btn:focus-visible,
+  .hd__tick:focus-visible,
+  .hd__cta:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  .hd__btn[hidden] {
+    display: none;
+  }
+
+  .hd__icon-play,
+  .hd__btn[aria-pressed='true'] .hd__icon-pause {
+    display: none;
+  }
+
+  .hd__btn[aria-pressed='true'] .hd__icon-play {
+    display: block;
+  }
+
+  /* ——— Stage: the corridor of arches ——— */
+  .hd__stage {
+    grid-area: stage;
+    position: relative;
+    z-index: 0;
+    height: calc(var(--arch-w) * 1.25 + var(--floor) + clamp(1.5rem, 4vh, 2.5rem));
+    /* bleed to the viewport's right edge so the corridor recedes off-frame */
+    margin-right: calc(-1 * var(--gutter));
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* the floor line every world stands on */
+  .hd__stage::after {
+    content: '';
+    position: absolute;
+    left: -20%;
+    right: 0;
+    bottom: var(--floor);
+    height: 1px;
+    background: linear-gradient(90deg, rgba(31, 28, 24, 0), rgba(31, 28, 24, 0.14) 25%, rgba(31, 28, 24, 0.06));
+  }
+
+  .hd__corridor {
+    position: absolute;
+    inset: 0;
+    translate: var(--drag) 0;
+  }
+
+  .is-ready:not(.is-dragging) .hd__corridor {
+    transition: translate 0.6s var(--ease-out);
+  }
+
+  .hd__world {
+    position: absolute;
+    left: 4%;
+    bottom: var(--floor);
+    width: var(--arch-w);
+    aspect-ratio: 4 / 5;
+    transform-origin: 50% 100%;
+    cursor: pointer;
+    will-change: transform, opacity;
+  }
+
+  .is-ready .hd__world {
+    transition: transform 1.6s var(--ease-camera), opacity 1.2s var(--ease-camera);
+  }
+
+  /* Discrete positions along the corridor (percentages of the arch's own width) */
+  .hd__world[data-pos='0'] { z-index: 4; transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+  .hd__world[data-pos='1'] { z-index: 3; transform: translate3d(84%, -5%, 0) scale(0.56); opacity: 0.92; }
+  .hd__world[data-pos='2'] { z-index: 2; transform: translate3d(140%, -9%, 0) scale(0.36); opacity: 0.6; }
+  .hd__world[data-pos='ahead'] { z-index: 1; transform: translate3d(180%, -12%, 0) scale(0.24); opacity: 0; pointer-events: none; }
+  /* just passed: it grows past the camera and dissolves to the left, behind the copy */
+  .hd__world[data-pos='behind'] { z-index: 5; transform: translate3d(-78%, 6%, 0) scale(1.38); opacity: 0; pointer-events: none; }
+
+  /* the niche: an arched wall tinted by its world, with a hairline edge and light falling from the top */
+  .hd__frame {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px 999px 6px 6px;
+    background:
+      radial-gradient(90% 55% at 50% 0%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0)),
+      color-mix(in srgb, rgb(var(--rgb)) 11%, #f8f2ea);
+    box-shadow: inset 0 0 0 1px rgba(31, 28, 24, 0.07);
+    translate: calc(var(--mx) * -6px) calc(var(--my) * -4px);
+  }
+
+  /* contact shadow on the floor */
+  .hd__floor {
+    position: absolute;
+    left: -6%;
+    right: -6%;
+    bottom: -5%;
+    height: 10%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(31, 28, 24, 0.16), rgba(31, 28, 24, 0));
+  }
+
+  /* the artwork stands in front of the niche and breaks its frame */
+  .hd__art {
+    position: absolute;
+    left: -18%;
+    right: -18%;
+    bottom: -7%;
+    aspect-ratio: 4 / 3;
+    translate: calc(var(--mx) * 16px) calc(var(--my) * 9px);
+  }
+
+  .hd__art img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    object-position: 50% 100%;
+    transform-origin: 50% 100%;
+    -webkit-user-drag: none;
+  }
+
+  /* a slow push-in on the featured artwork for as long as it is featured */
+  .hd__world[data-pos='0'] .hd__art img {
+    animation: hd-push var(--dwell) ease-in-out both;
+  }
+
+
+
+  @keyframes hd-push {
+    from { transform: scale(1) translateY(0); }
+    to { transform: scale(1.045) translateY(-1.5%); }
+  }
+
+  /* ——— Copy ——— */
+  .hd__copy {
+    grid-area: copy;
+    position: relative;
+    z-index: 6;
+    display: grid;
+    align-self: center;
+    padding-bottom: clamp(1.5rem, 5vh, 3rem);
+    touch-action: pan-y;
+  }
+
+  .hd__slide {
+    grid-area: 1 / 1;
+    align-self: center;
+  }
+
+  .hd__slide:not(.is-active):not(.is-leaving) {
+    visibility: hidden;
+  }
+
+  .hd__index,
+  .hd__name,
+  .hd__blurb,
+  .hd__cta-wrap {
+    margin: 0;
+  }
+
+  /* each line wipes through its own mask */
+  .hd__mask {
+    display: block;
+    overflow: hidden;
+    padding: 0.08em 0.1em 0.14em 0;
+    margin: -0.08em 0 -0.14em 0;
+  }
+
+  .hd__line {
+    display: block;
+    transform: translate3d(0, calc(100% + 0.3em), 0);
+  }
+
+  .is-active .hd__line {
+    transform: none;
+  }
+
+  .is-ready .is-active .hd__line {
+    transition: transform 1.1s var(--ease-out) calc(380ms + var(--d, 0ms));
+  }
+
+  .is-ready .is-leaving .hd__line {
+    transform: translate3d(0, calc(-100% - 0.3em), 0);
+    transition: transform 0.55s cubic-bezier(0.45, 0, 0.7, 0.2) calc(var(--d, 0ms) * 0.4);
+  }
+
+  /* stepping backwards reverses the wipe */
+  [data-dir='-1'] .hd__slide:not(.is-active):not(.is-leaving) .hd__line { transform: translate3d(0, calc(-100% - 0.3em), 0); }
+  [data-dir='-1'].is-ready .is-leaving .hd__line { transform: translate3d(0, calc(100% + 0.3em), 0); }
+
+  .hd__index {
+    font-family: var(--font-display, 'Bebas Neue', Impact, sans-serif);
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+  }
+
+  .hd__index-of {
+    color: var(--ink-soft);
+  }
+
+  .hd__name {
+    margin-top: 0.4rem;
+    font-family: var(--font-display, 'Bebas Neue', Impact, sans-serif);
+    font-size: clamp(56px, 6.2vw, 112px);
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+
+  .hd__blurb {
+    margin-top: clamp(0.9rem, 2.2vh, 1.4rem);
+    max-width: 30ch;
+    font-family: var(--font-sans, 'Manrope', sans-serif);
+    font-size: clamp(15px, 1.15vw, 18px);
+    font-weight: 500;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .hd__cta-wrap {
+    margin-top: clamp(1.1rem, 3vh, 2rem);
+  }
+
+  .hd__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.4rem;
+    font-family: var(--font-sans, 'Manrope', sans-serif);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: none;
+    background: linear-gradient(var(--ink), var(--ink)) 0 100% / 100% 1px no-repeat;
+  }
+
+  .hd__cta svg {
+    transition: translate 0.35s var(--ease-out);
+  }
+
+  .hd__cta:hover svg {
+    translate: 4px 0;
+  }
+
+  /* ——— Exhibition index rail ——— */
+  .hd__rail {
+    grid-area: rail;
+    list-style: none;
+    margin: clamp(0.75rem, 2.5vh, 1.75rem) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: clamp(0.5rem, 1.5vw, 1.5rem);
+  }
+
+  .hd__tick {
+    position: relative;
+    width: 100%;
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.5rem 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .hd__tick-track {
+    position: relative;
+    height: 1px;
+    background: rgba(31, 28, 24, 0.16);
+    overflow: hidden;
+  }
+
+  .hd__tick-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+  }
+
+  .hd__tick.is-active .hd__tick-fill {
+    animation: hd-progress var(--dwell) linear both;
+  }
+
+  @keyframes hd-progress {
+    to { transform: scaleX(1); }
+  }
+
+  /* Paused = the progress line (the timer) and the push-in both hold. Declared after, and at least as specific as,
+     the `animation` shorthands above, which would otherwise reset the play state to running. */
+  [data-paused] .hd__world[data-pos='0'] .hd__art img,
+  [data-paused] .hd__tick.is-active .hd__tick-fill {
+    animation-play-state: paused;
+  }
+
+  .hd__tick-label {
+    display: flex;
+    gap: 0.6rem;
+    font-family: var(--font-sans, 'Manrope', sans-serif);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hd__tick-num {
+    font-weight: 500;
+  }
+
+  .hd__tick:hover,
+  .hd__tick.is-active {
+    color: var(--ink);
+  }
+
+  /* ——— Entrance: the camera settles into the corridor the first time the section is reached ——— */
+  [data-intro='pending'] .hd__corridor {
+    opacity: 0;
+    transform: translate3d(10%, 0, 0) scale(0.94);
+  }
+
+  [data-intro='pending'] .hd__copy .hd__line {
+    transform: translate3d(0, calc(100% + 0.3em), 0);
+  }
+
+  [data-intro='done'] .hd__corridor {
+    transition: opacity 1.4s var(--ease-out), transform 1.8s var(--ease-out), translate 0.6s var(--ease-out);
+  }
+
+  /* ——— Tablet / phone: stage on top, copy beneath, rail as progress segments ——— */
+  @media (max-width: 900px) {
+    .hd {
+      --arch-w: clamp(190px, min(62vw, calc((100svh - var(--site-nav-h, 72px) - 390px) * 0.8)), 340px);
+    }
+
+    .hd__eyebrow {
+      grid-column: 1 / -1;
+      letter-spacing: 0.22em;
+      white-space: nowrap;
+    }
+
+    .hd__controls {
+      grid-row: 2;
+    }
+
+    .hd::before {
+      left: 40%;
+      top: 36%;
+    }
+
+    .hd__inner {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'head'
+        'stage'
+        'copy'
+        'rail';
+    }
+
+    .hd__stage {
+      margin-left: calc(-1 * var(--gutter));
+    }
+
+    .hd__world {
+      left: max(1.25rem, 9%);
+    }
+
+    .hd__world[data-pos='1'] { transform: translate3d(90%, -4%, 0) scale(0.58); }
+    .hd__world[data-pos='2'] { transform: translate3d(152%, -8%, 0) scale(0.38); }
+    .hd__world[data-pos='behind'] { transform: translate3d(-92%, 4%, 0) scale(1.3); }
+
+    .hd__copy {
+      padding-bottom: 0;
+      margin-top: 0.25rem;
+    }
+
+    .hd__name {
+      font-size: clamp(52px, 14vw, 88px);
+      margin-top: 0.15rem;
+    }
+
+    .hd__blurb {
+      margin-top: 0.6rem;
+      max-width: 36ch;
+    }
+
+    .hd__cta-wrap {
+      margin-top: 0.9rem;
+    }
+
+    .hd__rail {
+      gap: 6px;
+      margin-top: 0.75rem;
+    }
+
+    .hd__tick {
+      padding: 12px 0; /* a comfortable touch target around a thin line */
+    }
+
+    .hd__tick-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    .hd__tick-track {
+      height: 2px;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .hd__btn {
+      width: 40px;
+      height: 40px;
+    }
+
+    .hd__controls {
+      gap: 0.35rem;
+    }
+  }
+
+  /* ——— Reduced motion: no camera moves, no push-in, no wipes — worlds simply cross-fade ——— */
+  @media (prefers-reduced-motion: reduce) {
+    .hd {
+      transition: none;
+    }
+
+    .is-ready .hd__world {
+      transition: opacity 0.4s linear;
+    }
+
+    .hd__world[data-pos='0'] .hd__art img,
+    .hd__tick.is-active .hd__tick-fill {
+      animation: none;
+    }
+
+    .hd__tick.is-active .hd__tick-fill {
+      transform: scaleX(1);
+    }
+
+    .hd__line,
+    .is-active .hd__line,
+    .is-ready .is-active .hd__line,
+    .is-ready .is-leaving .hd__line,
+    [data-dir='-1'] .hd__slide:not(.is-active):not(.is-leaving) .hd__line,
+    [data-dir='-1'].is-ready .is-leaving .hd__line {
+      transform: none;
+      transition: none;
+    }
+
+    .hd__slide.is-leaving {
+      visibility: hidden;
+    }
+
+    .hd__cta svg,
+    .hd__btn {
+      transition: none;
+    }
+  }
+</style>

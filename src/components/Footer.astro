@@ -1,5 +1,9 @@
 ---
 import { siteConfig } from '../lib/config/site';
+import { getLogoHref, isCustomForgeOnly } from '../config/launchMode';
+
+const logoHref = getLogoHref();
+const isLaunch = isCustomForgeOnly();
 ---
 
 <footer class="site-footer">
@@ -8,7 +12,9 @@ import { siteConfig } from '../lib/config/site';
       <!-- Column 1: Brand & Philosophy -->
       <div class="footer-col brand-col">
         <div class="footer-logo-row">
-          <img src="/assets/branding/marshans-logo.png" alt="THE MARSHANS" class="footer-logo-img" width="160" height="30" />
+          <a href={logoHref} class="footer-brand-anchor" aria-label="THE MARSHANS Home">
+            <img src="/assets/branding/marshans-logo.png" alt="THE MARSHANS" class="footer-logo-img" width="160" height="30" />
+          </a>
           <span class="footer-tagline-badge">MADE TO BE DISCOVERED</span>
         </div>
         <p class="footer-bio">
@@ -27,16 +33,27 @@ import { siteConfig } from '../lib/config/site';
         </div>
       </div>
 
-      <!-- Column 2: The 5 Universes -->
+      <!-- Column 2: The Universes / Launch Editions -->
       <div class="footer-col">
-        <h4 class="footer-col-title">The Universes</h4>
+        <h4 class="footer-col-title">{isLaunch ? 'Custom Forge' : 'The Universes'}</h4>
         <ul class="footer-links">
-          <li><a href="/categories/lumo">LUMO (Ambient Lamps)</a></li>
-          <li><a href="/categories/fandom-tribe">Fandom Tribe (Collectibles)</a></li>
-          <li><a href="/categories/minitales">Mini Tales (Dioramas)</a></li>
-          <li><a href="/categories/utility-co">Utility Co. (Desk Gear)</a></li>
-          <li><a href="/categories/darshanam">Darshanam (Temples & Heritage)</a></li>
-          <li><a href="/custom-3d" class="footer-highlight-link">Custom Forge (On-Demand 3D)</a></li>
+          {isLaunch ? (
+            <>
+              <li><a href="/custom-3d" class="footer-highlight-link">Custom Forge Showcase</a></li>
+              <li><a href="/product/lady-justice/">Lady Justice Edition</a></li>
+              <li><a href="/product/lady-justice/">Bespoke Nameplates</a></li>
+              <li><a href="/custom-3d">Sculptural Finishes</a></li>
+            </>
+          ) : (
+            <>
+              <li><a href="/categories/lumo">LUMO (Ambient Lamps)</a></li>
+              <li><a href="/categories/fandom-tribe">Fandom Tribe (Collectibles)</a></li>
+              <li><a href="/categories/minitales">Mini Tales (Dioramas)</a></li>
+              <li><a href="/categories/utility-co">Utility Co. (Desk Gear)</a></li>
+              <li><a href="/categories/darshanam">Darshanam (Temples & Heritage)</a></li>
+              <li><a href="/custom-3d" class="footer-highlight-link">Custom Forge (On-Demand 3D)</a></li>
+            </>
+          )}
         </ul>
       </div>
 

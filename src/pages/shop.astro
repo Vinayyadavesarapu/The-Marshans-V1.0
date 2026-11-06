@@ -2,6 +2,12 @@
 import Layout from '../layouts/Layout.astro';
 import ShopCatalog from '../components/react/ShopCatalog.jsx';
 import { getProducts } from '../lib/api/products';
+import { isCustomForgeOnly } from '../config/launchMode';
+
+// Centralized launch-mode guard: direct URL protection for retail catalog
+if (isCustomForgeOnly()) {
+  return Astro.redirect('/custom-3d', 302);
+}
 
 const { products } = await getProducts({ limit: 50 });
 ---

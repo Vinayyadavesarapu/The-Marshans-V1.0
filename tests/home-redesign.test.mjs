@@ -55,11 +55,16 @@ test('hero uses optimized media only, keeps video lazy, and respects reduced mot
   }
 });
 
-test('pill navbar is homepage-only; other pages keep the default header', () => {
+test('one shared navbar on every page: the homepage hero renders above the same Header', () => {
   const hero = readFileSync(resolve('src/components/HeroIntro.astro'), 'utf8');
   const header = readFileSync(resolve('src/components/Header.astro'), 'utf8');
-  assert.match(hero, /<MarshansNavbar client:load variant="pill" \/>/);
-  assert.doesNotMatch(header, /variant=/, 'shared Header still renders the default variant');
+  const layout = readFileSync(resolve('src/layouts/Layout.astro'), 'utf8');
+  const home = readFileSync(resolve('src/pages/index.astro'), 'utf8');
+  assert.doesNotMatch(hero, /MarshansNavbar/, 'the hero no longer mounts its own navbar copy');
+  assert.match(header, /<MarshansNavbar client:load \/>/);
+  assert.match(layout, /<slot name="before-header" \/>\s*\{!hideHeader && <Header \/>\}/, 'hero slot sits directly before the shared header');
+  assert.match(home, /<HeroIntro slot="before-header" \/>/);
+  assert.doesNotMatch(home, /hideHeader/, 'the homepage uses the shared header');
 });
 
 function mp4Boxes(buf) {
@@ -98,7 +103,7 @@ test('hero hand-off: stays in the document, scrolls to the navbar once on video 
   assert.match(hero, /history\.scrollRestoration = 'manual'/, 'refresh restarts at the hero');
   assert.doesNotMatch(hero, /passive: false/, 'no non-passive (blocking) input listeners');
   assert.equal((hero.match(/preventDefault\(\)/g) || []).length, 1, 'only the cue link replaces its own jump');
-  assert.match(hero, /class="mh-hero__cue" href="#home-navbar"/, 'accessible continue link without JavaScript');
+  assert.match(hero, /class="mh-hero__cue" href="#site-navbar"/, 'accessible continue link without JavaScript');
   assert.match(hero, /<h1 id="home-hero-title"[^>]*>[\s\S]*?<\/h1>\s*\n\s*<section class="mh-hero"/);
 });
 
@@ -116,7 +121,8 @@ test('hero seal after hand-off: hidden + inert without layout change, passive sc
 
 test('homepage navbar: original pill structure in flat neutral colours (no green, gradients, blur or shadows)', () => {
   const nav = readFileSync(resolve('src/components/react/MarshansNavbar.tsx'), 'utf8');
-  const pill = nav.slice(nav.indexOf('PILL VARIANT (homepage)'), nav.indexOf('`}</style>'));
+  const pill = nav.slice(nav.indexOf('PILL NAVBAR (every page)'), nav.indexOf('`}</style>'));
+  assert.ok(pill.length > 500, 'pill block found');
   assert.match(pill, /\.navbar--pill \.nav-links-list \{[^}]*border-radius: 999px;[^}]*background: var\(--surface\);/, 'links sit in one rounded pill');
   assert.match(pill, /\.navbar--pill \.header-user-btn,\s*\.navbar--pill \.user-avatar-btn \{[^}]*border-radius: 999px;/, 'sign-in keeps its pill shape');
   assert.match(pill, /\.navbar--pill \.navbar-container \{[^}]*background: transparent;/, 'no outer bar');
@@ -125,13 +131,22 @@ test('homepage navbar: original pill structure in flat neutral colours (no green
   assert.doesNotMatch(pill, /#2b5e3c|#3c7a4d|#5b9466|#2f6b45|rgba\((24, 58, 35|31, 61, 43|36, 84, 53)/i, 'no green');
 });
 
-test('homepage navbar is an ordinary section: never fixed, sticky or docked', () => {
+test('navbar: one transparent sticky wrapper, no full-width background, visually static', () => {
   const hero = readFileSync(resolve('src/components/HeroIntro.astro'), 'utf8');
+  const header = readFileSync(resolve('src/components/Header.astro'), 'utf8');
   const nav = readFileSync(resolve('src/components/react/MarshansNavbar.tsx'), 'utf8');
-  const pill = nav.slice(nav.indexOf('PILL VARIANT (homepage)'), nav.indexOf('`}</style>'));
-  assert.doesNotMatch(hero, /is-docked|position:\s*(fixed|sticky)/, 'hero/navbar slot never docks');
-  assert.match(pill, /\.navbar--pill \{[^}]*position: static;/, 'pill navbar overrides the shared sticky default');
-  assert.doesNotMatch(pill, /position:\s*(fixed|sticky)/);
+  const pill = nav.slice(nav.indexOf('PILL NAVBAR (every page)'), nav.indexOf('`}</style>'));
+  const wrapper = header.match(/\.site-header-sticky \{([^}]*)\}/)[1];
+  assert.match(wrapper, /position: sticky;/);
+  assert.match(wrapper, /top: 0;/);
+  assert.match(wrapper, /background: transparent;/, 'no full-width colour behind the navbar');
+  assert.doesNotMatch(hero, /is-docked|position:\s*(fixed|sticky)/, 'the hero never docks anything itself');
+  assert.match(pill, /\.navbar--pill \{[^}]*position: static;[^}]*background: transparent;/, 'the bar is static inside the sticky wrapper and transparent');
+  assert.doesNotMatch(pill, /position:\s*(fixed|sticky)/, 'exactly one sticky element (the wrapper)');
+  assert.doesNotMatch(nav, /transition:\s*(?!none)[a-z]/, 'no transitions anywhere in the navbar');
+  assert.doesNotMatch(nav, /animation:|@keyframes/, 'no navbar animations');
+  assert.doesNotMatch(nav, /is-scrolled|addEventListener\('scroll'/, 'nothing changes with scroll position');
+  assert.match(pill, /:focus-visible[\s\S]*?outline: 2px solid/, 'keyboard focus indicators remain');
 });
 
 test('hero base rule: full-screen edge-to-edge box', () => {

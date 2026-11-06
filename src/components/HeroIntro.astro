@@ -1,6 +1,4 @@
 ---
-import MarshansNavbar from './react/MarshansNavbar.tsx';
-
 /**
  * THE MARSHANS — Cinematic home hero (the single hero implementation)
  *
@@ -13,6 +11,8 @@ import MarshansNavbar from './react/MarshansNavbar.tsx';
  * 720p 0.8 MB) is attached once that poster has loaded and is skipped for reduced-motion and Save-Data / 2G.
  * Hand-off: when the video reaches `ended` (it never loops), the page smoothly scrolls once to the navbar below,
  * revealing the navigation and carousel. Scrolling is never locked during playback.
+ * Navbar: the shared site navbar (Header.astro) renders directly after this component (Layout's `before-header`
+ * slot) and is sticky from the hero's bottom edge onwards.
  * Seal: after the hand-off (video ended, visitor chose to continue, or no video could play), the first time the visitor
  * is at or below the navbar the hero is sealed — hidden and inert but keeping its layout space (no layout shift) — and
  * a passive scroll floor keeps the scroll position at or below the navbar until the page is refreshed.
@@ -119,20 +119,13 @@ const HERO = '/assets/hero/home/optimized';
 
     <div class="mh-hero__fade" aria-hidden="true"></div>
 
-    <a class="mh-hero__cue" href="#home-navbar">
+    <a class="mh-hero__cue" href="#site-navbar">
       <span>Discover the collection</span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 5v14M5 12l7 7 7-7" />
       </svg>
     </a>
   </section>
-
-  <!-- Navbar sits directly below the hero as an ordinary section: it scrolls with the page (never fixed or docked). -->
-  <div class="hero-navbar-slot" data-mh-nav-slot>
-    <section class="hero-navbar-section" id="home-navbar" aria-label="Main Navigation" tabindex="-1">
-      <MarshansNavbar client:load variant="pill" />
-    </section>
-  </div>
 </div>
 
 <script>
@@ -140,8 +133,10 @@ const HERO = '/assets/hero/home/optimized';
   if (hero) {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const video = hero.querySelector<HTMLVideoElement>('.mh-hero__video');
-    const navSlot = document.querySelector<HTMLElement>('[data-mh-nav-slot]');
-    const navTargetTop = () => Math.round(navSlot ? navSlot.getBoundingClientRect().top + window.scrollY : hero.offsetHeight);
+    // The hero boundary = the navbar's in-flow position. Measured from the hero (which keeps its box when sealed), not
+    // the navbar, because a stuck sticky navbar reports the viewport top instead of its place in the page.
+    const navbar = document.querySelector<HTMLElement>('[data-site-navbar]');
+    const navTargetTop = () => Math.round(hero.getBoundingClientRect().bottom + window.scrollY);
 
     // 0. Position: a fresh load or refresh starts at the top with the hero (unless a #hash targets a section);
     //    a back/forward return restores where the visitor was.
@@ -185,7 +180,7 @@ const HERO = '/assets/hero/home/optimized';
     // Seal: the moment the visitor is at or past the hero boundary (the navbar's top edge) — by the automatic hand-off,
     // the continue link or their own scrolling, before or after the video ends — the hero is sealed for the rest of
     // the visit: hidden + inert but keeping its layout space (no layout shift), with a scroll floor at the navbar. The
-    // navbar itself stays an ordinary section that scrolls away with the page. A refresh starts over.
+    // navbar then stays stuck to the top of the viewport (sticky, from Header.astro). A refresh starts over.
     let floorTop: number | null = null;
     const sealed = () => floorTop !== null;
     const seal = () => {
@@ -250,12 +245,12 @@ const HERO = '/assets/hero/home/optimized';
     }
 
     // 3. "Discover the collection": the accessible way to continue at any time (also when the video is skipped).
-    //    Works as a plain #home-navbar link without JavaScript; enhanced here with smooth scrolling + focus hand-off.
+    //    Works as a plain #site-navbar link without JavaScript; enhanced here with smooth scrolling + focus hand-off.
     hero.querySelector<HTMLAnchorElement>('.mh-hero__cue')?.addEventListener('click', (event) => {
       event.preventDefault();
       advanced = true; // a manual continue replaces the automatic hand-off
       glideTo(navTargetTop());
-      document.getElementById('home-navbar')?.focus({ preventScroll: true });
+      navbar?.focus({ preventScroll: true });
     });
 
     // 4. One passive scroll handler for the hero:
@@ -299,19 +294,6 @@ const HERO = '/assets/hero/home/optimized';
     padding: 0;
   }
 
-  /* Navbar below the hero: a normal in-flow section that scrolls with the page */
-  .hero-navbar-slot {
-    position: relative;
-    background: #f6eee4;
-  }
-
-  .hero-navbar-section {
-    position: static;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-  }
-
   .mh-hero {
     --hero-p: 0;
     --mh-cream: #f6eee4;
@@ -335,10 +317,6 @@ const HERO = '/assets/hero/home/optimized';
 
   .mh-hero.is-sealed * {
     animation-play-state: paused !important;
-  }
-
-  .hero-navbar-section:focus {
-    outline: none;
   }
 
   .mh-sr-only {

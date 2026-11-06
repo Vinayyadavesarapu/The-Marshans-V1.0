@@ -80,6 +80,10 @@ export async function loginWithGoogle(): Promise<User> {
 
 export function subscribeToAuth(cb: (user: User | null) => void): () => void {
   if (typeof window === 'undefined') return () => {};
+  if ((window as any).__MOCK_AUTH_USER !== undefined) {
+    cb((window as any).__MOCK_AUTH_USER);
+    return () => {};
+  }
   try {
     const { auth } = getFirebaseClient();
     return onAuthStateChanged(auth, cb);
@@ -91,6 +95,9 @@ export function subscribeToAuth(cb: (user: User | null) => void): () => void {
 
 export async function getCurrentIdToken(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
+  if ((window as any).__MOCK_AUTH_USER !== undefined) {
+    return (window as any).__MOCK_AUTH_USER?.idToken || 'mock_token';
+  }
   try {
     const { auth } = getFirebaseClient();
     if (!auth.currentUser) return null;

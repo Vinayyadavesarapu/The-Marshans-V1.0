@@ -12,6 +12,7 @@ import {
 } from '../../lib/api/cart';
 import { onAuthStateChange } from '../../lib/firebase/client';
 import { resolveImageUrl } from '../../lib/utils/media';
+import { isCustomForgeOnly } from '../../config/launchMode';
 
 export default function CartView() {
   const [items, setItems] = useState([]);
@@ -21,6 +22,8 @@ export default function CartView() {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoError, setPromoError] = useState('');
   const [promoApplied, setPromoApplied] = useState('');
+
+  const isLaunch = isCustomForgeOnly();
 
   useEffect(() => {
     // 1. Initial cached items
@@ -82,6 +85,20 @@ export default function CartView() {
   };
 
   if (items.length === 0) {
+    if (isLaunch) {
+      return (
+        <div className="cart-empty-container">
+          <div className="empty-cart-icon">🛒</div>
+          <h2>Your Bag is Empty</h2>
+          <p>You haven't added the Lady Justice statue or custom artifacts to your shopping bag yet.</p>
+          <div className="empty-cart-actions">
+            <a href="/product/lady-justice/" className="btn btn-primary">Configure Lady Justice</a>
+            <a href="/custom-3d" className="btn btn-outline">Explore Custom Forge</a>
+          </div>
+        </div>
+      );
+    }
+
     if (!isAuthenticated) {
       return (
         <div className="cart-empty-container">
@@ -160,13 +177,31 @@ export default function CartView() {
               <div className="cart-item-core">
                 <div className="cart-item-headings">
                   <span className="cart-item-cat">{item.categoryName || 'Artifact'}</span>
-                  <a href={`/product/${encodeURIComponent(item.slug || item.productId)}/`} className="cart-item-name-link">
+                  <a href={item.options?.is_custom_forge ? '/product/lady-justice/' : `/product/${encodeURIComponent(item.slug || item.productId)}/`} className="cart-item-name-link">
                     <h3>{item.name}</h3>
                   </a>
-                  <div className="cart-item-options">
-                    {item.material && <span className="spec-badge">Material: {item.material}</span>}
-                    {item.finishing && <span className="spec-badge">Finish: {item.finishing}</span>}
-                  </div>
+                  {item.options?.is_custom_forge ? (
+                    <div className="cf-cart-spec-box">
+                      <span className="cf-spec-edition">Edition: {item.options.size_label || '1 Foot'} ({item.options.height_mm ? `${item.options.height_mm}mm` : '305mm'})</span>
+                      {item.options.custom_mode_enabled ? (
+                        <div className="cf-custom-mounted-badge">
+                          <span className="cf-mount-tag">Mounted Nameplate</span>
+                          <span className="cf-mount-line"><strong>Name:</strong> {item.options.custom_name}</span>
+                          {item.options.custom_designation && item.options.custom_designation !== 'NIL' && (
+                            <span className="cf-mount-line"><strong>Title:</strong> {item.options.custom_designation}</span>
+                          )}
+                          <span className="cf-mount-line"><strong>Material:</strong> {item.options.nameplate_material || 'Plastic'}</span>
+                        </div>
+                      ) : (
+                        <span className="cf-standard-tag">Standard Edition (No Personalization)</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="cart-item-options">
+                      {item.material && <span className="spec-badge">Material: {item.material}</span>}
+                      {item.finishing && <span className="spec-badge">Finish: {item.finishing}</span>}
+                    </div>
+                  )}
                 </div>
 
                 <div className="cart-item-actions-row">
@@ -251,6 +286,10 @@ export default function CartView() {
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
+          </a>
+
+          <a href={isLaunch ? "/custom-3d" : "/shop"} className="continue-shopping-btn">
+            ← Continue Shopping
           </a>
 
           {/* Promo Code Input */}
@@ -387,8 +426,80 @@ export default function CartView() {
           width: 80px;
           height: 80px;
           border-radius: 8px;
-          object-fit: cover;
+          object-fit: contain;
+          padding: 4px;
+          box-sizing: border-box;
           background: #f8fafc;
+        }
+
+        .continue-shopping-btn {
+          display: block;
+          text-align: center;
+          margin-top: 10px;
+          padding: 12px;
+          border-radius: 10px;
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.12);
+          color: #14251a;
+          font-size: 13px;
+          font-weight: 700;
+          text-decoration: none;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .continue-shopping-btn:hover {
+          background: #f4f4f5;
+          border-color: #14251a;
+        }
+
+        /* Custom Forge Cart Item Badges */
+        .cf-cart-spec-box {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 12px;
+        }
+
+        .cf-spec-edition {
+          font-size: 12px;
+          font-weight: 750;
+          color: #14251a;
+          background: #f4f4f5;
+          padding: 2px 8px;
+          border-radius: 4px;
+          display: inline-block;
+          width: fit-content;
+        }
+
+        .cf-custom-mounted-badge {
+          background: #fcfbf9;
+          border: 1px dashed rgba(20, 37, 26, 0.2);
+          border-radius: 8px;
+          padding: 8px 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          font-size: 11px;
+          color: #3f3f46;
+        }
+
+        .cf-mount-tag {
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #15803d;
+          margin-bottom: 2px;
+        }
+
+        .cf-mount-line strong {
+          color: #14251a;
+        }
+
+        .cf-standard-tag {
+          font-size: 11px;
+          color: #71717a;
+          font-style: italic;
         }
 
         .cart-item-core {

@@ -40,6 +40,13 @@ export default function ProductCard({ product, className = '', imageLoading = 'l
     e.stopPropagation();
     if (adding || isOutOfStock) return;
 
+    if (!product.price || product.price <= 0 || !product.id) {
+      if (typeof window !== 'undefined') {
+        window.location.href = productHref;
+      }
+      return;
+    }
+
     setAdding(true);
     const res = await addToCart({
       productId: product.id,
@@ -105,6 +112,7 @@ export default function ProductCard({ product, className = '', imageLoading = 'l
     if (name.includes('mini')) return 'Pocket Diorama';
     if (name.includes('utility')) return 'Modular Desk Gear';
     if (name.includes('darshanam')) return 'Sacred Geometry';
+    if (name.includes('custom')) return 'Custom Forge Artifact';
     return product.category_name || '3D Printed Artifact';
   };
 
@@ -173,9 +181,17 @@ export default function ProductCard({ product, className = '', imageLoading = 'l
           {/* Price */}
           <div className="marshans-pricing-group">
             <div className="marshans-price-display">
-              <span className="marshans-current-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
-              {product.compare_at_price && product.compare_at_price > product.price && (
-                <span className="marshans-compare-price">₹{Number(product.compare_at_price).toLocaleString('en-IN')}</span>
+              {product.price && product.price > 0 ? (
+                <>
+                  <span className="marshans-current-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
+                  {product.compare_at_price && product.compare_at_price > product.price && (
+                    <span className="marshans-compare-price">₹{Number(product.compare_at_price).toLocaleString('en-IN')}</span>
+                  )}
+                </>
+              ) : (
+                <span className="marshans-current-price" style={{ fontSize: '12px', fontWeight: 700, color: '#526056', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  Made to Order
+                </span>
               )}
             </div>
           </div>

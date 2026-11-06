@@ -1,0 +1,279 @@
+---
+/**
+ * THE MARSHANS — Lady Justice Compact Horizontal Feature
+ *
+ * Positioned on the homepage between New Arrivals and The Collection.
+ * A refined, compact horizontal promotional announcement strip (approx. 180–220px desktop height).
+ *
+ * Three visual areas:
+ * - LEFT:   Product artwork (statue relatively small, subtle angled presentation, transparent background)
+ * - CENTER: Product info (eyebrow, main title, short supporting description)
+ * - RIGHT:  Action (small, refined ORDER NOW button linking to /product/lady-justice/)
+ */
+---
+
+<section class="home-lady-feature" aria-labelledby="lady-justice-feature-title">
+  <div class="lady-feature-container">
+    <div class="lady-feature-card">
+      <!-- LEFT: Product Artwork -->
+      <div class="lady-feature-artwork">
+        <div class="lady-feature-statue-wrap">
+          <img
+            src="/assets/products/custom-forge/lady-justice-statue.png"
+            srcset="/assets/products/custom-forge/lady-justice-statue-thumb.png 288w, /assets/products/custom-forge/lady-justice-statue.png 1024w"
+            sizes="96px"
+            alt="Lady Justice statue"
+            class="lady-feature-statue-img"
+            width="96"
+            height="144"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </div>
+
+      <!-- CENTER: Product Information -->
+      <div class="lady-feature-info">
+        <span class="lady-feature-eyebrow">NEW FROM CUSTOM FORGE</span>
+        <h2 id="lady-justice-feature-title" class="lady-feature-title">LADY JUSTICE</h2>
+        <p class="lady-feature-desc">A symbol of truth, fairness and justice.</p>
+      </div>
+
+      <!-- RIGHT: Action -->
+      <div class="lady-feature-action">
+        <a
+          href="/product/lady-justice/"
+          class="lady-feature-btn"
+          aria-label="Order Lady Justice statue from Custom Forge"
+        >
+          <span>ORDER NOW</span>
+          <svg class="lady-feature-arrow" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3.333 8h9.334M8.667 4l4 4-4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .home-lady-feature {
+    width: 100%;
+    margin: 0;
+    padding: clamp(14px, 1.8vw, 18px) 0;
+    background: transparent;
+    box-sizing: border-box;
+  }
+
+  .lady-feature-container {
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 3.5vw, 2.5rem);
+    box-sizing: border-box;
+  }
+
+  .lady-feature-card {
+    display: grid;
+    grid-template-columns: 140px 1fr auto;
+    align-items: center;
+    gap: clamp(1.5rem, 3vw, 3rem);
+    height: 190px;
+    background: #faf7f2;
+    border: 1px solid rgba(20, 37, 26, 0.08);
+    border-radius: 16px;
+    padding: 0 clamp(1.5rem, 3vw, 2.75rem);
+    box-shadow: 0 4px 16px rgba(20, 37, 26, 0.03);
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* -------------------------------------------------------------------------
+     LEFT: Product Artwork
+     ------------------------------------------------------------------------- */
+  .lady-feature-artwork {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 140px;
+    flex-shrink: 0;
+    perspective: 800px;
+  }
+
+  .lady-feature-statue-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: perspective(800px) rotateY(-8deg) rotateX(2deg);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .lady-feature-card:hover .lady-feature-statue-wrap {
+    transform: perspective(800px) rotateY(-2deg) rotateX(0deg) scale(1.03);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lady-feature-statue-wrap {
+      transform: perspective(800px) rotateY(-6deg) !important;
+      transition: none !important;
+    }
+  }
+
+  .lady-feature-statue-img {
+    height: 144px;
+    width: auto;
+    max-width: 120px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(20, 37, 26, 0.12));
+    display: block;
+  }
+
+  /* -------------------------------------------------------------------------
+     CENTER: Product Information
+     ------------------------------------------------------------------------- */
+  .lady-feature-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+  }
+
+  .lady-feature-eyebrow {
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #705e4d;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+
+  .lady-feature-title {
+    margin: 0 0 4px;
+    font-size: clamp(20px, 2.2vw, 26px);
+    font-weight: 850;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: #14251a;
+    text-transform: uppercase;
+  }
+
+  .lady-feature-desc {
+    margin: 0;
+    font-size: clamp(13px, 1.1vw, 15px);
+    font-weight: 500;
+    line-height: 1.45;
+    color: #4b584f;
+  }
+
+  /* -------------------------------------------------------------------------
+     RIGHT: Action
+     ------------------------------------------------------------------------- */
+  .lady-feature-action {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .lady-feature-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 24px;
+    border-radius: 9999px;
+    background: #14251a;
+    color: #f6eee4;
+    font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 1px solid #14251a;
+    box-shadow: 0 3px 10px rgba(20, 37, 26, 0.12);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 0.2s ease,
+                box-shadow 0.2s ease;
+  }
+
+  .lady-feature-btn:hover {
+    background: #233e2d;
+    border-color: #233e2d;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(20, 37, 26, 0.2);
+    color: #ffffff;
+  }
+
+  .lady-feature-btn:focus-visible {
+    outline: 2px solid #2f6b45;
+    outline-offset: 2px;
+  }
+
+  .lady-feature-arrow {
+    transition: transform 0.2s ease;
+  }
+
+  .lady-feature-btn:hover .lady-feature-arrow {
+    transform: translateX(3px);
+  }
+
+  /* -------------------------------------------------------------------------
+     Compact Mobile Layout
+     ------------------------------------------------------------------------- */
+  @media (max-width: 768px) {
+    .lady-feature-card {
+      grid-template-columns: 85px 1fr;
+      grid-template-areas:
+        "art info"
+        "action action";
+      height: auto;
+      min-height: unset;
+      padding: 1rem 1.25rem;
+      gap: 0.75rem 1rem;
+    }
+
+    .lady-feature-artwork {
+      grid-area: art;
+      width: 85px;
+      height: 105px;
+    }
+
+    .lady-feature-statue-img {
+      height: 100px;
+      max-width: 80px;
+    }
+
+    .lady-feature-info {
+      grid-area: info;
+    }
+
+    .lady-feature-eyebrow {
+      font-size: 10px;
+    }
+
+    .lady-feature-title {
+      font-size: 18px;
+    }
+
+    .lady-feature-desc {
+      font-size: 12px;
+    }
+
+    .lady-feature-action {
+      grid-area: action;
+      width: 100%;
+    }
+
+    .lady-feature-btn {
+      width: 100%;
+      padding: 9px 18px;
+      font-size: 11px;
+    }
+  }
+</style>

@@ -14,6 +14,7 @@ import {
   verifyPaymentSignature,
   loadRazorpayCheckoutScript
 } from '../../lib/api/payments';
+import { createCustomForgeOrderApi } from '../../lib/api/customForge';
 import {
   sanitizePincodeInput,
   isValidPincode,
@@ -165,7 +166,158 @@ export default function CheckoutForm() {
 
     setLoading(true);
 
+    const hasCustomForgeItem = items.some(it => it.options?.is_custom_forge);
+
     try {
+      // -------------------------------------------------------------
+      // CUSTOM FORGE DEDICATED CHECKOUT FLOW
+      // -------------------------------------------------------------
+      if (hasCustomForgeItem) {
+        const cfItems = items.filter(it => it.options?.is_custom_forge);
+        if (cfItems.length > 0) {
+          if (paymentMethod === 'cod') {
+            setError('Custom Forge pieces are precision made-to-order and require online payment authorization.');
+            setLoading(false);
+            return;
+          }
+
+          const scriptReady = await loadRazorpayCheckoutScript();
+          if (!scriptReady || typeof window === 'undefined' || !window.Razorpay) {
+            setError('Unable to initialize secure payment gateway. Please check your connection.');
+            setLoading(false);
+            return;
+          }
+
+          let orderId;
+          let orderNumber;
+
+          if (pendingOrder && pendingOrder.orderId) {
+            orderId = pendingOrder.orderId;
+            orderNumber = pendingOrder.orderNumber;
+          } else {
+            const line1 = (formData.addressLine1 || '').trim();
+            const line2 = (formData.addressLine2 || '').trim();
+            const fullAddress = line2 ? `${line1}, ${line2}` : line1;
+
+            const cfPayload = {
+              items: cfItems.map(it => ({
+                variant_id: Number(it.options.variant_id) || 1,
+                quantity: Number(it.quantity) || 1,
+                custom_mode: it.options.custom_mode_enabled ? 1 : 0,
+                customization: it.options.custom_mode_enabled ? {
+                  customer_name: it.options.custom_name,
+                  customer_designation: it.options.custom_designation || 'NIL',
+                  nameplate_material: it.options.nameplate_material || 'Plastic'
+                } : null
+              })),
+              shipping_address: {
+                name: (formData.fullName || '').trim(),
+                phone: (formData.phone || '').trim(),
+                address: fullAddress,
+                city: (formData.city || '').trim(),
+                state: (formData.state || '').trim(),
+                pincode: (formData.postalCode || '').trim(),
+                country: 'India',
+                email: (formData.email || '').trim()
+              }
+            };
+
+            const orderRes = await createCustomForgeOrderApi(cfPayload);
+            if (!orderRes.success || !orderRes.data) {
+              setError(orderRes.error || 'Failed to place Custom Forge order.');
+              setLoading(false);
+              return;
+            }
+
+            orderId = orderRes.data.id;
+            orderNumber = orderRes.data.order_number;
+            setPendingOrder({ orderId, orderNumber });
+          }
+
+          // Step 2: Request authoritative payment order from backend
+          const payInit = await createPaymentOrder(orderId);
+          if (!payInit.success) {
+            setError(payInit.error || 'Failed to initiate secure payment order.');
+            setLoading(false);
+            return;
+          }
+
+          if (payInit.already_paid) {
+            clearCart();
+            setPendingOrder(null);
+            window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&total=${summary.total}`;
+            return;
+          }
+
+          const rzpKey = payInit.key_id || (typeof window !== 'undefined' && window.__PUBLIC_RAZORPAY_KEY_ID__) || import.meta.env.PUBLIC_RAZORPAY_KEY_ID;
+          if (!rzpKey) {
+            setError('Payment gateway configuration is missing. Please contact customer support.');
+            setLoading(false);
+            return;
+          }
+
+          // Step 3: Launch Razorpay Standard Checkout modal
+          const options = {
+            key: rzpKey,
+            amount: payInit.amount,
+            currency: payInit.currency || 'INR',
+            name: 'THE MARSHANS',
+            description: `Custom Forge Order #${orderNumber}`,
+            order_id: payInit.gateway_order_id,
+            prefill: {
+              name: (formData.fullName || payInit.prefill?.name || '').trim(),
+              email: (formData.email || payInit.prefill?.email || '').trim(),
+              contact: (formData.phone || payInit.prefill?.contact || '').trim()
+            },
+            theme: {
+              color: '#14251a'
+            },
+            ...(payInit.checkout_config_id ? { checkout_config_id: payInit.checkout_config_id } : {}),
+            modal: {
+              ondismiss: () => {
+                setLoading(false);
+                setError('Payment window was dismissed. Your allocation is preserved; you can retry payment below.');
+              }
+            },
+            handler: async (response) => {
+              try {
+                setLoading(true);
+                const verifyRes = await verifyPaymentSignature({
+                  order_id: orderId,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                });
+
+                if (verifyRes.success && verifyRes.payment_status === 'paid') {
+                  clearCart();
+                  setPendingOrder(null);
+                  window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&paymentId=${encodeURIComponent(response.razorpay_payment_id)}&total=${summary.total}`;
+                } else {
+                  setError(verifyRes.error || 'Payment signature verification failed.');
+                }
+              } catch (vErr) {
+                console.error('Payment verification error:', vErr);
+                setError('Payment signature verification encountered a server error.');
+              } finally {
+                setLoading(false);
+              }
+            }
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.on('payment.failed', (resp) => {
+            setLoading(false);
+            setError(resp.error?.description || 'Payment was declined by your bank.');
+          });
+          rzp.open();
+          return;
+        }
+      }
+
+      // -------------------------------------------------------------
+      // STANDARD RETAIL CHECKOUT FLOW (UNCHANGED)
+      // -------------------------------------------------------------
       // Contract-shaped payload (shipping_address.{name,phone,address,city,state,pincode}, items[].product_id).
       // No prices/totals are sent: the backend recomputes everything from its own catalogue.
       const payload = buildOrderPayload(formData, items, paymentMethod);
@@ -536,20 +688,27 @@ export default function CheckoutForm() {
                 <span className="pay-badge">Secure</span>
               </label>
 
-              <label className={`payment-option ${paymentMethod === 'cod' ? 'selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="cod"
-                  checked={paymentMethod === 'cod'}
-                  onChange={() => handlePaymentMethodChange('cod')}
-                />
-                <div className="payment-opt-info">
-                  <strong>Cash on Delivery (COD)</strong>
-                  <p>Pay cash upon air express courier arrival</p>
+              {!items.some(it => it.options?.is_custom_forge) ? (
+                <label className={`payment-option ${paymentMethod === 'cod' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cod"
+                    checked={paymentMethod === 'cod'}
+                    onChange={() => handlePaymentMethodChange('cod')}
+                  />
+                  <div className="payment-opt-info">
+                    <strong>Cash on Delivery (COD)</strong>
+                    <p>Pay cash upon air express courier arrival</p>
+                  </div>
+                  <span className="pay-badge">Standard</span>
+                </label>
+              ) : (
+                <div className="cf-online-only-note">
+                  <span className="cf-lock-icon">🔒</span>
+                  <span>Custom Forge made-to-order artifacts require online payment authorization (Instant UPI, Cards, NetBanking).</span>
                 </div>
-                <span className="pay-badge">Standard</span>
-              </label>
+              )}
             </div>
           </div>
 
@@ -575,12 +734,31 @@ export default function CheckoutForm() {
                   src={resolveImageUrl(item.imageUrl)}
                   alt={item.name}
                   className="checkout-item-img"
+                  style={item.options?.is_custom_forge ? { objectFit: 'contain', padding: '3px', background: '#f8fafc' } : {}}
                 />
                 <div className="checkout-item-details">
                   <h4>{item.name}</h4>
                   <div className="item-sub-specs">
-                    {item.material && <span>{item.material}</span>}
-                    <span>Qty: {item.quantity}</span>
+                    {item.options?.is_custom_forge ? (
+                      <div className="cf-checkout-specs">
+                        <span className="cf-spec-edition-tag">Edition: {item.options.size_label}</span>
+                        {item.options.custom_mode_enabled && (
+                          <div className="cf-mounted-summary-line">
+                            <span>Nameplate: <strong>{item.options.custom_name}</strong></span>
+                            {item.options.custom_designation && item.options.custom_designation !== 'NIL' && (
+                              <span> ({item.options.custom_designation})</span>
+                            )}
+                            <span> [{item.options.nameplate_material || 'Plastic'}]</span>
+                          </div>
+                        )}
+                        <span>Qty: {item.quantity}</span>
+                      </div>
+                    ) : (
+                      <>
+                        {item.material && <span>{item.material}</span>}
+                        <span>Qty: {item.quantity}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="checkout-item-price">
@@ -809,6 +987,40 @@ export default function CheckoutForm() {
           font-size: 13px;
           font-weight: 700;
           color: #09090b;
+        }
+
+        .cf-online-only-note {
+          background: #fcfbf9;
+          border: 1px dashed rgba(20, 37, 26, 0.25);
+          border-radius: 10px;
+          padding: 12px 14px;
+          font-size: 12px;
+          color: #27272a;
+          line-height: 1.45;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .cf-checkout-specs {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          font-size: 11px;
+        }
+
+        .cf-spec-edition-tag {
+          font-weight: 700;
+          color: #14251a;
+        }
+
+        .cf-mounted-summary-line {
+          font-size: 10px;
+          color: #52525b;
+          background: #f4f4f5;
+          padding: 2px 6px;
+          border-radius: 4px;
+          display: inline-block;
         }
 
         .guarantee-points {

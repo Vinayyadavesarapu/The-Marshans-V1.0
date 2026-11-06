@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import CollectionPage from '../../components/react/collection/CollectionPage.tsx';
 import { getProducts } from '../../lib/api/products';
 import { CATEGORIES_CONFIG, getCategoryMeta } from '../../config/categoriesConfig';
+import { isCustomForgeOnly } from '../../config/launchMode';
 
 export async function getStaticPaths() {
   const universes = Object.values(CATEGORIES_CONFIG);
@@ -17,6 +18,11 @@ const { slug } = Astro.params;
 const { universe } = Astro.props;
 
 const meta = universe || getCategoryMeta(slug as string);
+
+// Centralized launch-mode guard: redirect retail categories to Custom Forge landing page
+if (isCustomForgeOnly()) {
+  return Astro.redirect('/custom-3d', 302);
+}
 
 // Fetch real production products for Store 2 filtered by this category slug
 const { products } = await getProducts({ category_slug: meta.slug, limit: 50 });

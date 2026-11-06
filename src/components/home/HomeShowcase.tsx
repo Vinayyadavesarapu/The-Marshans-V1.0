@@ -96,7 +96,7 @@ export default function HomeShowcase({ initialProducts = [] }: HomeShowcaseProps
         setVisible(true);
         io.disconnect();
       }
-    }, { rootMargin: '0px 0px 40% 0px' }); // start the reveal just before the carousel scrolls into view
+    }, { rootMargin: '0px' }); // reveal as soon as the carousel enters the viewport
     io.observe(el);
     return () => io.disconnect();
   }, []);

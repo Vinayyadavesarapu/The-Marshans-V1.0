@@ -64,6 +64,9 @@ const {
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   </head>
   <body class="site-body">
+    <!-- Content that must sit above the navbar (the homepage hero). The navbar is a direct child of <body>,
+         so its sticky range spans the whole page, footer included. -->
+    <slot name="before-header" />
     {!hideHeader && <Header />}
     <main id="main-content" class="site-main">
       <slot />
@@ -121,7 +124,8 @@ const {
     flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
-    background-color: var(--color-bg, #ffffff);
+    /* A page may set --page-bg (the homepage uses its cream); the transparent navbar shows whatever this is */
+    background-color: var(--page-bg, var(--color-bg, #ffffff));
   }
 
   .site-main {

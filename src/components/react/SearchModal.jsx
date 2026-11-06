@@ -1,16 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchProducts } from '../../lib/api/products';
 import { resolveImageUrl } from '../../lib/utils/media';
+import {
+  isCustomForgeOnly,
+  CUSTOM_FORGE_SEARCH_PRODUCTS,
+  CUSTOM_FORGE_SEARCH_SUGGESTIONS,
+  RETAIL_SEARCH_SUGGESTIONS
+} from '../../config/launchMode';
 
 export default function SearchModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(isCustomForgeOnly() ? CUSTOM_FORGE_SEARCH_PRODUCTS : []);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
-  // Load products cache for instant search
+  const isLaunch = isCustomForgeOnly();
+
+  // Load products cache: in launch mode, strictly use Custom Forge products. In retail mode, load full catalog.
   useEffect(() => {
+    if (isLaunch) {
+      setProducts(CUSTOM_FORGE_SEARCH_PRODUCTS);
+      return;
+    }
+
     async function load() {
       try {
         const res = await fetchProducts({ limit: 50 });
@@ -20,7 +33,7 @@ export default function SearchModal() {
       }
     }
     load();
-  }, []);
+  }, [isLaunch]);
 
   // Global shortcut (Cmd/Ctrl + K)
   useEffect(() => {
@@ -48,13 +61,15 @@ export default function SearchModal() {
   }, [isOpen]);
 
   const filtered = query.trim() === '' ? [] : products.filter((p) => {
-    const q = query.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(q) ||
-      (p.description && p.description.toLowerCase().includes(q)) ||
-      (p.category_name && p.category_name.toLowerCase().includes(q))
-    );
+    const q = query.toLowerCase().trim();
+    const matchesName = p.name?.toLowerCase().includes(q);
+    const matchesDesc = (p.description || p.short_description)?.toLowerCase().includes(q);
+    const matchesCat = p.category_name?.toLowerCase().includes(q);
+    const matchesKeywords = Array.isArray(p.keywords) && p.keywords.some((k) => k.toLowerCase().includes(q));
+    return Boolean(matchesName || matchesDesc || matchesCat || matchesKeywords);
   });
+
+  const popularChips = isLaunch ? CUSTOM_FORGE_SEARCH_SUGGESTIONS : RETAIL_SEARCH_SUGGESTIONS;
 
   return (
     <>
@@ -82,7 +97,7 @@ export default function SearchModal() {
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search artifacts, statues, lamps, keycaps..."
+                placeholder={isLaunch ? "Search Custom Forge sculptures, Lady Justice..." : "Search artifacts, statues, lamps, keycaps..."}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="search-input"
@@ -102,7 +117,7 @@ export default function SearchModal() {
                 <div className="search-suggestions">
                   <span className="search-section-label">Popular Searches</span>
                   <div className="search-chips">
-                    {['Lumo Lamp', 'Fandom Statues', 'Artisan Keycaps', 'Mini Diorama', 'Darshanam Temple', 'Desk Organizer'].map((term) => (
+                    {popularChips.map((term) => (
                       <button
                         key={term}
                         type="button"
@@ -116,35 +131,44 @@ export default function SearchModal() {
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="search-empty">
-                  <p>No artifacts found for "{query}".</p>
-                  <a href="/shop" className="search-browse-link" onClick={() => setIsOpen(false)}>
-                    Browse full catalog →
+                  <p>{isLaunch ? `No Custom Forge pieces found for "${query}".` : `No artifacts found for "${query}".`}</p>
+                  <a
+                    href={isLaunch ? "/custom-3d" : "/shop"}
+                    className="search-browse-link"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {isLaunch ? "Explore Custom Forge →" : "Browse full catalog →"}
                   </a>
                 </div>
               ) : (
                 <div className="search-results-list">
-                  <span className="search-section-label">{filtered.length} Artifacts Found</span>
-                  {filtered.map((item) => (
-                    <a
-                      key={item.id}
-                      href={`/product/${encodeURIComponent(item.slug || item.id)}/`}
-                      className="search-result-item"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <img
-                        src={resolveImageUrl(item.primary_image_url || item.images?.[0]?.image_url || item.images?.[0])}
-                        alt={item.name}
-                        className="search-result-img"
-                      />
-                      <div className="search-result-info">
-                        <div className="search-result-meta">
-                          <span className="search-result-category">{item.category_name || 'Artifact'}</span>
+                  <span className="search-section-label">{filtered.length} {filtered.length === 1 ? 'Piece' : 'Pieces'} Found</span>
+                  {filtered.map((item) => {
+                    const targetHref = item.slug === 'lady-justice'
+                      ? '/product/lady-justice/'
+                      : `/product/${encodeURIComponent(item.slug || item.id)}/`;
+                    return (
+                      <a
+                        key={item.id}
+                        href={targetHref}
+                        className="search-result-item"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <img
+                          src={resolveImageUrl(item.primary_image_url || item.images?.[0]?.image_url || item.images?.[0])}
+                          alt={item.name}
+                          className="search-result-img"
+                        />
+                        <div className="search-result-info">
+                          <div className="search-result-meta">
+                            <span className="search-result-category">{item.category_name || 'Artifact'}</span>
+                          </div>
+                          <span className="search-result-title">{item.name}</span>
+                          <span className="search-result-price">₹{Number(item.price).toLocaleString('en-IN')}</span>
                         </div>
-                        <span className="search-result-title">{item.name}</span>
-                        <span className="search-result-price">₹{Number(item.price).toLocaleString('en-IN')}</span>
-                      </div>
-                    </a>
-                  ))}
+                      </a>
+                    );
+                  })}
                 </div>
               )}
             </div>

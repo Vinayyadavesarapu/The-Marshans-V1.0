@@ -79,15 +79,19 @@ export function loadRazorpayCheckoutScript(): Promise<boolean> {
  * Create or reuse a Razorpay Gateway Order via authoritative backend API
  */
 export async function createPaymentOrder(orderId: number | string): Promise<PaymentOrderInitResult> {
-  const numId = Number(orderId);
-  if (!Number.isInteger(numId) || numId <= 0) {
-    return { success: false, error: 'A valid order ID is required to initiate payment.' };
+  const rawId = typeof orderId === 'string' ? orderId.trim() : orderId;
+  const numId = Number(rawId);
+  const isNumeric = Number.isInteger(numId) && numId > 0;
+  const isCfOrder = typeof rawId === 'string' && rawId.startsWith('CF-');
+
+  if (!isNumeric && !isCfOrder) {
+    return { success: false, error: 'A valid order ID or order number is required to initiate payment.' };
   }
 
   try {
     const res = await apiClient<any>('/payments/create', {
       method: 'POST',
-      body: JSON.stringify({ order_id: numId })
+      body: JSON.stringify({ order_id: isNumeric ? numId : rawId })
     });
 
     if (res && res.success && res.data) {
@@ -98,7 +102,7 @@ export async function createPaymentOrder(orderId: number | string): Promise<Paym
         gateway_order_id: res.data.gateway_order_id,
         amount: res.data.amount,
         currency: res.data.currency || 'INR',
-        order_id: res.data.order_id || numId,
+        order_id: res.data.order_id || (isNumeric ? numId : rawId),
         order_number: res.data.order_number,
         checkout_config_id: res.data.checkout_config_id,
         prefill: res.data.prefill
@@ -122,10 +126,15 @@ export async function createPaymentOrder(orderId: number | string): Promise<Paym
  */
 export async function verifyPaymentSignature(payload: PaymentVerificationPayload): Promise<PaymentVerificationResult> {
   try {
+    const rawId = typeof payload.order_id === 'string' ? payload.order_id.trim() : payload.order_id;
+    const numId = Number(rawId);
+    const isNumeric = Number.isInteger(numId) && numId > 0;
+    const orderIdentifier = isNumeric ? numId : rawId;
+
     const res = await apiClient<any>('/payments/verify', {
       method: 'POST',
       body: JSON.stringify({
-        order_id: Number(payload.order_id),
+        order_id: orderIdentifier,
         razorpay_order_id: payload.razorpay_order_id,
         razorpay_payment_id: payload.razorpay_payment_id,
         razorpay_signature: payload.razorpay_signature
@@ -136,7 +145,7 @@ export async function verifyPaymentSignature(payload: PaymentVerificationPayload
       return {
         success: true,
         payment_status: res.data.payment_status || 'paid',
-        order_id: res.data.order_id || payload.order_id,
+        order_id: res.data.order_id || orderIdentifier,
         order_number: res.data.order_number
       };
     }

@@ -2,4 +2,62 @@
 import MarshansNavbar from './react/MarshansNavbar.tsx';
 ---
 
-<MarshansNavbar client:load />
+<!-- The one site navbar. Sticky in normal flow (reserves its own height, never overlaps content at rest).
+     The wrapper is transparent at rest so the page's own background shows through; only the logo, link pill and
+     controls have surfaces. `data-site-navbar` is the homepage hero's hand-off target.
+     When scrolled, an opaque warm cream background prevents headings, images and cards from visually clashing. -->
+<div class="site-header-sticky" id="site-navbar" data-site-navbar tabindex="-1">
+  <MarshansNavbar client:load />
+</div>
+
+<script>
+  // Ensure content scrolling under the sticky navbar does not overlap or clash with navbar pills
+  const header = document.querySelector<HTMLElement>('.site-header-sticky');
+  if (header) {
+    const checkScrolled = () => {
+      const isScrolled = window.scrollY > 20;
+      header.classList.toggle('is-scrolled', isScrolled);
+    };
+    window.addEventListener('scroll', checkScrolled, { passive: true });
+    checkScrolled();
+  }
+</script>
+
+<style>
+  .site-header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    width: 100%;
+    background: transparent;
+  }
+
+  .site-header-sticky:focus {
+    outline: none;
+  }
+</style>
+
+<style is:global>
+  /* --site-nav-h: the navbar's rendered height (lets the homepage carousel scene sit behind it).
+     In-page links and keyboard focus stop below the sticky navbar instead of underneath it. */
+  :root {
+    --site-nav-h: 88px;
+  }
+
+  html {
+    scroll-padding-top: calc(var(--site-nav-h) + 8px);
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      --site-nav-h: 72px;
+    }
+  }
+
+  /* When scrolling through homepage sections, warm cream background (#f6eee4) matches
+     the page background and prevents headings, images, and text from showing through the pill gaps */
+  .site-header-sticky.is-scrolled {
+    background-color: var(--page-bg, #f6eee4) !important;
+    box-shadow: 0 2px 14px rgba(31, 28, 24, 0.05);
+  }
+</style>

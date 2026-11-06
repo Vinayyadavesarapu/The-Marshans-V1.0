@@ -15,7 +15,7 @@ export default function HomeProductSection({ initialProducts = [] }: HomeProduct
     getProducts({ limit: 12 })
       .then((res) => {
         if (isMounted && res && Array.isArray(res.products)) {
-          // Live API response replaces build-time products (even when it is now empty)
+          // Live API response replaces build-time products (only when API response succeeded)
           if (res.ok) {
             setProducts(res.products);
           }
@@ -35,10 +35,12 @@ export default function HomeProductSection({ initialProducts = [] }: HomeProduct
     return null;
   }
 
+  const isSingle = products.length === 1;
+
   return (
     <section className="home-products-section" id="product-cards" aria-label="Product Cards Collection">
       <div className="container">
-        <div className="home-products-grid">
+        <div className={`home-products-grid ${isSingle ? 'is-single-product' : ''}`}>
           {products.map((product) => (
             <ProductCard key={product.id || product.slug} product={product} />
           ))}
@@ -68,8 +70,21 @@ export default function HomeProductSection({ initialProducts = [] }: HomeProduct
           box-sizing: border-box;
         }
 
+        /* Appropriate layout when only a single product exists in the catalog:
+           Center the product card with intentional proportions rather than pinning to the far left with a 75% void */
+        .home-products-grid.is-single-product {
+          display: flex;
+          justify-content: center;
+          max-width: 380px;
+          margin: 0 auto;
+        }
+
+        .home-products-grid.is-single-product .marshans-product-card-wrap {
+          width: 100%;
+        }
+
         @media (max-width: 1100px) {
-          .home-products-grid {
+          .home-products-grid:not(.is-single-product) {
             grid-template-columns: repeat(3, 1fr);
           }
         }
@@ -83,7 +98,7 @@ export default function HomeProductSection({ initialProducts = [] }: HomeProduct
             padding: 0 1rem;
           }
 
-          .home-products-grid {
+          .home-products-grid:not(.is-single-product) {
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
             max-width: 100%;
@@ -91,7 +106,7 @@ export default function HomeProductSection({ initialProducts = [] }: HomeProduct
         }
 
         @media (max-width: 480px) {
-          .home-products-grid {
+          .home-products-grid:not(.is-single-product) {
             grid-template-columns: 1fr;
             max-width: 340px;
             margin: 0 auto;

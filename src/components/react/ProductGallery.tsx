@@ -81,7 +81,7 @@ export default function ProductGallery({
               onClick={() => setSelectedIndex(idx)}
               className={`thumbnail-btn ${selectedIndex === idx ? 'active' : ''} ${item.is_video ? 'is-video-thumb' : ''}`}
             >
-              <img src={item.image_url} alt="" className="thumb-img" />
+              <img src={item.thumbnail_url || item.image_url} alt="" className="thumb-img" />
               {item.is_video && (
                 <div className="video-thumb-badge" aria-hidden="true">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff">
@@ -189,7 +189,7 @@ export default function ProductGallery({
           flex-direction: column;
           gap: 12px;
           flex-shrink: 0;
-          max-height: 580px;
+          max-height: 520px;
           overflow-y: auto;
           scrollbar-width: none;
         }
@@ -200,11 +200,11 @@ export default function ProductGallery({
 
         .thumbnail-btn {
           position: relative;
-          width: 74px;
-          height: 74px;
-          border-radius: 14px;
-          background: #f7f6f4;
-          border: 2px solid transparent;
+          width: 70px;
+          height: 70px;
+          border-radius: 12px;
+          background: #ffffff;
+          border: 2px solid rgba(20, 37, 26, 0.08);
           padding: 0;
           cursor: pointer;
           overflow: hidden;
@@ -213,13 +213,13 @@ export default function ProductGallery({
         }
 
         .thumbnail-btn:hover {
-          border-color: rgba(9, 9, 11, 0.35);
+          border-color: rgba(20, 37, 26, 0.35);
           transform: translateY(-2px);
         }
 
         .thumbnail-btn.active {
-          border-color: #09090b;
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+          border-color: #14251a;
+          box-shadow: 0 4px 12px rgba(20, 37, 26, 0.14);
         }
 
         .thumb-img {
@@ -236,43 +236,52 @@ export default function ProductGallery({
           align-items: center;
           justify-content: center;
           background: rgba(0, 0, 0, 0.45);
-          border-radius: 12px;
+          border-radius: 10px;
         }
 
         /* Primary Image/Video Stage */
         .gallery-primary-stage {
           position: relative;
           flex: 1;
-          aspect-ratio: 1 / 1.04;
-          background: #f7f6f4;
-          border-radius: 28px;
+          min-width: 0;
+          min-height: 0;
+          height: 520px;
+          max-height: 540px;
+          background: #ffffff;
+          border-radius: 20px;
           overflow: hidden;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(0, 0, 0, 0.05);
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+          border: 1px solid rgba(20, 37, 26, 0.08);
+          box-shadow: 0 4px 20px rgba(20, 37, 26, 0.04);
         }
 
         .image-viewport-wrapper {
           width: 100%;
           height: 100%;
+          min-width: 0;
+          min-height: 0;
           display: flex;
           align-items: center;
           justify-content: center;
+          padding: 1.5rem 1.25rem;
+          box-sizing: border-box;
         }
 
         .gallery-active-image {
+          max-width: 100%;
+          max-height: 100%;
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           object-position: center;
           display: block;
-          transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .gallery-primary-stage:hover .gallery-active-image {
-          transform: scale(1.035);
+          transform: scale(1.025);
         }
 
         .video-player-container {
@@ -407,7 +416,7 @@ export default function ProductGallery({
         }
 
         /* Mobile Layout */
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           .marshans-master-gallery {
             flex-direction: column-reverse;
             gap: 16px;
@@ -425,8 +434,10 @@ export default function ProductGallery({
             border-radius: 12px;
           }
           .gallery-primary-stage {
-            border-radius: 20px;
-            aspect-ratio: 1 / 1;
+            border-radius: 16px;
+            height: 480px;
+            max-height: 500px;
+            aspect-ratio: auto;
           }
           .stage-overlay-badges {
             top: 14px;

@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import ProductDetailPage from '../../components/react/ProductDetailPage.tsx';
 import { getProducts } from '../../lib/api/products';
+import { isCustomForgeOnly } from '../../config/launchMode';
 
 export async function getStaticPaths() {
   const { products, ok } = await getProducts({ limit: 100 });
@@ -18,6 +19,11 @@ export async function getStaticPaths() {
 }
 
 const { product } = Astro.props;
+
+// Centralized launch-mode guard: redirect retail products to Lady Justice
+if (isCustomForgeOnly()) {
+  return Astro.redirect('/product/lady-justice/', 302);
+}
 
 if (!product) {
   return Astro.redirect('/');

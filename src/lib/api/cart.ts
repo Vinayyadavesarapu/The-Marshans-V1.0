@@ -77,16 +77,20 @@ export function saveLocalCart(items: CartItem[]): void {
  * Fetch authoritative cart from backend /api/cart
  */
 export async function getBackendCart(): Promise<{ items: CartItem[]; subtotal: number; count: number }> {
+  const localCustomForgeItems = getLocalCart().filter(it => it.options?.is_custom_forge);
+
   if (!isCustomerAuthenticated()) {
-    saveLocalCart([]);
-    return { items: [], subtotal: 0, count: 0 };
+    saveLocalCart(localCustomForgeItems);
+    const subtotal = localCustomForgeItems.reduce((s, it) => s + (it.price * it.quantity), 0);
+    const count = localCustomForgeItems.reduce((s, it) => s + it.quantity, 0);
+    return { items: localCustomForgeItems, subtotal, count };
   }
 
   try {
     const res = await apiClient<any>('/cart');
     if (res && res.success && res.data) {
       const rawItems = res.data.items || [];
-      const items: CartItem[] = rawItems.map((row: any) => ({
+      const backendItems: CartItem[] = rawItems.map((row: any) => ({
         id: String(row.id),
         productId: Number(row.marshans_product_id || row.product_id),
         marshansProductId: Number(row.marshans_product_id),
@@ -101,10 +105,11 @@ export async function getBackendCart(): Promise<{ items: CartItem[]; subtotal: n
         options: row.options_snapshot || {}
       }));
 
-      saveLocalCart(items);
-      const subtotal = Number(res.data.subtotal) || items.reduce((s, it) => s + (it.price * it.quantity), 0);
-      const count = Number(res.data.total_items) || items.reduce((s, it) => s + it.quantity, 0);
-      return { items, subtotal, count };
+      const merged = [...backendItems, ...localCustomForgeItems];
+      saveLocalCart(merged);
+      const subtotal = merged.reduce((s, it) => s + (it.price * it.quantity), 0);
+      const count = merged.reduce((s, it) => s + it.quantity, 0);
+      return { items: merged, subtotal, count };
     }
   } catch (err) {
     console.warn('Backend cart retrieval notice:', err);
@@ -114,6 +119,35 @@ export async function getBackendCart(): Promise<{ items: CartItem[]; subtotal: n
   const subtotal = cached.reduce((s, it) => s + (it.price * it.quantity), 0);
   const count = cached.reduce((s, it) => s + it.quantity, 0);
   return { items: cached, subtotal, count };
+}
+
+/**
+ * Add Custom Forge Artifact to Cart (Preserves customization details and cart count)
+ */
+export async function addCustomForgeToCart(item: CartItem): Promise<{ success: boolean; cart: CartItem[] }> {
+  const current = getLocalCart();
+  const existingIdx = current.findIndex(it =>
+    it.options?.is_custom_forge &&
+    Number(it.options?.variant_id) === Number(item.options?.variant_id) &&
+    Boolean(it.options?.custom_mode_enabled) === Boolean(item.options?.custom_mode_enabled) &&
+    (it.options?.custom_name || '') === (item.options?.custom_name || '') &&
+    (it.options?.custom_designation || '') === (item.options?.custom_designation || '') &&
+    (it.options?.nameplate_material || '') === (item.options?.nameplate_material || '')
+  );
+
+  let updated: CartItem[];
+  if (existingIdx > -1) {
+    updated = [...current];
+    updated[existingIdx] = {
+      ...updated[existingIdx],
+      quantity: updated[existingIdx].quantity + (item.quantity || 1)
+    };
+  } else {
+    updated = [...current, item];
+  }
+
+  saveLocalCart(updated);
+  return { success: true, cart: updated };
 }
 
 /**
@@ -193,6 +227,13 @@ export async function updateCartQuantity(cartItemId: string, delta: number, curr
     return await removeFromCart(cartItemId);
   }
 
+  // Custom Forge items are managed locally with authoritative checkout pricing
+  if (existing?.options?.is_custom_forge) {
+    const updated = current.map(item => item.id === cartItemId ? { ...item, quantity: newQty } : item);
+    saveLocalCart(updated);
+    return true;
+  }
+
   try {
     const res = await apiClient<any>(`/cart/items/${encodeURIComponent(cartItemId)}`, {
       method: 'PUT',
@@ -218,6 +259,16 @@ export async function updateCartQuantity(cartItemId: string, delta: number, curr
  * Remove item from backend DELETE /api/cart/items/:id
  */
 export async function removeFromCart(cartItemId: string): Promise<boolean> {
+  const current = getLocalCart();
+  const existing = current.find(item => item.id === cartItemId);
+
+  // Custom Forge items are managed locally
+  if (existing?.options?.is_custom_forge) {
+    const updated = current.filter(item => item.id !== cartItemId);
+    saveLocalCart(updated);
+    return true;
+  }
+
   try {
     const res = await apiClient<any>(`/cart/items/${encodeURIComponent(cartItemId)}`, {
       method: 'DELETE'
@@ -231,7 +282,6 @@ export async function removeFromCart(cartItemId: string): Promise<boolean> {
     console.error('Remove cart item error:', err);
   }
 
-  const current = getLocalCart();
   const updated = current.filter(item => item.id !== cartItemId);
   saveLocalCart(updated);
   return true;
