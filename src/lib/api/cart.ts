@@ -9,6 +9,7 @@
 import { apiClient } from './client';
 import { getFirebaseClient } from '../firebase/client';
 import { CART_CACHE_KEY, PENDING_CART_ITEM_KEY } from '../session/cache';
+import { resolveVariantKey } from './customForge';
 
 export interface CartItem {
   id: string; // Cart item ID from backend database
@@ -126,9 +127,10 @@ export async function getBackendCart(): Promise<{ items: CartItem[]; subtotal: n
  */
 export async function addCustomForgeToCart(item: CartItem): Promise<{ success: boolean; cart: CartItem[] }> {
   const current = getLocalCart();
+  const itemVarKey = resolveVariantKey(item.options?.variant_key || item.options?.variant_id || item.productId);
   const existingIdx = current.findIndex(it =>
     it.options?.is_custom_forge &&
-    Number(it.options?.variant_id) === Number(item.options?.variant_id) &&
+    resolveVariantKey(it.options?.variant_key || it.options?.variant_id || it.productId) === itemVarKey &&
     Boolean(it.options?.custom_mode_enabled) === Boolean(item.options?.custom_mode_enabled) &&
     (it.options?.custom_name || '') === (item.options?.custom_name || '') &&
     (it.options?.custom_designation || '') === (item.options?.custom_designation || '') &&

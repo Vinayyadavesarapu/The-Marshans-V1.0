@@ -14,7 +14,11 @@ import {
   verifyPaymentSignature,
   loadRazorpayCheckoutScript
 } from '../../lib/api/payments';
-import { createCustomForgeOrderApi } from '../../lib/api/customForge';
+import {
+  createCustomForgeOrderApi,
+  resolveVariantNumericId,
+  resolveVariantKey
+} from '../../lib/api/customForge';
 import {
   sanitizePincodeInput,
   isValidPincode,
@@ -258,18 +262,40 @@ export default function CheckoutForm() {
             const line2 = (formData.addressLine2 || '').trim();
             const fullAddress = line2 ? `${line1}, ${line2}` : line1;
 
+            const primaryCf = cfItems[0];
+            const primaryNumericId = resolveVariantNumericId(
+              primaryCf.options?.variant_numeric_id || primaryCf.options?.variant_id || primaryCf.productId
+            );
+            const primaryVariantKey = resolveVariantKey(
+              primaryCf.options?.variant_key || primaryCf.options?.variant_id || primaryCf.productId
+            );
+
             const cfPayload = {
               coupon_code: appliedCoupon?.code || undefined,
-              items: cfItems.map(it => ({
-                variant_id: Number(it.options.variant_id) || 1,
-                quantity: Number(it.quantity) || 1,
-                custom_mode: it.options.custom_mode_enabled ? 1 : 0,
-                customization: it.options.custom_mode_enabled ? {
-                  customer_name: it.options.custom_name,
-                  customer_designation: it.options.custom_designation || 'NIL',
-                  nameplate_material: it.options.nameplate_material || 'Plastic'
-                } : null
-              })),
+              variant_id: primaryNumericId,
+              variant_key: primaryVariantKey,
+              quantity: Number(primaryCf.quantity) || 1,
+              custom_mode: primaryCf.options?.custom_mode_enabled ? 1 : 0,
+              customization: primaryCf.options?.custom_mode_enabled ? {
+                customer_name: primaryCf.options?.custom_name || '',
+                customer_designation: primaryCf.options?.custom_designation || 'NIL',
+                nameplate_material: primaryCf.options?.nameplate_material || 'Plastic'
+              } : null,
+              items: cfItems.map(it => {
+                const numId = resolveVariantNumericId(it.options?.variant_numeric_id || it.options?.variant_id || it.productId);
+                const varKey = resolveVariantKey(it.options?.variant_key || it.options?.variant_id || it.productId);
+                return {
+                  variant_id: numId,
+                  variant_key: varKey,
+                  quantity: Number(it.quantity) || 1,
+                  custom_mode: it.options?.custom_mode_enabled ? 1 : 0,
+                  customization: it.options?.custom_mode_enabled ? {
+                    customer_name: it.options?.custom_name || '',
+                    customer_designation: it.options?.custom_designation || 'NIL',
+                    nameplate_material: it.options?.nameplate_material || 'Plastic'
+                  } : null
+                };
+              }),
               shipping_address: {
                 name: (formData.fullName || '').trim(),
                 phone: (formData.phone || '').trim(),

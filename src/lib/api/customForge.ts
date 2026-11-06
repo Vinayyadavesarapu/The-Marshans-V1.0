@@ -39,9 +39,11 @@ export interface ApiResponse<T = any> {
 }
 
 export interface CustomForgeSizeVariant {
-  id: string;
+  id: 'cf-lj-6in' | 'cf-lj-1ft' | 'cf-lj-2ft' | string;
   backendVariantId: number;
   sizeLabel: '6 inches' | '1 foot' | '2 feet';
+  sku?: string;
+  sizeInches?: number;
   heightMm: number;
   price: number; // GST-inclusive (paise or INR)
   customModeAllowed: boolean;
@@ -53,6 +55,8 @@ export const LADY_JUSTICE_VARIANTS: CustomForgeSizeVariant[] = [
     id: 'cf-lj-6in',
     backendVariantId: 1,
     sizeLabel: '6 inches',
+    sku: 'MRSH-CF-LJ-6IN',
+    sizeInches: 6,
     heightMm: 152,
     price: 1600,
     customModeAllowed: false,
@@ -62,6 +66,8 @@ export const LADY_JUSTICE_VARIANTS: CustomForgeSizeVariant[] = [
     id: 'cf-lj-1ft',
     backendVariantId: 2,
     sizeLabel: '1 foot',
+    sku: 'MRSH-CF-LJ-1FT',
+    sizeInches: 12,
     heightMm: 305,
     price: 3500,
     customModeAllowed: true,
@@ -71,12 +77,49 @@ export const LADY_JUSTICE_VARIANTS: CustomForgeSizeVariant[] = [
     id: 'cf-lj-2ft',
     backendVariantId: 3,
     sizeLabel: '2 feet',
+    sku: 'MRSH-CF-LJ-2FT',
+    sizeInches: 24,
     heightMm: 610,
     price: 5600,
     customModeAllowed: true,
     description: 'Heroic courtroom & executive gallery centerpiece with optional bespoke personalized nameplate.'
   }
 ];
+
+export const VARIANT_ID_MAP: Record<string, number> = {
+  'cf-lj-6in': 1,
+  'cf-lj-1ft': 2,
+  'cf-lj-2ft': 3,
+  'mrsh-cf-lj-6in': 1,
+  'mrsh-cf-lj-1ft': 2,
+  'mrsh-cf-lj-2ft': 3,
+  '1': 1,
+  '2': 2,
+  '3': 3
+};
+
+export const VARIANT_KEY_MAP: Record<string, string> = {
+  '1': 'cf-lj-6in',
+  '2': 'cf-lj-1ft',
+  '3': 'cf-lj-2ft',
+  'cf-lj-6in': 'cf-lj-6in',
+  'cf-lj-1ft': 'cf-lj-1ft',
+  'cf-lj-2ft': 'cf-lj-2ft',
+  'mrsh-cf-lj-6in': 'cf-lj-6in',
+  'mrsh-cf-lj-1ft': 'cf-lj-1ft',
+  'mrsh-cf-lj-2ft': 'cf-lj-2ft'
+};
+
+export function resolveVariantNumericId(id: string | number | undefined | null): number {
+  if (typeof id === 'number' && Number.isInteger(id) && id > 0) return id;
+  const key = String(id || '').trim().toLowerCase();
+  return VARIANT_ID_MAP[key] || 1;
+}
+
+export function resolveVariantKey(id: string | number | undefined | null): string {
+  const key = String(id || '').trim().toLowerCase();
+  return VARIANT_KEY_MAP[key] || (key.startsWith('cf-lj-') ? key : 'cf-lj-6in');
+}
 
 export interface CustomForgeCustomizationInput {
   name: string;
@@ -90,7 +133,8 @@ export interface CustomForgeValidationResult {
 }
 
 export interface CreateCustomForgeOrderItemPayload {
-  variant_id: number;
+  variant_id: number | string;
+  variant_key?: string;
   quantity?: number;
   custom_mode: 0 | 1;
   customization?: {
@@ -101,7 +145,9 @@ export interface CreateCustomForgeOrderItemPayload {
 }
 
 export interface CreateCustomForgeOrderPayload {
-  variant_id?: number;
+  variant_id?: number | string;
+  variant_key?: string;
+  quantity?: number;
   custom_mode?: 0 | 1;
   coupon_code?: string;
   customization?: {
