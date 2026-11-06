@@ -320,8 +320,8 @@ export default function CheckoutForm() {
             setPendingOrder({ orderId, orderNumber });
           }
 
-          // Step 2: Request authoritative payment order from backend
-          const payInit = await createPaymentOrder(orderId);
+          // Step 2: Request authoritative payment order from backend using canonical orderNumber
+          const payInit = await createPaymentOrder(orderNumber || orderId);
           if (!payInit.success) {
             setError(payInit.error || 'Failed to initiate secure payment order.');
             setLoading(false);
@@ -370,7 +370,7 @@ export default function CheckoutForm() {
               try {
                 setLoading(true);
                 const verifyRes = await verifyPaymentSignature({
-                  order_id: orderId,
+                  order_id: orderNumber || orderId,
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature
