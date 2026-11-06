@@ -10,7 +10,9 @@ export interface GalleryItem {
 }
 
 interface ProductGalleryProps {
-  images: GalleryItem[];
+  images?: GalleryItem[];
+  variantImages?: Record<string, GalleryItem[]>;
+  initialVariant?: string;
   videoUrl?: string | null;
   productName: string;
   categoryName?: string;
@@ -20,25 +22,60 @@ interface ProductGalleryProps {
 
 export default function ProductGallery({
   images = [],
+  variantImages,
+  initialVariant = '1 foot',
   videoUrl = null,
   productName,
   categoryName,
   badge,
   selectedColorImage
 }: ProductGalleryProps) {
+  const [activeVariantKey, setActiveVariantKey] = useState<string>(initialVariant);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Synchronize with Custom Forge size/variant selection events
+  useEffect(() => {
+    const handleVariantChanged = (e: any) => {
+      const detail = e?.detail;
+      const label = detail?.sizeLabel || (detail?.variantId === 'cf-lj-6in' ? '6 inches' : '1 foot');
+      setActiveVariantKey(label);
+      setSelectedIndex(0); // Immediately reset to front view of newly selected variant
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('marshans:cf-variant-changed', handleVariantChanged);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('marshans:cf-variant-changed', handleVariantChanged);
+      }
+    };
+  }, []);
+
+  // Compute active image set based on selected variant
+  const currentImages: GalleryItem[] = React.useMemo(() => {
+    if (!variantImages) return images;
+    const normalized = (activeVariantKey || '').trim().toLowerCase();
+    if (normalized.includes('6') || normalized.includes('6in')) {
+      return variantImages['6 inches'] || images;
+    }
+    if (normalized.includes('2') || normalized.includes('2ft')) {
+      return variantImages['2 feet'] || variantImages['1 foot'] || images;
+    }
+    return variantImages['1 foot'] || variantImages['2 feet'] || images;
+  }, [variantImages, activeVariantKey, images]);
+
   // Combine images and optional video item
-  const allMedia: GalleryItem[] = [...images];
+  const allMedia: GalleryItem[] = [...currentImages];
   if (videoUrl && !allMedia.some((m) => m.is_video)) {
     allMedia.push({
       id: 'product-video-main',
-      image_url: images[0]?.image_url || '/assets/placeholders/product-placeholder.svg',
+      image_url: currentImages[0]?.image_url || '/assets/placeholders/product-placeholder.svg',
       is_video: true,
       video_url: videoUrl,
     });
   }
-
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // When selected color changes and has an associated image, jump to it
   useEffect(() => {
@@ -203,7 +240,7 @@ export default function ProductGallery({
           width: 70px;
           height: 70px;
           border-radius: 12px;
-          background: #ffffff;
+          background: #fafaf9;
           border: 2px solid rgba(20, 37, 26, 0.08);
           padding: 0;
           cursor: pointer;
@@ -225,7 +262,9 @@ export default function ProductGallery({
         .thumb-img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          padding: 4px;
+          box-sizing: border-box;
           display: block;
         }
 

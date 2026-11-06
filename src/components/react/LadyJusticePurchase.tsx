@@ -16,7 +16,16 @@ export default function LadyJusticePurchase() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showAddedConfirmation, setShowAddedConfirmation] = useState<boolean>(false);
 
-  // Switch variant
+  // Synchronize initial variant with the master product gallery on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('marshans:cf-variant-changed', {
+        detail: { variantId: selectedVariant.id, sizeLabel: selectedVariant.sizeLabel }
+      }));
+    }
+  }, []);
+
+  // Switch variant & synchronize product gallery immediately
   const handleVariantSelect = (v: CustomForgeSizeVariant) => {
     setSelectedVariant(v);
     if (!v.customModeAllowed) {
@@ -24,6 +33,12 @@ export default function LadyJusticePurchase() {
     }
     setValidationErrors({});
     setShowAddedConfirmation(false);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('marshans:cf-variant-changed', {
+        detail: { variantId: v.id, sizeLabel: v.sizeLabel }
+      }));
+    }
   };
 
   // Toggle Custom Mode
@@ -52,6 +67,10 @@ export default function LadyJusticePurchase() {
 
     setValidationErrors({});
 
+    const variantImageUrl = selectedVariant.id === 'cf-lj-6in'
+      ? '/assets/products/custom-forge/6 inches front.png'
+      : '/assets/products/custom-forge/name plate front.png';
+
     const cartItem: CartItem = {
       id: `cf-lady-justice-${selectedVariant.id}-${Date.now()}`,
       productId: selectedVariant.backendVariantId,
@@ -60,7 +79,7 @@ export default function LadyJusticePurchase() {
       sku: selectedVariant.sku,
       price: selectedVariant.price,
       quantity,
-      imageUrl: '/assets/products/custom-forge/lady-justice-statue.png',
+      imageUrl: variantImageUrl,
       categoryName: 'Custom Forge',
       material: customModeEnabled ? nameplateMaterial : 'Standard',
       options: {
@@ -318,7 +337,7 @@ export default function LadyJusticePurchase() {
             <span className="price-currency">₹</span>
             <strong className="price-amount">{totalPrice.toLocaleString('en-IN')}</strong>
           </div>
-          <span className="price-tax-note">All taxes included • Free Air Express Dispatch</span>
+          <span className="price-tax-note">All taxes included • Standard Air Delivery</span>
         </div>
       </div>
 

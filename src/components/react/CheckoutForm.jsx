@@ -259,6 +259,7 @@ export default function CheckoutForm() {
             const fullAddress = line2 ? `${line1}, ${line2}` : line1;
 
             const cfPayload = {
+              coupon_code: appliedCoupon?.code || undefined,
               items: cfItems.map(it => ({
                 variant_id: Number(it.options.variant_id) || 1,
                 quantity: Number(it.quantity) || 1,
@@ -303,8 +304,9 @@ export default function CheckoutForm() {
 
           if (payInit.already_paid) {
             clearCart();
+            clearAppliedCoupon();
             setPendingOrder(null);
-            window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&total=${summary.total}`;
+            window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&total=${finalPayableTotal}`;
             return;
           }
 
@@ -350,8 +352,9 @@ export default function CheckoutForm() {
 
                 if (verifyRes.success && verifyRes.payment_status === 'paid') {
                   clearCart();
+                  clearAppliedCoupon();
                   setPendingOrder(null);
-                  window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&paymentId=${encodeURIComponent(response.razorpay_payment_id)}&total=${summary.total}`;
+                  window.location.href = `/order-confirmation?orderNumber=${encodeURIComponent(orderNumber)}&paymentId=${encodeURIComponent(response.razorpay_payment_id)}&total=${finalPayableTotal}`;
                 } else {
                   setError(verifyRes.error || 'Payment signature verification failed.');
                 }
@@ -779,7 +782,7 @@ export default function CheckoutForm() {
             disabled={loading}
             className="btn btn-primary place-order-submit-btn"
           >
-            {loading ? 'Fabricating & Placing Order...' : `Authorize & Confirm Order (₹${summary.total.toLocaleString('en-IN')})`}
+            {loading ? 'Fabricating & Placing Order...' : `Authorize & Confirm Order (₹${finalPayableTotal.toLocaleString('en-IN')})`}
           </button>
         </form>
       </div>

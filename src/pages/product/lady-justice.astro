@@ -6,32 +6,38 @@ import { getLogoHref, isCustomForgeOnly } from '../../config/launchMode';
 
 /**
  * Lady Justice curated photography and architectural gallery.
- * Features primary transparent render, studio portrait, clean lotus plinth, and detail infographic.
+ *
+ * Primary product thumbnail: name plate front.png
+ * 1-foot and 2-foot variants: name plate front.png, name plate back.png
+ * 6-inch variant: 6 inches front.png, 6 inches back.png
  */
-const LADY_JUSTICE_PRIMARY_IMAGE = '/assets/products/custom-forge/lady-justice-statue.png';
-const LADY_JUSTICE_THUMB_IMAGE = '/assets/products/custom-forge/lady-justice-statue-thumb.png';
+const LADY_JUSTICE_PRIMARY_IMAGE = '/assets/products/custom-forge/name plate front.png';
 
-const ladyJusticeGalleryItems = [
+const ladyJustice1ft2ftImages = [
   {
-    id: 'cf-lj-primary',
-    image_url: '/assets/products/custom-forge/lady-justice-statue.png',
-    thumbnail_url: '/assets/products/custom-forge/lady-justice-statue-thumb.png',
+    id: 'cf-lj-np-front',
+    image_url: '/assets/products/custom-forge/name plate front.png',
+    thumbnail_url: '/assets/products/custom-forge/name plate front.png',
     is_primary: true
   },
   {
-    id: 'cf-lj-studio',
-    image_url: '/assets/products/custom-forge/lady-justice-statue-studio.jpeg',
-    thumbnail_url: '/assets/products/custom-forge/lady-justice-statue-studio.jpeg'
+    id: 'cf-lj-np-back',
+    image_url: '/assets/products/custom-forge/name plate back.png',
+    thumbnail_url: '/assets/products/custom-forge/name plate back.png'
+  }
+];
+
+const ladyJustice6inImages = [
+  {
+    id: 'cf-lj-6in-front',
+    image_url: '/assets/products/custom-forge/6 inches front.png',
+    thumbnail_url: '/assets/products/custom-forge/6 inches front.png',
+    is_primary: true
   },
   {
-    id: 'cf-lj-angle-2',
-    image_url: '/assets/products/custom-forge/lady-justice-statue-angle-2.jpeg',
-    thumbnail_url: '/assets/products/custom-forge/lady-justice-statue-angle-2.jpeg'
-  },
-  {
-    id: 'cf-lj-details',
-    image_url: '/assets/products/custom-forge/lady-justice-statue-details.jpeg',
-    thumbnail_url: '/assets/products/custom-forge/lady-justice-statue-details.jpeg'
+    id: 'cf-lj-6in-back',
+    image_url: '/assets/products/custom-forge/6 inches back.png',
+    thumbnail_url: '/assets/products/custom-forge/6 inches back.png'
   }
 ];
 
@@ -118,7 +124,13 @@ const ladyJusticeJsonLd = {
         <div class="lady-stage-col">
           <ProductGallery
             client:load
-            images={ladyJusticeGalleryItems}
+            images={ladyJustice1ft2ftImages}
+            variantImages={{
+              '6 inches': ladyJustice6inImages,
+              '1 foot': ladyJustice1ft2ftImages,
+              '2 feet': ladyJustice1ft2ftImages
+            }}
+            initialVariant="1 foot"
             productName="LADY JUSTICE"
             categoryName="Custom Forge"
             badge="Custom Forge Edition"
@@ -188,12 +200,17 @@ const ladyJusticeJsonLd = {
 </Layout>
 
 <style is:global>
+  :root {
+    --page-bg: #faf9f7;
+  }
+
   .product-page-root {
     background-color: #faf9f7;
     padding-bottom: 96px;
     width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;
+    margin-top: calc(-1 * var(--site-nav-h, 88px));
   }
 
   .container {
@@ -205,7 +222,7 @@ const ladyJusticeJsonLd = {
 
   /* Breadcrumbs */
   .breadcrumbs-container {
-    padding-top: 24px;
+    padding-top: calc(var(--site-nav-h, 88px) + 20px);
     padding-bottom: 24px;
   }
 

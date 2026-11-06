@@ -10,7 +10,7 @@ import { LADY_JUSTICE_VARIANTS } from '../lib/api/customForge';
  * Easy to replace later by modifying this path.
  */
 const CUSTOM_FORGE_HERO_IMAGE = '/assets/categories/custom-forge/hero.webp';
-const LADY_JUSTICE_IMAGE = '/assets/products/custom-forge/lady-justice-statue.png';
+const LADY_JUSTICE_IMAGE = '/assets/products/custom-forge/name plate front.png';
 
 const customForgeCategory = {
   ...CATEGORIES_CONFIG['custom-forge'],
@@ -144,7 +144,7 @@ const customForgeJsonLd = {
 
 <style is:global>
   :root {
-    --page-bg: #f6eee4;
+    --page-bg: #faf9f7;
   }
 
   .custom-forge-page {
@@ -155,6 +155,36 @@ const customForgeJsonLd = {
     box-sizing: border-box;
     overflow-x: hidden;
     font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+    margin-top: calc(-1 * var(--site-nav-h, 88px));
+  }
+
+  /* Extended Cinematic Hero for Custom Forge */
+  .custom-forge-page .collection-hero-banner {
+    width: 100%;
+    height: clamp(520px, 38vw, 560px);
+    max-height: 560px;
+    position: relative;
+    overflow: hidden;
+    background: #faf9f7;
+  }
+
+  .custom-forge-page .collection-hero-banner-img {
+    width: 100%;
+    height: 100%;
+    max-height: none !important;
+    object-fit: cover !important;
+    object-position: center 10% !important;
+  }
+
+  @media (max-width: 768px) {
+    .custom-forge-page .collection-hero-banner {
+      height: clamp(360px, 95vw, 400px);
+      max-height: 400px;
+    }
+
+    .custom-forge-page .collection-hero-banner-img {
+      object-position: 15% 10% !important;
+    }
   }
 
   .cf-landing-section {

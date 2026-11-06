@@ -30,7 +30,10 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
     setCurrentPath(window.location.pathname.replace(/\/+$/, '') || '/');
   }, []);
 
-  const isActive = (href: string) => currentPath !== '' && (href === '/' ? currentPath === '/' : currentPath.startsWith(href));
+  const isActive = (href: string) => {
+    const clean = href.replace(/\/+$/, '') || '/';
+    return currentPath !== '' && (clean === '/' ? currentPath === '/' : currentPath === clean || currentPath.startsWith(clean + '/'));
+  };
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -227,13 +230,15 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
 
       <style>{`
         .marshans-navbar {
-          position: sticky;
+          position: static;
           top: 0;
           left: 0;
           width: 100%;
           z-index: 50;
-          background-color: #ffffff;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+          background: transparent !important;
+          background-color: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
           box-sizing: border-box;
         }
 
@@ -515,14 +520,16 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
         .navbar--pill {
           --ink: #1f1c18;
           --ink-soft: #4a453f;
-          --surface: #fbf8f3;        /* soft cream, just lighter than the page */
+          --surface: #fbf8f3;        /* soft cream matching reference */
           --surface-hover: #ffffff;
           --rim: rgba(31, 28, 24, 0.12);
           --rim-strong: rgba(31, 28, 24, 0.22);
           position: static; /* the sticky wrapper in Header.astro positions the bar */
           background: transparent;
           border-bottom: none;
-          padding: 12px clamp(10px, 2vw, 24px);
+          box-shadow: none;
+          padding: 14px clamp(12px, 2.5vw, 32px);
+          box-sizing: border-box;
         }
 
         /* global.css gives every link a colour/opacity transition; the navbar's links stay static */
@@ -531,26 +538,44 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
         }
 
         .navbar--pill .navbar-container {
-          height: 64px;
+          height: 48px;
           max-width: 1360px;
-          padding: 0 14px 0 16px;
+          padding: 0;
           background: transparent;
+          border: none;
+          box-shadow: none;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
         }
 
         /* Separate logo on the left */
+        .navbar--pill .navbar-left {
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
         .navbar--pill .navbar-logo-badge {
           display: inline-flex;
           align-items: center;
+          justify-content: center;
           background: var(--surface);
           border: 1px solid var(--rim);
           border-radius: 12px;
-          padding: 6px 10px;
+          height: 38px;
+          padding: 0 12px;
+          box-shadow: none;
         }
 
         .navbar--pill .navbar-logo-img {
-          height: 26px;
-          max-width: 70px;
+          height: 22px;
+          width: auto;
+          max-width: 58px;
+          object-fit: contain;
           mix-blend-mode: multiply; /* the logo file has an opaque white ground: let the cream surface show through */
+          display: block;
         }
 
         .navbar--pill .navbar-brand:focus-visible,
@@ -563,25 +588,46 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
           border-radius: 999px;
         }
 
-        /* All seven links side by side inside one rounded pill */
+        /* Centered navigation pill */
+        .navbar--pill .navbar-center {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 1;
+        }
+
         .navbar--pill .nav-links-list {
+          display: inline-flex;
+          align-items: center;
           gap: 2px;
-          padding: 5px;
+          padding: 4px;
           border-radius: 999px;
           background: var(--surface);
           border: 1px solid var(--rim);
           box-shadow: none;
+          list-style: none;
+          margin: 0;
+        }
+
+        .navbar--pill .nav-item {
+          display: inline-block;
+          margin: 0;
+          padding: 0;
         }
 
         .navbar--pill .nav-link {
           display: inline-block;
-          padding: 7px 13px;
+          padding: 6px 16px;
           border: 1px solid transparent;
-          border-radius: 999px;
-          background: none;
+          border-radius: 9999px;
+          background: transparent;
           color: var(--ink-soft);
-          font-size: 13px;
-          font-weight: 600;
+          font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+          font-size: 13.5px;
+          font-weight: 500;
+          line-height: 1.2;
+          text-decoration: none;
+          white-space: nowrap;
         }
 
         .navbar--pill .nav-link::after {
@@ -590,73 +636,103 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
 
         .navbar--pill .nav-link:hover {
           color: var(--ink);
-          background: rgba(31, 28, 24, 0.05);
+          background: rgba(31, 28, 24, 0.04);
         }
 
         /* Active page: a clean white pill with a fine rim */
         .navbar--pill .nav-link.is-active {
           color: var(--ink);
+          font-weight: 600;
           background: var(--surface-hover);
           border-color: var(--rim-strong);
           box-shadow: none;
         }
 
         .navbar--pill .navbar-right {
+          display: flex;
+          align-items: center;
           gap: 8px;
+          flex-shrink: 0;
         }
 
         /* Search / cart: rounded square controls; sign-in: rounded pill */
-        .navbar--pill .header-icon-btn,
-        .navbar--pill .user-avatar-btn,
-        .navbar--pill .header-user-btn,
+        .navbar--pill .header-icon-btn {
+          color: var(--ink);
+          background: var(--surface);
+          border: 1px solid var(--rim);
+          border-radius: 12px;
+          box-shadow: none;
+          width: 38px;
+          min-width: 38px;
+          height: 38px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          transition: none;
+          box-sizing: border-box;
+          text-decoration: none;
+        }
+
         .navbar--pill .mobile-menu-toggle {
           color: var(--ink);
           background: var(--surface);
           border: 1px solid var(--rim);
           border-radius: 12px;
           box-shadow: none;
-          min-width: 40px;
-          height: 40px;
+          width: 38px;
+          min-width: 38px;
+          height: 38px;
+          display: none; /* hidden on desktop, enabled on mobile below 900px */
           align-items: center;
           justify-content: center;
+          padding: 0;
           transition: none;
-        }
-
-        /* Controls come from SearchModal / HeaderUserNav / CartBadge, which carry their own hover lifts and count
-           bump; inside the navbar they stay still */
-        .navbar--pill .header-icon-btn:hover,
-        .navbar--pill .user-avatar-btn:hover,
-        .navbar--pill .cart-count-badge,
-        .navbar--pill .cart-count-badge.bump {
-          transform: none;
-          transition: none;
-        }
-
-        .navbar--pill .header-icon-btn,
-        .navbar--pill .user-avatar-btn,
-        .navbar--pill .header-user-btn {
-          display: inline-flex;
+          box-sizing: border-box;
         }
 
         .navbar--pill .header-user-btn,
         .navbar--pill .user-avatar-btn {
+          color: var(--ink);
+          background: var(--surface);
+          border: 1px solid var(--rim);
           border-radius: 999px;
-          padding: 0 12px;
+          box-shadow: none;
+          height: 38px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 0 14px;
+          font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
+          font-size: 11.5px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          transition: none;
+          box-sizing: border-box;
+          text-decoration: none;
         }
 
         .navbar--pill .header-icon-btn:hover,
-        .navbar--pill .user-avatar-btn:hover,
+        .navbar--pill .mobile-menu-toggle:hover,
         .navbar--pill .header-user-btn:hover,
-        .navbar--pill .mobile-menu-toggle:hover {
+        .navbar--pill .user-avatar-btn:hover {
           background: var(--surface-hover);
           border-color: var(--rim-strong);
+        }
+
+        .navbar--pill .header-icon-btn:active,
+        .navbar--pill .mobile-menu-toggle:active,
+        .navbar--pill .header-user-btn:active,
+        .navbar--pill .user-avatar-btn:active {
+          transform: none;
         }
 
         .navbar--pill .navbar-right svg {
           stroke: currentColor;
         }
 
-        .navbar--pill .header-user-btn,
         .navbar--pill .user-btn-label,
         .navbar--pill .user-name {
           color: var(--ink);
@@ -666,30 +742,56 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
           background-color: var(--ink);
           color: #ffffff;
           box-shadow: none;
+          font-size: 10px;
+          min-width: 16px;
+          height: 16px;
+          top: -3px;
+          right: -3px;
         }
 
         @media (max-width: 1240px) {
           .navbar--pill .nav-link {
-            padding: 7px 10px;
-            font-size: 12.5px;
+            padding: 6px 12px;
+            font-size: 13px;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .navbar--pill .navbar-center {
+            display: none;
+          }
+          .navbar--pill .mobile-menu-toggle {
+            display: inline-flex;
           }
         }
 
         @media (max-width: 640px) {
           .navbar--pill {
-            padding: 8px 10px;
+            padding: 10px 12px;
           }
           .navbar--pill .navbar-container {
-            height: 56px;
-            padding: 0 8px 0 10px;
+            height: 42px;
+            gap: 6px;
+          }
+          .navbar--pill .navbar-logo-badge {
+            height: 36px;
+            padding: 0 10px;
           }
           .navbar--pill .navbar-logo-img {
-            height: 22px;
+            height: 20px;
+            max-width: 50px;
           }
           .navbar--pill .header-icon-btn,
           .navbar--pill .mobile-menu-toggle {
-            min-width: 38px;
-            height: 38px;
+            width: 36px;
+            min-width: 36px;
+            height: 36px;
+          }
+          .navbar--pill .navbar-right {
+            gap: 6px;
+          }
+          .navbar--pill .action-item.user-wrap {
+            display: none;
           }
         }
       `}</style>

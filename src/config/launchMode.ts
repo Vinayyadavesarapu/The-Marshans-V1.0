@@ -105,7 +105,7 @@ export const CUSTOM_FORGE_SEARCH_PRODUCTS = [
     category_name: 'Custom Forge',
     category_slug: 'custom-forge',
     price: 1600, // Starting price for 6" edition
-    primary_image_url: '/assets/products/custom-forge/lady-justice-statue.png',
+    primary_image_url: '/assets/products/custom-forge/name plate front.png',
     description: 'A symbol of truth, fairness and justice. Thoughtfully crafted with sculptural balance, bespoke 3D printed nameplate customization, and architectural presence.',
     keywords: ['lady justice', 'justice', 'statue', 'sculpture', 'custom forge', 'law', 'scales of justice', 'nameplate', 'advocate', 'judge', 'legal']
   }

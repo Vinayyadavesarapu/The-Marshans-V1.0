@@ -168,3 +168,65 @@ test('7. validateCouponApi returns friendly error message when backend rejects c
   assert.strictEqual(res.success, false);
   assert.strictEqual(res.error, 'Minimum order value of ₹5,000 required for this coupon.');
 });
+
+test('8. saveAppliedCoupon, getAppliedCoupon, and clearAppliedCoupon manage customer session persistence', async () => {
+  installBrowser();
+  const { saveAppliedCoupon, getAppliedCoupon, clearAppliedCoupon } = await loadModule('src/lib/api/coupons.ts');
+
+  clearAppliedCoupon();
+  assert.strictEqual(getAppliedCoupon(), null);
+
+  const sampleCoupon = {
+    id: 1,
+    code: 'MARS105',
+    discountType: 'fixed',
+    discountValue: 59900,
+    discountRupees: 599,
+    minOrderValueRupees: 50000
+  };
+
+  saveAppliedCoupon(sampleCoupon);
+  const retrieved = getAppliedCoupon();
+  assert.ok(retrieved);
+  assert.strictEqual(retrieved.code, 'MARS105');
+  assert.strictEqual(retrieved.discountRupees, 599);
+
+  clearAppliedCoupon();
+  assert.strictEqual(getAppliedCoupon(), null, 'Clearing applied coupon resets storage to null');
+});
+
+test('9. Commercial rule: coupon discounts never reduce gross merchandise subtotal for shipping calculation', async () => {
+  installBrowser();
+  const { calculateShipping } = await loadModule('src/lib/api/shipping.ts');
+  const { calculateCouponDiscount } = await loadModule('src/lib/api/coupons.ts');
+
+  const policy = {
+    storeId: 2,
+    standardFee: 50,
+    freeShippingEnabled: false,
+    freeShippingThreshold: 0,
+    source: 'api'
+  };
+
+  const coupon = {
+    id: 1,
+    code: 'MARS105',
+    discountType: 'fixed',
+    discountValue: 59900,
+    discountRupees: 599,
+    minOrderValueRupees: 50000
+  };
+
+  const subtotal = 55000;
+  const discount = calculateCouponDiscount(coupon, subtotal);
+  assert.strictEqual(discount, 599);
+
+  // Authoritative shipping calculation receives gross subtotal (subtotal before coupon)
+  const shippingCalc = calculateShipping(subtotal, policy);
+  assert.strictEqual(shippingCalc.shipping, 50, 'Store 2 standard air delivery is ₹50');
+  assert.strictEqual(shippingCalc.subtotal, 55000, 'Gross subtotal is preserved');
+
+  const netMerchandise = subtotal - discount;
+  const finalPayable = netMerchandise + shippingCalc.shipping;
+  assert.strictEqual(finalPayable, 54451, 'Payable is 55000 - 599 + 50 = 54451');
+});

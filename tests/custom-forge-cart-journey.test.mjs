@@ -16,7 +16,7 @@ test('1. Adding configured Lady Justice product to cart', async () => {
     sku: 'CF-LJ-1FT',
     price: 3500,
     quantity: 1,
-    imageUrl: '/assets/products/custom-forge/lady-justice-statue.png',
+    imageUrl: '/assets/products/custom-forge/name plate front.png',
     options: {
       is_custom_forge: true,
       variant_id: 2,

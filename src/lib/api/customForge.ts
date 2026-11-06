@@ -103,6 +103,7 @@ export interface CreateCustomForgeOrderItemPayload {
 export interface CreateCustomForgeOrderPayload {
   variant_id?: number;
   custom_mode?: 0 | 1;
+  coupon_code?: string;
   customization?: {
     customer_name: string;
     customer_designation: string;

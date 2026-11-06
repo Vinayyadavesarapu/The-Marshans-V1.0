@@ -5,12 +5,19 @@ import { resolve } from 'node:path';
 
 const read = (p) => readFileSync(resolve(p), 'utf8');
 
-test('Lady Justice image exists and is a valid transparent PNG', () => {
-  const imgPath = resolve('public/assets/products/custom-forge/lady-justice-statue.png');
-  assert.ok(existsSync(imgPath), 'lady-justice-statue.png exists in public assets');
+test('Lady Justice image exists and is a valid transparent or truecolor PNG', () => {
+  const imgPath = resolve('public/assets/products/custom-forge/name plate front.png');
+  assert.ok(existsSync(imgPath), 'name plate front.png exists in public assets');
   const buffer = readFileSync(imgPath);
-  // PNG color type is byte offset 25; type 6 = RGBA
-  assert.equal(buffer.readUInt8(25), 6, 'image is RGBA (colour type 6 with transparency)');
+  // PNG magic number check
+  assert.equal(buffer.slice(0, 8).toString('hex'), '89504e470d0a1a0a', 'file starts with valid PNG magic header');
+  // PNG color type is byte offset 25; type 2 = RGB, type 6 = RGBA
+  assert.ok([2, 6].includes(buffer.readUInt8(25)), 'image is valid PNG (Truecolor RGB or RGBA)');
+
+  // Verify all required variant assets exist
+  assert.ok(existsSync(resolve('public/assets/products/custom-forge/name plate back.png')), 'name plate back.png exists');
+  assert.ok(existsSync(resolve('public/assets/products/custom-forge/6 inches front.png')), '6 inches front.png exists');
+  assert.ok(existsSync(resolve('public/assets/products/custom-forge/6 inches back.png')), '6 inches back.png exists');
 });
 
 test('Homepage features Lady Justice banner strictly between New Arrivals and The Collection', () => {
@@ -50,7 +57,7 @@ test('HomeLadyJusticeFeature contains all required editorial content, compact di
   assert.match(banner, /ORDER NOW/, 'CTA button text is ORDER NOW');
 
   // Image source
-  assert.match(banner, /src="\/assets\/products\/custom-forge\/lady-justice-statue\.png"/);
+  assert.match(banner, /src="\/assets\/products\/custom-forge\/name plate front\.png"/);
 
   // Proportions: compact height in 180-220px range
   assert.match(banner, /height:\s*190px/, 'card desktop height is within 180-220px target');
@@ -72,8 +79,11 @@ test('Lady Justice product detail page satisfies routing, SEO, and structured da
 
   // Real product images and gallery
   assert.match(page, /productImage = LADY_JUSTICE_PRIMARY_IMAGE/);
-  assert.match(page, /const LADY_JUSTICE_PRIMARY_IMAGE = '\/assets\/products\/custom-forge\/lady-justice-statue\.png'/);
+  assert.match(page, /const LADY_JUSTICE_PRIMARY_IMAGE = '\/assets\/products\/custom-forge\/name plate front\.png'/);
   assert.match(page, /<ProductGallery/);
+  assert.match(page, /variantImages=\{\{/);
+  assert.match(page, /'6 inches': ladyJustice6inImages/);
+  assert.match(page, /'1 foot': ladyJustice1ft2ftImages/);
   assert.doesNotMatch(page, /dummy\.png/);
 
   // Structured Data
