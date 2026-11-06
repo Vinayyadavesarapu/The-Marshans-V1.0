@@ -78,9 +78,18 @@ export default function CheckoutForm() {
 
     const handleCouponUpdate = (e) => {
       setAppliedCoupon(e.detail ? normalizeCoupon(e.detail) : null);
+      setPendingOrder(null);
     };
     window.addEventListener('marshans:coupon-updated', handleCouponUpdate);
     setAppliedCoupon(getAppliedCoupon());
+
+    const handleCartUpdate = (e) => {
+      if (e.detail?.items) {
+        setItems(e.detail.items);
+        setPendingOrder(null);
+      }
+    };
+    window.addEventListener('marshans:cart-updated', handleCartUpdate);
 
     const unsub = onAuthStateChange((user) => {
       if (user) {
@@ -125,6 +134,7 @@ export default function CheckoutForm() {
       unsub();
       window.removeEventListener('marshans:shipping-policy-updated', handlePolicyUpdate);
       window.removeEventListener('marshans:coupon-updated', handleCouponUpdate);
+      window.removeEventListener('marshans:cart-updated', handleCartUpdate);
     };
   }, []);
 
