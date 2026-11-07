@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   LADY_JUSTICE_VARIANTS,
   type CustomForgeSizeVariant,
-  validateCustomForgeCustomization
+  validateCustomForgeCustomization,
+  calculateLadyJusticePrice,
+  LADY_JUSTICE_CUSTOMIZATION_PRICING
 } from '../../lib/api/customForge';
 import { addCustomForgeToCart, type CartItem } from '../../lib/api/cart';
 
@@ -30,6 +32,7 @@ export default function LadyJusticePurchase() {
     setSelectedVariant(v);
     if (!v.customModeAllowed) {
       setCustomModeEnabled(false);
+      setNameplateMaterial('Plastic');
     }
     setValidationErrors({});
     setShowAddedConfirmation(false);
@@ -48,16 +51,31 @@ export default function LadyJusticePurchase() {
       return;
     }
     setCustomModeEnabled(checked);
+    if (!checked) {
+      setNameplateMaterial('Plastic');
+    }
     setValidationErrors({});
     setShowAddedConfirmation(false);
   };
 
+  // Live Authoritative Customization Pricing Calculation
+  const isCustomActive = customModeEnabled && selectedVariant.customModeAllowed;
+  const priceMetrics = calculateLadyJusticePrice(
+    selectedVariant.price,
+    isCustomActive,
+    isCustomActive ? nameplateMaterial : 'Plastic',
+    quantity
+  );
+  const { nameplateCharge, materialCharge, unitPrice, totalPrice } = priceMetrics;
+
   // Handle Add to Cart
   const handleAddToCart = async () => {
-    const val = validateCustomForgeCustomization(selectedVariant, customModeEnabled, {
+    const isCustom = customModeEnabled && selectedVariant.customModeAllowed;
+    const effectiveMaterial = isCustom ? nameplateMaterial : 'Plastic';
+    const val = validateCustomForgeCustomization(selectedVariant, isCustom, {
       name: customName,
       designation: customDesignation,
-      material: nameplateMaterial
+      material: effectiveMaterial
     });
 
     if (!val.valid) {
@@ -77,11 +95,11 @@ export default function LadyJusticePurchase() {
       name: `Lady Justice Statue (${selectedVariant.sizeLabel})`,
       slug: 'lady-justice',
       sku: selectedVariant.sku || (selectedVariant.id === 'cf-lj-6in' ? 'MRSH-CF-LJ-6IN' : selectedVariant.id === 'cf-lj-1ft' ? 'MRSH-CF-LJ-1FT' : 'MRSH-CF-LJ-2FT'),
-      price: selectedVariant.price,
+      price: unitPrice,
       quantity,
       imageUrl: variantImageUrl,
       categoryName: 'Custom Forge',
-      material: customModeEnabled ? nameplateMaterial : 'Standard',
+      material: isCustom && effectiveMaterial === 'MDF' ? 'Organic Wood / MDF' : 'Precision Polymer',
       options: {
         is_custom_forge: true,
         variant_id: selectedVariant.id,
@@ -90,18 +108,19 @@ export default function LadyJusticePurchase() {
         size_label: selectedVariant.sizeLabel,
         size_inches: selectedVariant.sizeInches || (selectedVariant.id === 'cf-lj-6in' ? 6 : selectedVariant.id === 'cf-lj-1ft' ? 12 : 24),
         height_mm: selectedVariant.heightMm,
-        custom_mode_enabled: customModeEnabled,
-        custom_name: customModeEnabled ? customName.trim() : null,
-        custom_designation: customModeEnabled ? (customDesignation.trim() || 'NIL') : null,
-        nameplate_material: customModeEnabled ? nameplateMaterial : null
+        custom_mode_enabled: isCustom,
+        custom_name: isCustom ? customName.trim() : null,
+        custom_designation: isCustom ? (customDesignation.trim() || 'NIL') : null,
+        nameplate_material: effectiveMaterial,
+        nameplate_charge: nameplateCharge,
+        material_charge: materialCharge,
+        customization_charge: nameplateCharge + materialCharge
       }
     };
 
     await addCustomForgeToCart(cartItem);
     setShowAddedConfirmation(true);
   };
-
-  const totalPrice = selectedVariant.price * quantity;
 
   return (
     <div className="lady-purchase-root">
@@ -119,7 +138,9 @@ export default function LadyJusticePurchase() {
             <div className="toast-text-wrap">
               <strong className="toast-title">Added to Your Shopping Bag</strong>
               <p className="toast-sub">
-                Lady Justice ({selectedVariant.sizeLabel}) {customModeEnabled ? '• Custom Nameplate' : ''} × {quantity}
+                Lady Justice ({selectedVariant.sizeLabel})
+                {customModeEnabled ? ' • Personalized Nameplate (+₹29)' : ''}
+                {nameplateMaterial === 'MDF' ? ' • Organic Wood / MDF (+₹50)' : ''} × {quantity}
               </p>
             </div>
           </div>
@@ -175,15 +196,16 @@ export default function LadyJusticePurchase() {
       </div>
 
       {/* =========================================================================
-          CUSTOM MODE (BESPOKE NAMEPLATE)
+          CUSTOMIZATION OPTIONS: PERSONALIZED NAMEPLATE & MATERIAL
          ========================================================================= */}
       <div className="purchase-section custom-mode-container">
+        {/* Master Option: Personalized Nameplate Toggle (+₹29) */}
         <div className="custom-toggle-card">
           <div className="custom-toggle-info">
             <div className="toggle-heading-row">
               <strong className="toggle-title">Personalized Nameplate</strong>
               {selectedVariant.customModeAllowed ? (
-                <span className="toggle-free-tag">Complimentary</span>
+                <span className="toggle-price-tag">+₹29</span>
               ) : (
                 <span className="toggle-disabled-tag">1ft & 2ft Editions Only</span>
               )}
@@ -201,17 +223,17 @@ export default function LadyJusticePurchase() {
               checked={customModeEnabled}
               disabled={!selectedVariant.customModeAllowed}
               onChange={handleCustomModeToggle}
-              aria-label="Enable bespoke nameplate customization"
+              aria-label="Enable bespoke nameplate customization (+₹29)"
             />
             <span className="switch-slider" />
           </label>
         </div>
 
-        {/* CUSTOMIZATION INPUT FORM */}
+        {/* CUSTOMIZATION INPUT FORM (Appears ONLY when Personalized Nameplate is ON) */}
         {customModeEnabled && selectedVariant.customModeAllowed && (
           <div className="custom-fields-panel" role="region" aria-label="Bespoke Nameplate Inputs">
             <div className="custom-form-intro">
-              <span className="form-intro-tag">EMBOSSED SPECIFICATIONS</span>
+              <span className="form-intro-tag">EMBOSSED SPECIFICATIONS (+₹29)</span>
               <p className="form-intro-desc">Enter the details exactly as you wish them mounted on the lotus pedestal.</p>
             </div>
 
@@ -256,31 +278,44 @@ export default function LadyJusticePurchase() {
                 placeholder="e.g. Senior Advocate, High Court (or NIL)"
                 className={`field-input ${validationErrors.designation ? 'has-error' : ''}`}
               />
-              <span className="field-hint">Leave blank or enter 'NIL' if only your name should appear.</span>
+              <span className="field-hint">Leave blank or enter 'NIL' if only your name should appear (included in ₹29 price).</span>
               {validationErrors.designation && (
                 <p className="field-error-msg" role="alert">{validationErrors.designation}</p>
               )}
             </div>
 
-            {/* Field 3: Material */}
-            <div className="input-group">
-              <label className="field-label">Nameplate Material</label>
+            {/* Dependent Option: Nameplate Plinth Material Choice */}
+            <div className="custom-material-card">
+              <div className="material-header-row">
+                <label className="field-label">Nameplate Material</label>
+                <span className="material-price-hint">
+                  {nameplateMaterial === 'MDF' ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}
+                </span>
+              </div>
               <div className="material-toggle-row">
                 <button
                   type="button"
                   className={`material-choice-btn ${nameplateMaterial === 'Plastic' ? 'active' : ''}`}
                   onClick={() => setNameplateMaterial('Plastic')}
+                  aria-pressed={nameplateMaterial === 'Plastic'}
                 >
-                  <span className="material-btn-title">Precision Polymer</span>
+                  <div className="material-btn-top">
+                    <span className="material-btn-title">Precision Polymer</span>
+                    <span className="material-price-badge free">+₹0</span>
+                  </div>
                   <span className="material-btn-sub">Smooth matte monochrome matching statue</span>
                 </button>
                 <button
                   type="button"
                   className={`material-choice-btn ${nameplateMaterial === 'MDF' ? 'active' : ''}`}
                   onClick={() => setNameplateMaterial('MDF')}
+                  aria-pressed={nameplateMaterial === 'MDF'}
                 >
-                  <span className="material-btn-title">Organic Wood / MDF</span>
-                  <span className="material-btn-sub">Warm natural grain contrast</span>
+                  <div className="material-btn-top">
+                    <span className="material-btn-title">Organic Wood / MDF</span>
+                    <span className="material-price-badge paid">+₹50</span>
+                  </div>
+                  <span className="material-btn-sub">Warm natural grain contrast plinth</span>
                 </button>
               </div>
             </div>
@@ -337,6 +372,26 @@ export default function LadyJusticePurchase() {
           <div className="price-value-row">
             <span className="price-currency">₹</span>
             <strong className="price-amount">{totalPrice.toLocaleString('en-IN')}</strong>
+          </div>
+          <div className="price-breakdown-details">
+            <span className="breakdown-line">
+              {selectedVariant.sizeLabel}: ₹{selectedVariant.price.toLocaleString('en-IN')}
+            </span>
+            {nameplateCharge > 0 && (
+              <span className="breakdown-line paid-add">
+                • Nameplate: +₹29
+              </span>
+            )}
+            {materialCharge > 0 && (
+              <span className="breakdown-line paid-add">
+                • Wood / MDF: +₹50
+              </span>
+            )}
+            {quantity > 1 && (
+              <span className="breakdown-line qty-sub">
+                (₹{unitPrice.toLocaleString('en-IN')} × {quantity})
+              </span>
+            )}
           </div>
           <span className="price-tax-note">All taxes included • Standard Air Delivery</span>
         </div>
@@ -523,14 +578,14 @@ export default function LadyJusticePurchase() {
           color: #14251a;
         }
 
-        .toggle-free-tag {
-          font-size: 10px;
+        .toggle-price-tag {
+          font-size: 11px;
           font-weight: 800;
-          text-transform: uppercase;
           background: #eef8f1;
           color: #15803d;
-          padding: 2px 7px;
+          padding: 2px 8px;
           border-radius: 4px;
+          border: 1px solid rgba(21, 128, 61, 0.2);
         }
 
         .toggle-disabled-tag {
@@ -691,6 +746,29 @@ export default function LadyJusticePurchase() {
         }
 
         /* Material buttons */
+        .custom-material-card {
+          background: #ffffff;
+          border: 1px solid rgba(20, 37, 26, 0.1);
+          border-radius: 16px;
+          padding: 16px 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          box-shadow: 0 2px 8px rgba(20, 37, 26, 0.03);
+        }
+
+        .material-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+        }
+
+        .material-price-hint {
+          font-size: 12px;
+          font-weight: 700;
+          color: #2f6b45;
+        }
+
         .material-toggle-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -716,9 +794,45 @@ export default function LadyJusticePurchase() {
           color: #ffffff;
         }
 
+        .material-btn-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+        }
+
         .material-btn-title {
           font-size: 13px;
           font-weight: 800;
+        }
+
+        .material-price-badge {
+          font-size: 10px;
+          font-weight: 800;
+          padding: 1px 6px;
+          border-radius: 4px;
+        }
+
+        .material-price-badge.free {
+          background: #f4f4f5;
+          color: #71717a;
+        }
+
+        .material-choice-btn.active .material-price-badge.free {
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+        }
+
+        .material-price-badge.paid {
+          background: #eef8f1;
+          color: #15803d;
+          border: 1px solid rgba(21, 128, 61, 0.2);
+        }
+
+        .material-choice-btn.active .material-price-badge.paid {
+          background: #2f6b45;
+          color: #ffffff;
+          border-color: #2f6b45;
         }
 
         .material-btn-sub {
@@ -883,6 +997,28 @@ export default function LadyJusticePurchase() {
           font-weight: 850;
           color: #14251a;
           line-height: 1;
+        }
+
+        .price-breakdown-details {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          justify-content: flex-end;
+          align-items: center;
+          margin-top: 4px;
+          font-size: 11px;
+          color: #71717a;
+          font-weight: 600;
+        }
+
+        .breakdown-line.paid-add {
+          color: #15803d;
+          font-weight: 700;
+        }
+
+        .breakdown-line.qty-sub {
+          color: #14251a;
+          font-weight: 700;
         }
 
         .price-tax-note {

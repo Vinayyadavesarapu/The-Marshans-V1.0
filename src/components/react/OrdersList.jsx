@@ -88,6 +88,9 @@ export default function OrdersList() {
               </div>
 
               <div className="order-header-right">
+                <span className={`payment-tag payment-${(ord.payment_status || 'pending').toLowerCase()}`}>
+                  {ord.payment_status === 'paid' ? 'Paid' : 'Pending Payment'}
+                </span>
                 <span className={`status-tag status-${ord.status || 'confirmed'}`}>
                   {ord.status || 'Print Queued'}
                 </span>
@@ -97,32 +100,64 @@ export default function OrdersList() {
 
             {/* Items in this order */}
             <div className="order-items-list">
-              {(ord.items || []).map((item, idx) => (
-                <div key={idx} className="order-item-row">
-                  <img
-                    src={item.image_url || '/assets/placeholders/product-placeholder.svg'}
-                    alt={item.name}
-                    className="order-item-thumb"
-                  />
-                  <div className="order-item-info">
-                    <h4 className="item-title">{item.name}</h4>
-                    <div className="item-specs">
-                      {item.material && <span>Mat: {item.material}</span>}
-                      {item.finishing && <span>Finish: {item.finishing}</span>}
-                      <span>Qty: {item.quantity}</span>
+              {(ord.items || []).map((item, idx) => {
+                const isCustom = Boolean(item.customization && (item.customization.name || item.customization.custom_mode_enabled));
+                const matName = item.nameplate_material || item.customization?.material || item.material;
+                const isWood = /mdf/i.test(matName) || /wood/i.test(matName);
+                const hasCustomCharges = isCustom && (item.nameplate_charge || item.material_charge || item.price === 3529 || item.price === 3579 || item.price === 5629 || item.price === 5679);
+                const nameplateFee = item.nameplate_charge || (hasCustomCharges ? 29 : 0);
+                const woodFee = item.material_charge || (hasCustomCharges && isWood ? 50 : 0);
+                const baseUnit = item.base_price || (hasCustomCharges ? (item.price - nameplateFee - woodFee) : item.price);
+
+                return (
+                  <div key={idx} className="order-item-row">
+                    <img
+                      src={item.image_url || '/assets/placeholders/product-placeholder.svg'}
+                      alt={item.name}
+                      className="order-item-thumb"
+                    />
+                    <div className="order-item-info">
+                      <h4 className="item-title">{item.name}</h4>
+                      <div className="item-specs">
+                        {item.finishing && <span className="spec-pill">Edition: {item.finishing}</span>}
+                        {matName && <span className="spec-pill">Plinth: {isWood ? 'Organic Wood / MDF' : 'Precision Polymer'}</span>}
+                        <span>Qty: {item.quantity}</span>
+                      </div>
+
+                      {item.customization?.name && (
+                        <div className="item-customization-box">
+                          <span className="custom-box-label">BESPOKE NAMEPLATE</span>
+                          <div className="custom-box-content">
+                            <span>Name: <strong>{item.customization.name}</strong></span>
+                            {item.customization.designation && item.customization.designation.toUpperCase() !== 'NIL' && (
+                              <span>Designation: <strong>{item.customization.designation}</strong></span>
+                            )}
+                            <span>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></span>
+                          </div>
+                        </div>
+                      )}
+
+                      {hasCustomCharges && (
+                        <div className="item-pricing-breakdown">
+                          <span>Base: ₹{Number(baseUnit).toLocaleString('en-IN')}</span>
+                          {nameplateFee > 0 && <span className="add-fee">• Nameplate: +₹{nameplateFee}</span>}
+                          {woodFee > 0 && <span className="add-fee">• Wood / MDF: +₹{woodFee}</span>}
+                        </div>
+                      )}
+                    </div>
+                    <div className="item-price">
+                      ₹{Number(item.price * item.quantity).toLocaleString('en-IN')}
                     </div>
                   </div>
-                  <div className="item-price">
-                    ₹{Number(item.price * item.quantity).toLocaleString('en-IN')}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Order Footer & Tracking info */}
+            {/* Order Footer & Breakdown info */}
             <div className="order-card-footer">
               <div className="shipping-address-snippet">
                 <span>Shipping to: <strong>{ord.shipping_address?.city || 'India'}</strong> ({ord.shipping_address?.postal_code || 'PIN'})</span>
+                {ord.coupon_code && <span className="coupon-used-badge">🎟️ {ord.coupon_code}</span>}
               </div>
               <button
                 type="button"
@@ -136,18 +171,34 @@ export default function OrdersList() {
         ))}
       </div>
 
-      {/* Fulfillment Status Modal */}
+      {/* Fulfillment Status & Order Details Modal */}
       {selectedOrder && (
         <div className="tracking-modal-backdrop" onClick={() => setSelectedOrder(null)}>
           <div className="tracking-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Order Fulfillment Timeline</h3>
+              <div>
+                <span className="modal-eyebrow">ORDER DETAILS & TRACKING</span>
+                <h3>#{selectedOrder.order_number || selectedOrder.id}</h3>
+              </div>
               <button type="button" onClick={() => setSelectedOrder(null)} className="close-btn">✕</button>
             </div>
+
             <div className="modal-body">
+              {/* Order Meta Header */}
               <div className="order-summary-mini">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <strong style={{ fontSize: '16px' }}>#{selectedOrder.order_number || selectedOrder.id}</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span className={`payment-tag payment-${(selectedOrder.payment_status || 'pending').toLowerCase()}`}>
+                      {selectedOrder.payment_status === 'paid' ? '✓ Paid Online' : 'Pending Payment'}
+                    </span>
+                    <span className="order-date-tag">
+                      {new Date(selectedOrder.created_at || Date.now()).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
                   <span style={{
                     textTransform: 'uppercase',
                     fontSize: '11px',
@@ -160,85 +211,180 @@ export default function OrdersList() {
                     {trackingInfo?.current_status || selectedOrder.status}
                   </span>
                 </div>
-                <span>Courier: <strong>{trackingInfo?.courier || selectedOrder.courier || 'Velocity Air Express'}</strong></span>
-                {trackingInfo?.tracking_no ? (
-                  <span>AWB Consignment: <strong>{trackingInfo.tracking_no}</strong></span>
-                ) : (
-                  <span style={{ color: '#71717a' }}>AWB Consignment: <em>Assigned upon dispatch</em></span>
+
+                {selectedOrder.transaction_id && (
+                  <span className="tx-ref-line">
+                    Transaction Ref: <code>{selectedOrder.transaction_id}</code>
+                  </span>
                 )}
+              </div>
+
+              {/* Items in this Order */}
+              <div className="modal-section-card">
+                <h4 className="modal-section-title">Purchased Items & Specifications</h4>
+                <div className="modal-items-list">
+                  {(selectedOrder.items || []).map((item, idx) => {
+                    const isCustom = Boolean(item.customization && (item.customization.name || item.customization.custom_mode_enabled));
+                    const matName = item.nameplate_material || item.customization?.material || item.material;
+                    const isWood = /mdf/i.test(matName) || /wood/i.test(matName);
+                    const hasCustomCharges = isCustom && (item.nameplate_charge || item.material_charge || item.price === 3529 || item.price === 3579 || item.price === 5629 || item.price === 5679);
+                    const nameplateFee = item.nameplate_charge || (hasCustomCharges ? 29 : 0);
+                    const woodFee = item.material_charge || (hasCustomCharges && isWood ? 50 : 0);
+                    const baseUnit = item.base_price || (hasCustomCharges ? (item.price - nameplateFee - woodFee) : item.price);
+
+                    return (
+                      <div key={idx} className="modal-item-row">
+                        <img
+                          src={item.image_url || '/assets/placeholders/product-placeholder.svg'}
+                          alt={item.name}
+                          className="modal-item-thumb"
+                        />
+                        <div className="modal-item-info">
+                          <strong>{item.name}</strong>
+                          <div className="modal-item-specs">
+                            <span>Edition: <strong>{item.finishing || 'Standard'}</strong></span>
+                            <span>Qty: <strong>{item.quantity}</strong></span>
+                            <span>Unit Price: <strong>₹{Number(item.price).toLocaleString('en-IN')}</strong></span>
+                          </div>
+
+                          {item.customization?.name && (
+                            <div className="modal-custom-detail">
+                              <span className="detail-tag">EMBOSSED SPECIFICATIONS</span>
+                              <p>Name: <strong>{item.customization.name}</strong></p>
+                              {item.customization.designation && item.customization.designation.toUpperCase() !== 'NIL' && (
+                                <p>Designation: <strong>{item.customization.designation}</strong></p>
+                              )}
+                              <p>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></p>
+                            </div>
+                          )}
+
+                          {hasCustomCharges && (
+                            <div className="modal-price-breakdown-row">
+                              <span>Base: ₹{Number(baseUnit).toLocaleString('en-IN')}</span>
+                              {nameplateFee > 0 && <span className="add">• Nameplate: +₹{nameplateFee}</span>}
+                              {woodFee > 0 && <span className="add">• Wood / MDF: +₹{woodFee}</span>}
+                            </div>
+                          )}
+                        </div>
+                        <div className="modal-item-total">
+                          ₹{Number(item.price * item.quantity).toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Order Financial Summary */}
+              <div className="modal-section-card financial-breakdown-card">
+                <h4 className="modal-section-title">Order Financial Summary</h4>
+                <div className="financial-rows">
+                  <div className="fin-row">
+                    <span>Product Subtotal</span>
+                    <strong>₹{Number(selectedOrder.subtotal || selectedOrder.total_amount).toLocaleString('en-IN')}</strong>
+                  </div>
+                  {Number(selectedOrder.discount_amount) > 0 && (
+                    <div className="fin-row discount-row">
+                      <span>
+                        Coupon Discount {selectedOrder.coupon_code ? `(${selectedOrder.coupon_code})` : ''}
+                      </span>
+                      <strong className="discount-val">−₹{Number(selectedOrder.discount_amount).toLocaleString('en-IN')}</strong>
+                    </div>
+                  )}
+                  <div className="fin-row">
+                    <span>Standard Air Delivery</span>
+                    <strong>₹{Number(selectedOrder.shipping_amount !== undefined ? selectedOrder.shipping_amount : 50).toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="fin-row fin-total-row">
+                    <span>Final Order Total</span>
+                    <strong className="grand-total">₹{Number(selectedOrder.total_amount).toLocaleString('en-IN')}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipping Coordinates */}
+              {selectedOrder.shipping_address && (
+                <div className="modal-section-card">
+                  <h4 className="modal-section-title">Delivery Coordinates</h4>
+                  <div className="shipping-address-detail">
+                    <p><strong>{selectedOrder.shipping_address.name}</strong> • {selectedOrder.shipping_address.phone}</p>
+                    <p>{selectedOrder.shipping_address.line1} {selectedOrder.shipping_address.line2}</p>
+                    <p>{selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} — {selectedOrder.shipping_address.postal_code || selectedOrder.shipping_address.postalCode}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Manufacturing & Fulfillment Timeline */}
+              <div className="modal-section-card">
+                <h4 className="modal-section-title">Manufacturing & Carrier Timeline</h4>
+                <div className="carrier-status-summary">
+                  <span>Courier: <strong>{trackingInfo?.courier || selectedOrder.courier || 'Velocity Air Express'}</strong></span>
+                  {trackingInfo?.tracking_no ? (
+                    <span>AWB Waybill: <strong>{trackingInfo.tracking_no}</strong></span>
+                  ) : (
+                    <span style={{ color: '#71717a' }}>AWB Waybill: <em>Assigned upon physical parcel dispatch</em></span>
+                  )}
+                </div>
+
                 {trackingInfo?.track_url && (
-                  <div style={{ marginTop: '8px' }}>
+                  <div style={{ marginTop: '10px' }}>
                     <a
                       href={trackingInfo.track_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-outline btn-sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '4px 10px' }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px' }}
                     >
-                      Open Live Carrier Tracking ↗
+                      Open Carrier Live Tracking ↗
                     </a>
                   </div>
                 )}
-              </div>
 
-              {trackingLoading ? (
-                <div style={{ padding: '36px 0', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
-                  Connecting to live carrier telemetry...
-                </div>
-              ) : trackingInfo?.activities && trackingInfo.activities.length > 0 ? (
-                <div className="tracking-timeline">
-                  {trackingInfo.activities.map((act, idx) => (
-                    <div key={idx} className={`timeline-step ${idx === 0 ? 'step-active' : 'step-complete'}`}>
-                      <div className="step-circle">{idx === 0 ? '●' : '✓'}</div>
-                      <div className="step-content">
-                        <strong>{act.activity || act.status || 'Consignment Update'}</strong>
-                        {act.location && <p>Location: {act.location}</p>}
-                        {(act.date || act.time || act.timestamp) && (
-                          <p style={{ fontSize: '11px', color: '#a1a1aa' }}>
-                            {[act.date, act.time].filter(Boolean).join(' ')}
-                          </p>
-                        )}
+                {trackingLoading ? (
+                  <div style={{ padding: '24px 0', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
+                    Connecting to live carrier telemetry...
+                  </div>
+                ) : trackingInfo?.activities && trackingInfo.activities.length > 0 ? (
+                  <div className="tracking-timeline" style={{ marginTop: '16px' }}>
+                    {trackingInfo.activities.map((act, idx) => (
+                      <div key={idx} className={`timeline-step ${idx === 0 ? 'step-active' : 'step-complete'}`}>
+                        <div className="step-circle">{idx === 0 ? '●' : '✓'}</div>
+                        <div className="step-content">
+                          <strong>{act.activity || act.status || 'Consignment Update'}</strong>
+                          {act.location && <p>Location: {act.location}</p>}
+                          {(act.date || act.time || act.timestamp) && (
+                            <p style={{ fontSize: '11px', color: '#a1a1aa' }}>
+                              {[act.date, act.time].filter(Boolean).join(' ')}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : trackingInfo?.tracking_no ? (
-                <div className="tracking-pending-state">
-                  <div className="pending-badge-row">
-                    <span className="courier-badge">{trackingInfo.courier || selectedOrder.courier || 'Velocity Air Express'}</span>
-                    <span className="consignment-tag">Consignment Registered</span>
+                    ))}
                   </div>
-                  <h4>Dispatched & In Transit</h4>
-                  <p>
-                    Waybill #{trackingInfo.tracking_no} is active with Velocity Air Express.
-                    Carrier checkpoint telemetry will update automatically as physical parcel scans occur at courier sorting hubs.
-                  </p>
-                  {trackingInfo?.track_url && (
-                    <div style={{ marginTop: '16px' }}>
-                      <a
-                        href={trackingInfo.track_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-primary btn-sm"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        Open Carrier Tracking Portal ↗
-                      </a>
+                ) : trackingInfo?.tracking_no ? (
+                  <div className="tracking-pending-state" style={{ marginTop: '14px' }}>
+                    <div className="pending-badge-row">
+                      <span className="courier-badge">{trackingInfo.courier || selectedOrder.courier || 'Velocity Air Express'}</span>
+                      <span className="consignment-tag">Consignment Registered</span>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="tracking-pending-state">
-                  <div className="pending-badge-row">
-                    <span className="courier-badge">Status: {selectedOrder.status || 'Print Queued'}</span>
+                    <h4>In Transit with Velocity Air Express</h4>
+                    <p>
+                      Waybill #{trackingInfo.tracking_no} is active. Physical checkpoint scans will appear as the parcel moves through courier routing hubs.
+                    </p>
                   </div>
-                  <h4>Fabrication & Fulfillment in Progress</h4>
-                  <p>
-                    Your artifact is currently queued in our print farm.
-                    Carrier tracking consignment details will appear here once dispatched via Velocity Air Express.
-                  </p>
-                </div>
-              )}
+                ) : (
+                  <div className="tracking-pending-state" style={{ marginTop: '14px' }}>
+                    <div className="pending-badge-row">
+                      <span className="courier-badge">Manufacturing Queue</span>
+                      <span className="consignment-tag">{selectedOrder.status || 'Order Placed'}</span>
+                    </div>
+                    <h4>Fabrication in Progress at Marshan Farm</h4>
+                    <p>
+                      Your piece is progressing through additive manufacturing and precision inspection. Live courier waybill telemetry begins upon physical hand-over to Velocity Air Express.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -552,6 +698,261 @@ export default function OrdersList() {
           color: #64748b;
           line-height: 1.5;
           margin: 0;
+        }
+
+        .payment-tag {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 3px 8px;
+          border-radius: 9999px;
+        }
+
+        .payment-tag.payment-paid {
+          background: #dcfce7;
+          color: #15803d;
+        }
+
+        .payment-tag.payment-pending {
+          background: #fef3c7;
+          color: #92400e;
+        }
+
+        .item-specs {
+          display: flex;
+          gap: 8px;
+          font-size: 11px;
+          color: #71717a;
+          flex-wrap: wrap;
+          margin-bottom: 6px;
+        }
+
+        .spec-pill {
+          background: #f4f4f5;
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+
+        .item-customization-box {
+          background: #fdfaf6;
+          border: 1px solid rgba(180, 83, 9, 0.2);
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin: 6px 0;
+          font-size: 11px;
+        }
+
+        .custom-box-label {
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.1em;
+          color: #b45309;
+          display: block;
+          margin-bottom: 4px;
+        }
+
+        .custom-box-content {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          color: #1f2937;
+        }
+
+        .item-pricing-breakdown {
+          display: flex;
+          gap: 8px;
+          font-size: 11px;
+          color: #71717a;
+          margin-top: 4px;
+        }
+
+        .item-pricing-breakdown .add-fee {
+          color: #15803d;
+          font-weight: 700;
+        }
+
+        .coupon-used-badge {
+          font-size: 11px;
+          font-weight: 700;
+          background: #eef2ff;
+          color: #4338ca;
+          padding: 2px 8px;
+          border-radius: 4px;
+          margin-left: 8px;
+        }
+
+        .modal-eyebrow {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          color: #71717a;
+          display: block;
+          margin-bottom: 4px;
+        }
+
+        .modal-section-card {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 16px;
+          margin-bottom: 16px;
+        }
+
+        .modal-section-title {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #475569;
+          margin: 0 0 12px 0;
+        }
+
+        .modal-items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .modal-item-row {
+          display: flex;
+          gap: 12px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid #edf2f7;
+        }
+
+        .modal-item-row:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
+        .modal-item-thumb {
+          width: 52px;
+          height: 52px;
+          border-radius: 8px;
+          object-fit: cover;
+          background: #edf2f7;
+          flex-shrink: 0;
+        }
+
+        .modal-item-info {
+          flex: 1;
+          font-size: 12px;
+        }
+
+        .modal-item-specs {
+          display: flex;
+          gap: 8px;
+          font-size: 11px;
+          color: #64748b;
+          margin: 2px 0 6px 0;
+          flex-wrap: wrap;
+        }
+
+        .modal-custom-detail {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 6px 10px;
+          font-size: 11px;
+          margin-top: 4px;
+        }
+
+        .modal-custom-detail p {
+          margin: 2px 0;
+          color: #1e293b;
+        }
+
+        .detail-tag {
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.1em;
+          color: #b45309;
+          display: block;
+          margin-bottom: 2px;
+        }
+
+        .modal-price-breakdown-row {
+          display: flex;
+          gap: 8px;
+          font-size: 11px;
+          color: #64748b;
+          margin-top: 4px;
+        }
+
+        .modal-price-breakdown-row .add {
+          color: #15803d;
+          font-weight: 700;
+        }
+
+        .modal-item-total {
+          font-size: 13px;
+          font-weight: 700;
+          color: #09090b;
+        }
+
+        .financial-rows {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          font-size: 12px;
+        }
+
+        .fin-row {
+          display: flex;
+          justify-content: space-between;
+          color: #475569;
+        }
+
+        .discount-row {
+          color: #15803d;
+        }
+
+        .discount-val {
+          color: #15803d;
+        }
+
+        .fin-total-row {
+          border-top: 1px solid #cbd5e1;
+          padding-top: 8px;
+          font-size: 14px;
+          color: #09090b;
+        }
+
+        .grand-total {
+          font-size: 16px;
+          color: #09090b;
+        }
+
+        .shipping-address-detail p {
+          margin: 2px 0;
+          font-size: 12px;
+          color: #334155;
+        }
+
+        .carrier-status-summary {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12px;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .order-date-tag {
+          font-size: 11px;
+          color: #71717a;
+        }
+
+        .tx-ref-line {
+          font-size: 11px;
+          color: #64748b;
+        }
+
+        .tx-ref-line code {
+          background: #f1f5f9;
+          padding: 1px 4px;
+          border-radius: 4px;
+          color: #0f172a;
         }
       ` }} />
     </div>

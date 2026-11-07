@@ -153,11 +153,11 @@ test('7. CUSTOM MODE VALIDATION RULES: 35/50 char limits, NIL accepted, Plastic/
   assert.equal(res6in.valid, false);
   assert.ok(res6in.errors.variant);
 
-  // Empty fields when Custom Mode enabled -> invalid
+  // Empty fields when Custom Mode enabled -> name & material required, designation is optional
   const resEmpty = validateCustomForgeCustomization(v1ft, true, {});
   assert.equal(resEmpty.valid, false);
   assert.ok(resEmpty.errors.name);
-  assert.ok(resEmpty.errors.designation);
+  assert.equal(resEmpty.errors.designation, undefined, 'Designation is optional');
   assert.ok(resEmpty.errors.material);
 
   // Name > 35 characters -> invalid

@@ -230,15 +230,22 @@ export default function CartView() {
                       <span className="cf-spec-edition">Edition: {item.options.size_label || '1 Foot'} ({item.options.height_mm ? `${item.options.height_mm}mm` : '305mm'})</span>
                       {item.options.custom_mode_enabled ? (
                         <div className="cf-custom-mounted-badge">
-                          <span className="cf-mount-tag">Mounted Nameplate</span>
+                          <span className="cf-mount-tag">Personalized Nameplate (+₹29)</span>
                           <span className="cf-mount-line"><strong>Name:</strong> {item.options.custom_name}</span>
                           {item.options.custom_designation && item.options.custom_designation !== 'NIL' && (
                             <span className="cf-mount-line"><strong>Title:</strong> {item.options.custom_designation}</span>
                           )}
-                          <span className="cf-mount-line"><strong>Material:</strong> {item.options.nameplate_material || 'Plastic'}</span>
+                          <span className="cf-mount-line">
+                            <strong>Material:</strong> {item.options.nameplate_material === 'MDF' ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}
+                          </span>
                         </div>
                       ) : (
-                        <span className="cf-standard-tag">Standard Edition (No Personalization)</span>
+                        <div className="cf-custom-mounted-badge">
+                          <span className="cf-standard-tag">Standard Edition (No Personalization)</span>
+                          {item.options.nameplate_material === 'MDF' && (
+                            <span className="cf-mount-line"><strong>Material:</strong> Organic Wood / MDF (+₹50)</span>
+                          )}
+                        </div>
                       )}
                     </div>
                   ) : (

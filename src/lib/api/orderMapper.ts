@@ -18,9 +18,19 @@ export interface OrderItem {
   price: number;
   /** Line total in rupees. */
   total_price: number;
+  base_price?: number;
+  nameplate_charge?: number;
+  material_charge?: number;
   image_url: string;
   material: string;
+  nameplate_material?: string;
   finishing: string;
+  customization?: {
+    name?: string;
+    designation?: string;
+    material?: string;
+    status?: string;
+  } | null;
 }
 
 export interface Order {
@@ -35,10 +45,13 @@ export interface Order {
   subtotal: number;
   shipping_amount: number;
   discount_amount: number;
+  coupon_code?: string;
   /** Human-readable fulfillment status, e.g. "Ready To Ship". */
   status: string;
   payment_status?: string;
   payment_method?: string;
+  gateway_order_id?: string;
+  transaction_id?: string;
   courier?: string;
   tracking_no?: string;
   shipping_address: {
@@ -113,6 +126,28 @@ export function normalizeOrderItem(raw: any, storeId?: number): OrderItem {
   const item = raw && typeof raw === 'object' ? raw : {};
   const options = parseJsonObject(item.variant_options);
   const name = str(item.product_name) || str(item.name) || 'Artifact';
+  const customData = item.customization || options.nameplate || null;
+  const isCustom = Boolean(customData && (customData.name || item.custom_mode_enabled));
+  const rawMat = str(options.material || item.material || item.nameplate_material || customData?.material);
+  const isMdf = /mdf/i.test(rawMat) || /wood/i.test(rawMat);
+
+  const unitPrice = rupees(item, 'unit_price', storeId);
+  const explicitNameplate = num(options.nameplate_charge ?? item.nameplate_charge);
+  const explicitMaterial = num(options.material_charge ?? item.material_charge);
+
+  let nameplateCharge = 0;
+  let materialCharge = 0;
+  let basePrice = unitPrice;
+
+  if (explicitNameplate !== null && explicitNameplate !== undefined) {
+    nameplateCharge = explicitNameplate;
+    materialCharge = explicitMaterial ?? 0;
+    basePrice = Math.max(0, unitPrice - nameplateCharge - materialCharge);
+  } else if (isCustom && (unitPrice === 3529 || unitPrice === 3579 || unitPrice === 5629 || unitPrice === 5679)) {
+    nameplateCharge = 29;
+    materialCharge = isMdf ? 50 : 0;
+    basePrice = Math.max(0, unitPrice - nameplateCharge - materialCharge);
+  }
 
   return {
     id: item.id ?? '',
@@ -121,11 +156,16 @@ export function normalizeOrderItem(raw: any, storeId?: number): OrderItem {
     product_name: name,
     sku: item.sku ? str(item.sku) : undefined,
     quantity: num(item.quantity) ?? 1,
-    price: rupees(item, 'unit_price', storeId),
+    price: unitPrice,
     total_price: rupees(item, 'total_price', storeId),
+    base_price: basePrice,
+    nameplate_charge: nameplateCharge > 0 ? nameplateCharge : undefined,
+    material_charge: materialCharge > 0 ? materialCharge : undefined,
     image_url: str(item.img || item.product_image || item.image_url),
-    material: str(options.material),
-    finishing: str(options.finishing || options.finish)
+    material: rawMat,
+    nameplate_material: str(item.nameplate_material || customData?.material || (isMdf ? 'MDF' : (isCustom ? 'Plastic' : ''))),
+    finishing: str(options.finishing || options.finish || options.size || item.size_label || item.finishing),
+    customization: customData
   };
 }
 
@@ -146,9 +186,12 @@ export function normalizeOrder(raw: any): Order {
     subtotal: rupees(order, 'subtotal', storeId),
     shipping_amount: rupees(order, 'shipping_charge', storeId),
     discount_amount: rupees(order, 'discount_total', storeId),
-    status: formatFulfillmentStatus(order.fulfillment_status),
+    coupon_code: order.coupon_code ? str(order.coupon_code) : undefined,
+    status: formatFulfillmentStatus(order.fulfillment_status || order.production_status || order.status),
     payment_status: order.payment_status ? str(order.payment_status) : undefined,
     payment_method: order.payment_method ? str(order.payment_method) : undefined,
+    gateway_order_id: order.gateway_order_id ? str(order.gateway_order_id) : undefined,
+    transaction_id: str(order.transaction_id || order.gateway_payment_id || order.gateway_order_id) || undefined,
     courier: order.courier ? str(order.courier) : undefined,
     tracking_no: order.tracking_no ? str(order.tracking_no) : undefined,
     shipping_address: {

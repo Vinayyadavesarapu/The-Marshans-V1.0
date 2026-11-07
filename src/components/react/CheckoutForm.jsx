@@ -289,30 +289,32 @@ export default function CheckoutForm() {
               primaryCf.options?.variant_key || primaryCf.options?.variant_id || primaryCf.productId
             );
 
+            const isPrimaryCustom = Boolean(primaryCf.options?.custom_mode_enabled);
             const cfPayload = {
               coupon_code: appliedCoupon?.code || undefined,
               variant_id: primaryNumericId,
               variant_key: primaryVariantKey,
               quantity: Number(primaryCf.quantity) || 1,
-              custom_mode: primaryCf.options?.custom_mode_enabled ? 1 : 0,
-              customization: primaryCf.options?.custom_mode_enabled ? {
-                customer_name: primaryCf.options?.custom_name || '',
-                customer_designation: primaryCf.options?.custom_designation || 'NIL',
-                nameplate_material: primaryCf.options?.nameplate_material || 'Plastic'
-              } : null,
+              custom_mode: isPrimaryCustom ? 1 : 0,
+              customization: {
+                customer_name: isPrimaryCustom ? (primaryCf.options?.custom_name || '') : null,
+                customer_designation: isPrimaryCustom ? (primaryCf.options?.custom_designation || 'NIL') : null,
+                nameplate_material: isPrimaryCustom ? (primaryCf.options?.nameplate_material || 'Plastic') : 'Plastic'
+              },
               items: cfItems.map(it => {
                 const numId = resolveVariantNumericId(it.options?.variant_numeric_id || it.options?.variant_id || it.productId);
                 const varKey = resolveVariantKey(it.options?.variant_key || it.options?.variant_id || it.productId);
+                const isItemCustom = Boolean(it.options?.custom_mode_enabled);
                 return {
                   variant_id: numId,
                   variant_key: varKey,
                   quantity: Number(it.quantity) || 1,
-                  custom_mode: it.options?.custom_mode_enabled ? 1 : 0,
-                  customization: it.options?.custom_mode_enabled ? {
-                    customer_name: it.options?.custom_name || '',
-                    customer_designation: it.options?.custom_designation || 'NIL',
-                    nameplate_material: it.options?.nameplate_material || 'Plastic'
-                  } : null
+                  custom_mode: isItemCustom ? 1 : 0,
+                  customization: {
+                    customer_name: isItemCustom ? (it.options?.custom_name || '') : null,
+                    customer_designation: isItemCustom ? (it.options?.custom_designation || 'NIL') : null,
+                    nameplate_material: isItemCustom ? (it.options?.nameplate_material || 'Plastic') : 'Plastic'
+                  }
                 };
               }),
               shipping_address: {
@@ -342,6 +344,7 @@ export default function CheckoutForm() {
           // Step 2: Request authoritative payment order from backend using canonical orderNumber
           const payInit = await createPaymentOrder(orderNumber || orderId);
           if (!payInit.success) {
+            setPendingOrder(null);
             setError(payInit.error || 'Failed to initiate secure payment order.');
             setLoading(false);
             return;
@@ -474,6 +477,7 @@ export default function CheckoutForm() {
       // Step 2: Request authoritative payment order from backend
       const payInit = await createPaymentOrder(orderId);
       if (!payInit.success) {
+        setPendingOrder(null);
         setError(payInit.error || 'Failed to initiate secure payment order.');
         setLoading(false);
         return;
@@ -852,14 +856,20 @@ export default function CheckoutForm() {
                     {item.options?.is_custom_forge ? (
                       <div className="cf-checkout-specs">
                         <span className="cf-spec-edition-tag">Edition: {item.options.size_label}</span>
-                        {item.options.custom_mode_enabled && (
+                        {item.options.custom_mode_enabled ? (
                           <div className="cf-mounted-summary-line">
-                            <span>Nameplate: <strong>{item.options.custom_name}</strong></span>
+                            <span>Nameplate (+₹29): <strong>{item.options.custom_name}</strong></span>
                             {item.options.custom_designation && item.options.custom_designation !== 'NIL' && (
                               <span> ({item.options.custom_designation})</span>
                             )}
-                            <span> [{item.options.nameplate_material || 'Plastic'}]</span>
+                            <span> [{item.options.nameplate_material === 'MDF' ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer'}]</span>
                           </div>
+                        ) : (
+                          item.options.nameplate_material === 'MDF' && (
+                            <div className="cf-mounted-summary-line">
+                              <span>Material: [Organic Wood / MDF (+₹50)]</span>
+                            </div>
+                          )
                         )}
                         <span>Qty: {item.quantity}</span>
                       </div>

@@ -202,14 +202,55 @@ export interface CustomForgeOrderRecord {
 }
 
 /**
+ * Lady Justice Customization Pricing (Authoritative Constants)
+ * - Personalized Nameplate: +₹29
+ * - Organic Wood / MDF engraving: +₹50
+ * - Precision Polymer: +₹0
+ * Formula: unitPrice = editionPrice + nameplateCharge + materialCharge
+ */
+export const LADY_JUSTICE_CUSTOMIZATION_PRICING = {
+  NAMEPLATE_RUPEES: 29,
+  WOOD_MDF_RUPEES: 50
+} as const;
+
+export function calculateLadyJusticePrice(
+  editionPrice: number,
+  customModeEnabled: boolean,
+  material: 'Plastic' | 'MDF',
+  quantity: number = 1
+): {
+  editionPrice: number;
+  nameplateCharge: number;
+  materialCharge: number;
+  unitPrice: number;
+  totalPrice: number;
+} {
+  const nameplateCharge = customModeEnabled ? LADY_JUSTICE_CUSTOMIZATION_PRICING.NAMEPLATE_RUPEES : 0;
+  // Wooden engraving is strictly dependent on Personalized Nameplate being enabled
+  const materialCharge = (customModeEnabled && material === 'MDF') ? LADY_JUSTICE_CUSTOMIZATION_PRICING.WOOD_MDF_RUPEES : 0;
+  const unitPrice = editionPrice + nameplateCharge + materialCharge;
+  const totalPrice = unitPrice * Math.max(1, quantity);
+
+  return {
+    editionPrice,
+    nameplateCharge,
+    materialCharge,
+    unitPrice,
+    totalPrice
+  };
+}
+
+/**
  * Validates Custom Mode inputs according to strict business rules:
  * - 6-inch variant: Custom Mode unavailable.
  * - 1-foot / 2-feet: Custom Mode optional.
  * - When Custom Mode is enabled:
  *     - Name required, max 35 chars.
- *     - Designation required, max 50 chars (literal 'NIL' accepted).
- *     - Nameplate material required: 'Plastic' or 'MDF'.
- * - When Custom Mode is disabled: customization fields must not be required.
+ *     - Designation optional, max 50 chars (literal 'NIL' accepted).
+ *     - Nameplate material required: 'Plastic' (+₹0) or 'MDF' (+₹50).
+ * - When Custom Mode is disabled:
+ *     - Customization fields must not be required.
+ *     - Material cannot be MDF (wood engraving requires personalized nameplate).
  */
 export function validateCustomForgeCustomization(
   variant: CustomForgeSizeVariant,
@@ -219,6 +260,10 @@ export function validateCustomForgeCustomization(
   const errors: Record<string, string> = {};
 
   if (!customModeEnabled) {
+    if (data?.material === 'MDF' || /wood/i.test(String(data?.material || ''))) {
+      errors.material = 'Wooden engraving (+₹50) is only available when Personalized Nameplate is enabled.';
+      return { valid: false, errors };
+    }
     return { valid: true, errors: {} };
   }
 
@@ -235,9 +280,7 @@ export function validateCustomForgeCustomization(
   }
 
   const designation = (data?.designation || '').trim();
-  if (!designation) {
-    errors.designation = 'Designation is required (or enter NIL).';
-  } else if (designation.length > 50) {
+  if (designation && designation.length > 50) {
     errors.designation = 'Designation must be 50 characters or fewer.';
   }
 
