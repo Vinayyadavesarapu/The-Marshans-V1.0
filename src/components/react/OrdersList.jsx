@@ -1,27 +1,48 @@
 import React, { useState, useEffect } from 'react';
+import { onAuthStateChange } from '../../lib/firebase/client';
 import { getOrders, getOrderTracking } from '../../lib/api/orders';
+import { formatPaymentStatus } from '../../lib/api/orderMapper';
+import { loadRazorpayCheckoutScript, createPaymentOrder, verifyPaymentSignature } from '../../lib/api/payments';
+import AccountNav from './AccountNav';
 
 export default function OrdersList() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [trackingInfo, setTrackingInfo] = useState(null);
+  const [retryingOrderId, setRetryingOrderId] = useState(null);
+  const [actionMessage, setActionMessage] = useState({ type: '', text: '' });
+
+  const loadOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await getOrders();
+      setOrders(res.orders || []);
+    } catch (err) {
+      console.error('Failed to load orders', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await getOrders();
-        setOrders(res.orders || []);
-      } catch (err) {
-        console.error('Failed to load orders', err);
-      } finally {
+    const unsub = onAuthStateChange((currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+      if (currentUser) {
+        loadOrders();
+      } else {
+        setOrders([]);
         setLoading(false);
       }
-    }
-    load();
+    });
+    return () => unsub();
   }, []);
 
+  // Handle URL track param on mount or after orders load
   useEffect(() => {
     if (orders.length === 0) return;
     try {
@@ -38,6 +59,7 @@ export default function OrdersList() {
     } catch {}
   }, [orders]);
 
+  // Load tracking details when modal opens
   useEffect(() => {
     if (selectedOrder) {
       setTrackingLoading(true);
@@ -50,126 +72,285 @@ export default function OrdersList() {
     }
   }, [selectedOrder]);
 
-  if (loading) {
+  // Safe payment retry via official Razorpay Standard Checkout SDK
+  const handleRetryPayment = async (order, e) => {
+    if (e) e.stopPropagation();
+    setActionMessage({ type: '', text: '' });
+    setRetryingOrderId(order.id);
+
+    try {
+      const scriptLoaded = await loadRazorpayCheckoutScript();
+      if (!scriptLoaded) {
+        throw new Error('Payment gateway SDK failed to load. Please verify your network connection.');
+      }
+
+      const initRes = await createPaymentOrder(order.order_number || order.id);
+      if (initRes.already_paid) {
+        setActionMessage({
+          type: 'success',
+          text: `Order #${order.order_number || order.id} is already verified and marked Paid.`
+        });
+        await loadOrders();
+        return;
+      }
+
+      if (!initRes.success || !initRes.gateway_order_id) {
+        throw new Error(initRes.error || 'Failed to initialize payment gateway.');
+      }
+
+      const options = {
+        key: initRes.key_id,
+        amount: initRes.amount,
+        currency: initRes.currency || 'INR',
+        name: 'THE MARSHANS',
+        description: `Order #${order.order_number || order.id}`,
+        order_id: initRes.gateway_order_id,
+        prefill: initRes.prefill || {
+          name: order.shipping_address?.name || '',
+          email: order.customer_email || user?.email || '',
+          contact: order.shipping_address?.phone || ''
+        },
+        theme: { color: '#09090b' },
+        handler: async (response) => {
+          try {
+            const verifyRes = await verifyPaymentSignature({
+              order_id: order.order_number || order.id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            if (verifyRes.success) {
+              setActionMessage({
+                type: 'success',
+                text: `Payment confirmed for Order #${order.order_number || order.id}! Status is now Paid.`
+              });
+              await loadOrders();
+            } else {
+              setActionMessage({
+                type: 'error',
+                text: verifyRes.error || 'Payment verification encountered an issue. Please contact collector support.'
+              });
+            }
+          } catch (verifyErr) {
+            setActionMessage({
+              type: 'error',
+              text: verifyErr.message || 'Signature verification error.'
+            });
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            console.log('Payment modal dismissed');
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        setActionMessage({
+          type: 'error',
+          text: resp.error?.description || 'Payment was declined by bank or gateway.'
+        });
+      });
+      rzp.open();
+    } catch (err) {
+      setActionMessage({
+        type: 'error',
+        text: err.message || 'Unable to open payment gateway.'
+      });
+    } finally {
+      setRetryingOrderId(null);
+    }
+  };
+
+  if (authLoading) {
     return (
       <div className="orders-loading-wrap">
-        <p>Retrieving your order dispatches from the Marshan print network...</p>
+        <div className="spinner"></div>
+        <p>Connecting to Marshan dispatch network...</p>
       </div>
     );
   }
 
-  if (orders.length === 0) {
+  if (!user) {
     return (
-      <div className="orders-empty-state">
-        <div className="orders-box-icon">📦</div>
-        <h2>No Dispatches Found</h2>
-        <p>Your collection vault is currently empty. Explore our latest drops across the 5 universes to begin.</p>
-        <a href="/#home-carousel-section" className="btn btn-primary">Discover Artifacts</a>
+      <div className="orders-wrapper">
+        <div className="orders-guest-state">
+          <div className="orders-box-icon">🔒</div>
+          <h2>Collector Sign-In Required</h2>
+          <p>Please sign in to inspect your order dispatches, live manufacturing queue, and waybill tracking numbers.</p>
+          <div className="guest-action-row">
+            <a href="/login?redirect=/account/orders" className="btn btn-primary">Sign In</a>
+            <a href="/#home-carousel-section" className="btn btn-outline">Explore Artifacts</a>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="orders-list-layout">
-      <div className="orders-feed">
-        {orders.map((ord) => (
-          <div key={ord.id} className="order-card-detailed">
-            <div className="order-card-header">
-              <div className="order-id-group">
-                <span className="order-label">ORDER</span>
-                <strong className="order-num">#{ord.order_number || ord.id}</strong>
-                <span className="order-date">
-                  {new Date(ord.created_at || Date.now()).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                  })}
-                </span>
-              </div>
+    <div className="orders-wrapper">
+      <AccountNav activeTab="orders" />
 
-              <div className="order-header-right">
-                <span className={`payment-tag payment-${(ord.payment_status || 'pending').toLowerCase()}`}>
-                  {ord.payment_status === 'paid' ? 'Paid' : 'Pending Payment'}
-                </span>
-                <span className={`status-tag status-${ord.status || 'confirmed'}`}>
-                  {ord.status || 'Print Queued'}
-                </span>
-                <span className="order-total">₹{Number(ord.total_amount).toLocaleString('en-IN')}</span>
-              </div>
-            </div>
+      {actionMessage.text && (
+        <div className={`orders-alert alert-${actionMessage.type}`}>
+          <span>{actionMessage.type === 'success' ? '✓' : '⚠️'}</span>
+          <span>{actionMessage.text}</span>
+          <button type="button" onClick={() => setActionMessage({ type: '', text: '' })} className="alert-close">✕</button>
+        </div>
+      )}
 
-            {/* Items in this order */}
-            <div className="order-items-list">
-              {(ord.items || []).map((item, idx) => {
-                const isCustom = Boolean(item.customization && (item.customization.name || item.customization.custom_mode_enabled));
-                const matName = item.nameplate_material || item.customization?.material || item.material;
-                const isWood = /mdf/i.test(matName) || /wood/i.test(matName);
-                const hasCustomCharges = isCustom && (item.nameplate_charge || item.material_charge || item.price === 3529 || item.price === 3579 || item.price === 5629 || item.price === 5679);
-                const nameplateFee = item.nameplate_charge || (hasCustomCharges ? 29 : 0);
-                const woodFee = item.material_charge || (hasCustomCharges && isWood ? 50 : 0);
-                const baseUnit = item.base_price || (hasCustomCharges ? (item.price - nameplateFee - woodFee) : item.price);
+      {loading ? (
+        <div className="orders-loading-wrap">
+          <div className="spinner"></div>
+          <p>Retrieving your order dispatches from the Marshan print network...</p>
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="orders-empty-state">
+          <div className="orders-box-icon">📦</div>
+          <h2>No Dispatches Found</h2>
+          <p>Your collection vault is currently empty. Explore our latest drops across the 5 universes or launch a Custom Forge project.</p>
+          <div className="empty-actions-row">
+            <a href="/#home-carousel-section" className="btn btn-primary">Discover Artifacts</a>
+            <button type="button" onClick={loadOrders} className="btn btn-outline btn-sm">Refresh Orders ↻</button>
+          </div>
+        </div>
+      ) : (
+        <div className="orders-list-layout">
+          <div className="orders-feed-header">
+            <span className="orders-count-tag">Showing {orders.length} Dispatches</span>
+            <button type="button" onClick={loadOrders} className="btn btn-outline btn-sm refresh-btn">
+              Refresh ↻
+            </button>
+          </div>
 
-                return (
-                  <div key={idx} className="order-item-row">
-                    <img
-                      src={item.image_url || '/assets/placeholders/product-placeholder.svg'}
-                      alt={item.name}
-                      className="order-item-thumb"
-                    />
-                    <div className="order-item-info">
-                      <h4 className="item-title">{item.name}</h4>
-                      <div className="item-specs">
-                        {item.finishing && <span className="spec-pill">Edition: {item.finishing}</span>}
-                        {matName && <span className="spec-pill">Plinth: {isWood ? 'Organic Wood / MDF' : 'Precision Polymer'}</span>}
-                        <span>Qty: {item.quantity}</span>
-                      </div>
+          <div className="orders-feed">
+            {orders.map((ord) => {
+              const paymentInfo = formatPaymentStatus(ord.payment_status);
+              const isUnpaid = paymentInfo.canRetryPayment;
 
-                      {item.customization?.name && (
-                        <div className="item-customization-box">
-                          <span className="custom-box-label">BESPOKE NAMEPLATE</span>
-                          <div className="custom-box-content">
-                            <span>Name: <strong>{item.customization.name}</strong></span>
-                            {item.customization.designation && item.customization.designation.toUpperCase() !== 'NIL' && (
-                              <span>Designation: <strong>{item.customization.designation}</strong></span>
-                            )}
-                            <span>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></span>
-                          </div>
-                        </div>
-                      )}
-
-                      {hasCustomCharges && (
-                        <div className="item-pricing-breakdown">
-                          <span>Base: ₹{Number(baseUnit).toLocaleString('en-IN')}</span>
-                          {nameplateFee > 0 && <span className="add-fee">• Nameplate: +₹{nameplateFee}</span>}
-                          {woodFee > 0 && <span className="add-fee">• Wood / MDF: +₹{woodFee}</span>}
-                        </div>
-                      )}
+              return (
+                <div key={ord.id} className="order-card-detailed">
+                  <div className="order-card-header">
+                    <div className="order-id-group">
+                      <span className="order-label">ORDER</span>
+                      <strong className="order-num">#{ord.order_number || ord.id}</strong>
+                      <span className="order-date">
+                        {new Date(ord.created_at || Date.now()).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
                     </div>
-                    <div className="item-price">
-                      ₹{Number(item.price * item.quantity).toLocaleString('en-IN')}
+
+                    <div className="order-header-right">
+                      <span className={`payment-tag ${paymentInfo.badgeClass}`}>
+                        {paymentInfo.label}
+                      </span>
+                      <span className={`status-tag status-${(ord.status || 'confirmed').toLowerCase().replace(/\s+/g, '-')}`}>
+                        {ord.status || 'Print Queued'}
+                      </span>
+                      <span className="order-total">₹{Number(ord.total_amount).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Order Footer & Breakdown info */}
-            <div className="order-card-footer">
-              <div className="shipping-address-snippet">
-                <span>Shipping to: <strong>{ord.shipping_address?.city || 'India'}</strong> ({ord.shipping_address?.postal_code || 'PIN'})</span>
-                {ord.coupon_code && <span className="coupon-used-badge">🎟️ {ord.coupon_code}</span>}
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedOrder(ord)}
-                className="btn btn-primary btn-sm track-order-action-btn"
-              >
-                Track Order →
-              </button>
-            </div>
+                  {/* Items in this order */}
+                  <div className="order-items-list">
+                    {(ord.items || []).map((item, idx) => {
+                      const isCustom = Boolean(item.customization && (item.customization.name || item.customization.custom_mode_enabled));
+                      const matName = item.nameplate_material || item.customization?.material || item.material;
+                      const isWood = /mdf/i.test(matName) || /wood/i.test(matName);
+                      const hasCustomCharges = isCustom && (item.nameplate_charge || item.material_charge || item.price === 3529 || item.price === 3579 || item.price === 5629 || item.price === 5679);
+                      const nameplateFee = item.nameplate_charge || (hasCustomCharges ? 29 : 0);
+                      const woodFee = item.material_charge || (hasCustomCharges && isWood ? 50 : 0);
+                      const baseUnit = item.base_price || (hasCustomCharges ? (item.price - nameplateFee - woodFee) : item.price);
+
+                      return (
+                        <div key={idx} className="order-item-row">
+                          <img
+                            src={item.image_url || '/assets/placeholders/product-placeholder.svg'}
+                            alt={item.name}
+                            className="order-item-thumb"
+                          />
+                          <div className="order-item-info">
+                            <h4 className="item-title">{item.name}</h4>
+                            <div className="item-specs">
+                              {item.finishing && <span className="spec-pill">Edition: {item.finishing}</span>}
+                              {matName && <span className="spec-pill">Plinth: {isWood ? 'Organic Wood / MDF' : 'Precision Polymer'}</span>}
+                              <span>Qty: {item.quantity}</span>
+                            </div>
+
+                            {item.customization?.name && (
+                              <div className="item-customization-box">
+                                <span className="custom-box-label">BESPOKE NAMEPLATE</span>
+                                <div className="custom-box-content">
+                                  <span>Name: <strong>{item.customization.name}</strong></span>
+                                  {item.customization.designation && item.customization.designation.toUpperCase() !== 'NIL' && (
+                                    <span>Designation: <strong>{item.customization.designation}</strong></span>
+                                  )}
+                                  <span>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></span>
+                                </div>
+                              </div>
+                            )}
+
+                            {hasCustomCharges && (
+                              <div className="item-pricing-breakdown">
+                                <span>Base: ₹{Number(baseUnit).toLocaleString('en-IN')}</span>
+                                {nameplateFee > 0 && <span className="add-fee">• Nameplate: +₹{nameplateFee}</span>}
+                                {woodFee > 0 && <span className="add-fee">• Wood / MDF: +₹{woodFee}</span>}
+                              </div>
+                            )}
+                          </div>
+                          <div className="item-price">
+                            ₹{Number(item.price * item.quantity).toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Order Footer & Breakdown info */}
+                  <div className="order-card-footer">
+                    <div className="shipping-address-snippet">
+                      <span>Shipping to: <strong>{ord.shipping_address?.city || 'India'}</strong> ({ord.shipping_address?.postal_code || ord.shipping_address?.postalCode || 'PIN'})</span>
+                      {ord.coupon_code && <span className="coupon-used-badge">🎟️ {ord.coupon_code}</span>}
+                    </div>
+
+                    <div className="order-actions-cluster">
+                      {isUnpaid && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleRetryPayment(ord, e)}
+                          disabled={retryingOrderId === ord.id}
+                          className="btn btn-warning btn-sm retry-payment-btn"
+                        >
+                          {retryingOrderId === ord.id ? (
+                            'Opening Gateway...'
+                          ) : ord.payment_status === 'failed' ? (
+                            `Retry Payment (₹${Number(ord.total_amount).toLocaleString('en-IN')}) →`
+                          ) : (
+                            `Complete Payment (₹${Number(ord.total_amount).toLocaleString('en-IN')}) →`
+                          )}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOrder(ord)}
+                        className="btn btn-primary btn-sm track-order-action-btn"
+                      >
+                        Track Order →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Fulfillment Status & Order Details Modal */}
       {selectedOrder && (
@@ -180,7 +361,7 @@ export default function OrdersList() {
                 <span className="modal-eyebrow">ORDER DETAILS & TRACKING</span>
                 <h3>#{selectedOrder.order_number || selectedOrder.id}</h3>
               </div>
-              <button type="button" onClick={() => setSelectedOrder(null)} className="close-btn">✕</button>
+              <button type="button" onClick={() => setSelectedOrder(null)} className="close-btn" aria-label="Close modal">✕</button>
             </div>
 
             <div className="modal-body">
@@ -188,9 +369,14 @@ export default function OrdersList() {
               <div className="order-summary-mini">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span className={`payment-tag payment-${(selectedOrder.payment_status || 'pending').toLowerCase()}`}>
-                      {selectedOrder.payment_status === 'paid' ? '✓ Paid Online' : 'Pending Payment'}
-                    </span>
+                    {(() => {
+                      const pStatus = formatPaymentStatus(selectedOrder.payment_status);
+                      return (
+                        <span className={`payment-tag ${pStatus.badgeClass}`}>
+                          {pStatus.label}
+                        </span>
+                      );
+                    })()}
                     <span className="order-date-tag">
                       {new Date(selectedOrder.created_at || Date.now()).toLocaleDateString('en-IN', {
                         day: 'numeric',
@@ -217,6 +403,20 @@ export default function OrdersList() {
                     Transaction Ref: <code>{selectedOrder.transaction_id}</code>
                   </span>
                 )}
+
+                {formatPaymentStatus(selectedOrder.payment_status).canRetryPayment && (
+                  <div className="modal-retry-notice">
+                    <p>This order is currently pending payment. Authorize the transaction to advance your piece into the manufacturing queue.</p>
+                    <button
+                      type="button"
+                      onClick={(e) => handleRetryPayment(selectedOrder, e)}
+                      disabled={retryingOrderId === selectedOrder.id}
+                      className="btn btn-warning btn-sm"
+                    >
+                      {retryingOrderId === selectedOrder.id ? 'Connecting Gateway...' : `Authorize & Pay ₹${Number(selectedOrder.total_amount).toLocaleString('en-IN')} →`}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Items in this Order */}
@@ -239,34 +439,34 @@ export default function OrdersList() {
                           alt={item.name}
                           className="modal-item-thumb"
                         />
-                        <div className="modal-item-info">
-                          <strong>{item.name}</strong>
-                          <div className="modal-item-specs">
-                            <span>Edition: <strong>{item.finishing || 'Standard'}</strong></span>
-                            <span>Qty: <strong>{item.quantity}</strong></span>
-                            <span>Unit Price: <strong>₹{Number(item.price).toLocaleString('en-IN')}</strong></span>
+                        <div className="modal-item-details">
+                          <strong className="item-name">{item.name}</strong>
+                          <div className="item-meta-tags">
+                            {item.finishing && <span>Edition: {item.finishing}</span>}
+                            {matName && <span>Plinth: {isWood ? 'Organic Wood / MDF' : 'Precision Polymer'}</span>}
+                            <span>Quantity: {item.quantity}</span>
                           </div>
 
                           {item.customization?.name && (
                             <div className="modal-custom-detail">
-                              <span className="detail-tag">EMBOSSED SPECIFICATIONS</span>
+                              <span className="custom-detail-title">Mounted Bespoke Nameplate:</span>
                               <p>Name: <strong>{item.customization.name}</strong></p>
                               {item.customization.designation && item.customization.designation.toUpperCase() !== 'NIL' && (
-                                <p>Designation: <strong>{item.customization.designation}</strong></p>
+                                <p>Title: <strong>{item.customization.designation}</strong></p>
                               )}
                               <p>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></p>
                             </div>
                           )}
 
                           {hasCustomCharges && (
-                            <div className="modal-price-breakdown-row">
-                              <span>Base: ₹{Number(baseUnit).toLocaleString('en-IN')}</span>
-                              {nameplateFee > 0 && <span className="add">• Nameplate: +₹{nameplateFee}</span>}
-                              {woodFee > 0 && <span className="add">• Wood / MDF: +₹{woodFee}</span>}
+                            <div className="modal-price-breakdown">
+                              <span>Base Edition: ₹{Number(baseUnit).toLocaleString('en-IN')}</span>
+                              {nameplateFee > 0 && <span>+ Nameplate Personalization: ₹{nameplateFee}</span>}
+                              {woodFee > 0 && <span>+ Organic Wood Upgrade: ₹{woodFee}</span>}
                             </div>
                           )}
                         </div>
-                        <div className="modal-item-total">
+                        <div className="modal-item-price">
                           ₹{Number(item.price * item.quantity).toLocaleString('en-IN')}
                         </div>
                       </div>
@@ -275,28 +475,26 @@ export default function OrdersList() {
                 </div>
               </div>
 
-              {/* Order Financial Summary */}
-              <div className="modal-section-card financial-breakdown-card">
-                <h4 className="modal-section-title">Order Financial Summary</h4>
-                <div className="financial-rows">
-                  <div className="fin-row">
-                    <span>Product Subtotal</span>
-                    <strong>₹{Number(selectedOrder.subtotal || selectedOrder.total_amount).toLocaleString('en-IN')}</strong>
+              {/* Financial Calculation Breakdown */}
+              <div className="modal-section-card">
+                <h4 className="modal-section-title">Order Cost Breakdown</h4>
+                <div className="cost-breakdown-table">
+                  <div className="cost-row">
+                    <span>Merchandise Subtotal</span>
+                    <span>₹{Number(selectedOrder.subtotal).toLocaleString('en-IN')}</span>
                   </div>
-                  {Number(selectedOrder.discount_amount) > 0 && (
-                    <div className="fin-row discount-row">
-                      <span>
-                        Coupon Discount {selectedOrder.coupon_code ? `(${selectedOrder.coupon_code})` : ''}
-                      </span>
-                      <strong className="discount-val">−₹{Number(selectedOrder.discount_amount).toLocaleString('en-IN')}</strong>
+                  {selectedOrder.discount_amount > 0 && (
+                    <div className="cost-row discount-row">
+                      <span>Coupon Discount {selectedOrder.coupon_code ? `(${selectedOrder.coupon_code})` : ''}</span>
+                      <span>−₹{Number(selectedOrder.discount_amount).toLocaleString('en-IN')}</span>
                     </div>
                   )}
-                  <div className="fin-row">
-                    <span>Standard Air Delivery</span>
-                    <strong>₹{Number(selectedOrder.shipping_amount !== undefined ? selectedOrder.shipping_amount : 50).toLocaleString('en-IN')}</strong>
+                  <div className="cost-row">
+                    <span>Standard Air Delivery (Store 2 Flat)</span>
+                    <span>₹{Number(selectedOrder.shipping_amount).toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="fin-row fin-total-row">
-                    <span>Final Order Total</span>
+                  <div className="cost-row grand-total-row">
+                    <strong>Total Amount Payable</strong>
                     <strong className="grand-total">₹{Number(selectedOrder.total_amount).toLocaleString('en-IN')}</strong>
                   </div>
                 </div>
@@ -378,335 +576,203 @@ export default function OrdersList() {
                       <span className="courier-badge">Manufacturing Queue</span>
                       <span className="consignment-tag">{selectedOrder.status || 'Order Placed'}</span>
                     </div>
-                    <h4>Fabrication in Progress at Marshan Farm</h4>
+                    <h4>Precision Additive Manufacturing Progress</h4>
                     <p>
-                      Your piece is progressing through additive manufacturing and precision inspection. Live courier waybill telemetry begins upon physical hand-over to Velocity Air Express.
+                      {formatPaymentStatus(selectedOrder.payment_status).canRetryPayment ? (
+                        'Awaiting payment authorization. Once payment is confirmed, your piece enters our digital slicing and fabrication queue.'
+                      ) : (
+                        'Your piece is progressing through additive manufacturing and precision inspection. Live courier waybill telemetry begins upon physical hand-over to Velocity Air Express.'
+                      )}
                     </p>
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                onClick={() => setSelectedOrder(null)}
+                className="btn btn-outline"
+              >
+                Close Details
+              </button>
             </div>
           </div>
         </div>
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .orders-list-layout {
-          width: 100%;
+        .orders-wrapper {
+          max-width: 900px;
+          margin: 0 auto;
         }
 
-        .orders-loading-wrap, .orders-empty-state {
+        .orders-alert {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          border-radius: 8px;
+          font-size: 13px;
+          margin-bottom: 20px;
+        }
+
+        .alert-success {
+          background: #ecfdf5;
+          color: #065f46;
+          border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+          background: #fef2f2;
+          color: #991b1b;
+          border: 1px solid #fecaca;
+        }
+
+        .alert-close {
+          margin-left: auto;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 14px;
+          color: inherit;
+        }
+
+        .orders-loading-wrap, .orders-empty-state, .orders-guest-state {
           text-align: center;
-          padding: 80px 20px;
+          padding: 72px 20px;
           background: #ffffff;
           border-radius: 16px;
           border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
-        .orders-box-icon {
-          font-size: 40px;
-          margin-bottom: 12px;
+        .spinner {
+          width: 36px;
+          height: 36px;
+          border: 3px solid rgba(0, 0, 0, 0.1);
+          border-top-color: #09090b;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          margin: 0 auto 16px;
         }
 
-        .orders-feed {
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .orders-box-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+        }
+
+        .orders-empty-state h2, .orders-guest-state h2 {
+          font-family: var(--font-display, Impact, sans-serif);
+          font-size: clamp(24px, 4vw, 32px);
+          letter-spacing: 0.02em;
+          margin-bottom: 8px;
+        }
+
+        .orders-empty-state p, .orders-guest-state p {
+          color: #71717a;
+          font-size: 14px;
+          max-width: 440px;
+          margin: 0 auto 24px;
+          line-height: 1.6;
+        }
+
+        .empty-actions-row, .guest-action-row {
           display: flex;
-          flex-direction: column;
-          gap: 24px;
+          gap: 12px;
+          justify-content: center;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .orders-feed-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+          padding: 0 4px;
+        }
+
+        .orders-count-tag {
+          font-size: 12px;
+          font-weight: 700;
+          color: #71717a;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+
+        .refresh-btn {
+          font-size: 11px;
+          padding: 4px 10px;
         }
 
         .order-card-detailed {
           background: #ffffff;
           border: 1px solid rgba(0, 0, 0, 0.08);
           border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+          padding: 24px;
+          margin-bottom: 20px;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .order-card-detailed:hover {
+          border-color: rgba(0, 0, 0, 0.16);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
         }
 
         .order-card-header {
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          padding: 16px 24px;
-          background: #f8fafc;
-          border-bottom: 1px solid #f1f5f9;
+          align-items: flex-start;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #f4f4f5;
+          margin-bottom: 16px;
           flex-wrap: wrap;
           gap: 12px;
         }
 
         .order-id-group {
           display: flex;
-          align-items: center;
+          align-items: baseline;
           gap: 8px;
         }
 
         .order-label {
           font-size: 11px;
           font-weight: 800;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.08em;
           color: #71717a;
         }
 
         .order-num {
-          font-size: 15px;
+          font-family: var(--font-display, Impact, sans-serif);
+          font-size: 20px;
           color: #09090b;
         }
 
         .order-date {
           font-size: 12px;
           color: #a1a1aa;
-          margin-left: 6px;
         }
 
         .order-header-right {
           display: flex;
           align-items: center;
-          gap: 16px;
-        }
-
-        .status-tag {
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          padding: 4px 10px;
-          border-radius: 9999px;
-          background: #e0f2fe;
-          color: #0284c7;
-        }
-
-        .order-total {
-          font-family: var(--font-sans, sans-serif);
-          font-weight: 800;
-          font-size: 16px;
-          color: #09090b;
-        }
-
-        .order-items-list {
-          padding: 20px 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .order-item-row {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .order-item-thumb {
-          width: 56px;
-          height: 56px;
-          border-radius: 8px;
-          object-fit: cover;
-          background: #f1f5f9;
-        }
-
-        .order-item-info {
-          flex: 1;
-        }
-
-        .item-title {
-          font-size: 14px;
-          font-weight: 600;
-          color: #09090b;
-          margin: 0 0 4px 0;
-        }
-
-        .item-specs {
-          display: flex;
-          gap: 12px;
-          font-size: 11px;
-          color: #71717a;
-        }
-
-        .item-price {
-          font-size: 14px;
-          font-weight: 700;
-          color: #09090b;
-        }
-
-        .order-card-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 12px 24px;
-          background: #ffffff;
-          border-top: 1px solid #f1f5f9;
-          font-size: 12px;
-          color: #71717a;
+          gap: 10px;
           flex-wrap: wrap;
-          gap: 12px;
-        }
-
-        .tracking-modal-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(8px);
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-        }
-
-        .tracking-modal-card {
-          background: #ffffff;
-          border-radius: 16px;
-          max-width: 540px;
-          width: 100%;
-          max-height: 90vh;
-          overflow-y: auto;
-          padding: 32px;
-          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 20px;
-          padding-bottom: 12px;
-          border-bottom: 1px solid #f4f4f5;
-        }
-
-        .modal-header h3 {
-          font-family: var(--font-display, Impact, sans-serif);
-          font-size: 24px;
-          margin: 0;
-        }
-
-        .close-btn {
-          background: none;
-          border: none;
-          font-size: 18px;
-          cursor: pointer;
-          color: #71717a;
-        }
-
-        .order-summary-mini {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          margin-bottom: 24px;
-          font-size: 13px;
-        }
-
-        .tracking-timeline {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          position: relative;
-          padding-left: 8px;
-        }
-
-        .timeline-step {
-          display: flex;
-          gap: 16px;
-          position: relative;
-        }
-
-        .step-circle {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 11px;
-          font-weight: 800;
-          background: #f4f4f5;
-          color: #a1a1aa;
-          flex-shrink: 0;
-          z-index: 2;
-        }
-
-        .step-complete .step-circle {
-          background: #15803d;
-          color: #ffffff;
-        }
-
-        .step-active .step-circle {
-          background: #0284c7;
-          color: #ffffff;
-        }
-
-        .step-content strong {
-          display: block;
-          font-size: 13px;
-          color: #09090b;
-        }
-
-        .step-content p {
-          font-size: 12px;
-          color: #71717a;
-          margin: 2px 0 0 0;
-        }
-
-        .track-order-action-btn {
-          font-weight: 700;
-          letter-spacing: 0.02em;
-          white-space: nowrap;
-        }
-
-        .tracking-pending-state {
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
-          padding: 24px;
-          text-align: center;
-        }
-
-        .pending-badge-row {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          margin-bottom: 12px;
-          flex-wrap: wrap;
-        }
-
-        .courier-badge {
-          font-size: 11px;
-          font-weight: 800;
-          letter-spacing: 0.05em;
-          background: #e0f2fe;
-          color: #0369a1;
-          padding: 3px 8px;
-          border-radius: 4px;
-        }
-
-        .consignment-tag {
-          font-size: 11px;
-          font-weight: 700;
-          background: #fef3c7;
-          color: #92400e;
-          padding: 3px 8px;
-          border-radius: 4px;
-        }
-
-        .tracking-pending-state h4 {
-          font-size: 16px;
-          font-weight: 700;
-          color: #09090b;
-          margin: 0 0 8px 0;
-        }
-
-        .tracking-pending-state p {
-          font-size: 13px;
-          color: #64748b;
-          line-height: 1.5;
-          margin: 0;
         }
 
         .payment-tag {
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 800;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.04em;
           text-transform: uppercase;
-          padding: 3px 8px;
-          border-radius: 9999px;
+          padding: 4px 10px;
+          border-radius: 6px;
         }
 
         .payment-tag.payment-paid {
@@ -716,16 +782,81 @@ export default function OrdersList() {
 
         .payment-tag.payment-pending {
           background: #fef3c7;
-          color: #92400e;
+          color: #b45309;
+        }
+
+        .payment-tag.payment-failed {
+          background: #fee2e2;
+          color: #b91c1c;
+        }
+
+        .payment-tag.payment-expired {
+          background: #f4f4f5;
+          color: #71717a;
+        }
+
+        .payment-tag.payment-refunded {
+          background: #f3e8ff;
+          color: #7e22ce;
+        }
+
+        .status-tag {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          padding: 4px 10px;
+          border-radius: 6px;
+          background: #f4f4f5;
+          color: #3f3f46;
+        }
+
+        .order-total {
+          font-size: 16px;
+          font-weight: 800;
+          color: #09090b;
+        }
+
+        .order-items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #f4f4f5;
+        }
+
+        .order-item-row {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .order-item-thumb {
+          width: 64px;
+          height: 64px;
+          object-fit: cover;
+          border-radius: 8px;
+          border: 1px solid rgba(0, 0, 0, 0.06);
+          background: #fafafa;
+          flex-shrink: 0;
+        }
+
+        .order-item-info {
+          flex: 1;
+        }
+
+        .item-title {
+          font-size: 14px;
+          font-weight: 700;
+          margin-bottom: 4px;
+          color: #18181b;
         }
 
         .item-specs {
           display: flex;
           gap: 8px;
-          font-size: 11px;
+          font-size: 12px;
           color: #71717a;
           flex-wrap: wrap;
-          margin-bottom: 6px;
         }
 
         .spec-pill {
@@ -735,28 +866,28 @@ export default function OrdersList() {
         }
 
         .item-customization-box {
-          background: #fdfaf6;
-          border: 1px solid rgba(180, 83, 9, 0.2);
-          border-radius: 8px;
+          margin-top: 8px;
           padding: 8px 12px;
-          margin: 6px 0;
-          font-size: 11px;
+          background: #faf7f2;
+          border: 1px solid #ebdccb;
+          border-radius: 8px;
+          font-size: 12px;
         }
 
         .custom-box-label {
+          display: block;
           font-size: 9px;
           font-weight: 800;
           letter-spacing: 0.1em;
-          color: #b45309;
-          display: block;
+          color: #8c6d3b;
           margin-bottom: 4px;
         }
 
         .custom-box-content {
           display: flex;
-          flex-direction: column;
-          gap: 2px;
-          color: #1f2937;
+          gap: 12px;
+          flex-wrap: wrap;
+          color: #57431e;
         }
 
         .item-pricing-breakdown {
@@ -765,21 +896,96 @@ export default function OrdersList() {
           font-size: 11px;
           color: #71717a;
           margin-top: 4px;
+          flex-wrap: wrap;
         }
 
-        .item-pricing-breakdown .add-fee {
-          color: #15803d;
+        .add-fee {
+          color: #8c6d3b;
+          font-weight: 600;
+        }
+
+        .item-price {
           font-weight: 700;
+          font-size: 14px;
+          color: #09090b;
+        }
+
+        .order-card-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 16px;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        .shipping-address-snippet {
+          font-size: 12px;
+          color: #71717a;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
         }
 
         .coupon-used-badge {
-          font-size: 11px;
-          font-weight: 700;
-          background: #eef2ff;
-          color: #4338ca;
+          background: #fef3c7;
+          color: #92400e;
           padding: 2px 8px;
           border-radius: 4px;
-          margin-left: 8px;
+          font-weight: 700;
+          font-size: 11px;
+        }
+
+        .order-actions-cluster {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .retry-payment-btn {
+          background: #f59e0b;
+          border-color: #d97706;
+          color: #ffffff;
+          font-weight: 700;
+        }
+
+        .retry-payment-btn:hover {
+          background: #d97706;
+        }
+
+        /* Modal Styles */
+        .tracking-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(4px);
+          z-index: 999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+
+        .tracking-modal-card {
+          background: #ffffff;
+          border-radius: 20px;
+          width: 100%;
+          max-width: 680px;
+          max-height: 90vh;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+          overflow: hidden;
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 24px;
+          border-bottom: 1px solid #f4f4f5;
         }
 
         .modal-eyebrow {
@@ -787,25 +993,92 @@ export default function OrdersList() {
           font-weight: 800;
           letter-spacing: 0.12em;
           color: #71717a;
+        }
+
+        .modal-header h3 {
+          font-family: var(--font-display, Impact, sans-serif);
+          font-size: 24px;
+          margin: 2px 0 0;
+          color: #09090b;
+        }
+
+        .close-btn {
+          background: #f4f4f5;
+          border: none;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .modal-body {
+          padding: 24px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .order-summary-mini {
+          background: #fafafa;
+          border: 1px solid #f4f4f5;
+          border-radius: 12px;
+          padding: 16px;
+        }
+
+        .order-date-tag {
+          font-size: 12px;
+          color: #71717a;
+        }
+
+        .tx-ref-line {
           display: block;
-          margin-bottom: 4px;
+          font-size: 11px;
+          color: #71717a;
+          margin-top: 6px;
+        }
+
+        .tx-ref-line code {
+          background: #e4e4e7;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-family: monospace;
+          color: #18181b;
+        }
+
+        .modal-retry-notice {
+          margin-top: 12px;
+          padding: 12px;
+          background: #fffbeb;
+          border: 1px solid #fde68a;
+          border-radius: 8px;
+        }
+
+        .modal-retry-notice p {
+          font-size: 12px;
+          color: #92400e;
+          margin: 0 0 8px;
+          line-height: 1.5;
         }
 
         .modal-section-card {
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          border: 1px solid #e4e4e7;
           border-radius: 12px;
           padding: 16px;
-          margin-bottom: 16px;
         }
 
         .modal-section-title {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 800;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #475569;
-          margin: 0 0 12px 0;
+          color: #71717a;
+          margin-bottom: 12px;
         }
 
         .modal-items-list {
@@ -817,8 +1090,9 @@ export default function OrdersList() {
         .modal-item-row {
           display: flex;
           gap: 12px;
+          align-items: flex-start;
           padding-bottom: 12px;
-          border-bottom: 1px solid #edf2f7;
+          border-bottom: 1px solid #f4f4f5;
         }
 
         .modal-item-row:last-child {
@@ -827,132 +1101,250 @@ export default function OrdersList() {
         }
 
         .modal-item-thumb {
-          width: 52px;
-          height: 52px;
-          border-radius: 8px;
+          width: 54px;
+          height: 54px;
           object-fit: cover;
-          background: #edf2f7;
+          border-radius: 6px;
+          border: 1px solid #e4e4e7;
+          background: #fafafa;
           flex-shrink: 0;
         }
 
-        .modal-item-info {
+        .modal-item-details {
           flex: 1;
-          font-size: 12px;
         }
 
-        .modal-item-specs {
+        .item-name {
+          font-size: 13px;
+          color: #18181b;
+        }
+
+        .item-meta-tags {
           display: flex;
           gap: 8px;
           font-size: 11px;
-          color: #64748b;
-          margin: 2px 0 6px 0;
-          flex-wrap: wrap;
+          color: #71717a;
+          margin: 2px 0 4px;
         }
 
         .modal-custom-detail {
-          background: #ffffff;
-          border: 1px solid #e2e8f0;
+          background: #faf7f2;
+          border: 1px solid #ebdccb;
           border-radius: 6px;
           padding: 6px 10px;
           font-size: 11px;
+          color: #57431e;
           margin-top: 4px;
         }
 
-        .modal-custom-detail p {
-          margin: 2px 0;
-          color: #1e293b;
-        }
-
-        .detail-tag {
-          font-size: 9px;
+        .custom-detail-title {
           font-weight: 800;
-          letter-spacing: 0.1em;
-          color: #b45309;
+          font-size: 9px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #8c6d3b;
           display: block;
           margin-bottom: 2px;
         }
 
-        .modal-price-breakdown-row {
+        .modal-custom-detail p {
+          margin: 1px 0;
+        }
+
+        .modal-price-breakdown {
           display: flex;
           gap: 8px;
-          font-size: 11px;
-          color: #64748b;
+          font-size: 10px;
+          color: #71717a;
           margin-top: 4px;
+          flex-wrap: wrap;
         }
 
-        .modal-price-breakdown-row .add {
-          color: #15803d;
+        .modal-item-price {
           font-weight: 700;
-        }
-
-        .modal-item-total {
           font-size: 13px;
-          font-weight: 700;
-          color: #09090b;
+          color: #18181b;
         }
 
-        .financial-rows {
+        .cost-breakdown-table {
           display: flex;
           flex-direction: column;
           gap: 8px;
-          font-size: 12px;
+          font-size: 13px;
         }
 
-        .fin-row {
+        .cost-row {
           display: flex;
           justify-content: space-between;
-          color: #475569;
+          color: #52525b;
         }
 
         .discount-row {
           color: #15803d;
         }
 
-        .discount-val {
-          color: #15803d;
-        }
-
-        .fin-total-row {
-          border-top: 1px solid #cbd5e1;
+        .grand-total-row {
           padding-top: 8px;
-          font-size: 14px;
+          border-top: 1px solid #e4e4e7;
+          font-size: 15px;
           color: #09090b;
         }
 
         .grand-total {
-          font-size: 16px;
           color: #09090b;
+          font-weight: 850;
         }
 
         .shipping-address-detail p {
           margin: 2px 0;
-          font-size: 12px;
-          color: #334155;
+          font-size: 13px;
+          color: #3f3f46;
         }
 
         .carrier-status-summary {
           display: flex;
           justify-content: space-between;
           font-size: 12px;
+          color: #52525b;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #f4f4f5;
           flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .tracking-pending-state {
+          background: #fbfbfb;
+          border: 1px dashed #d4d4d8;
+          border-radius: 10px;
+          padding: 16px;
+          text-align: center;
+        }
+
+        .pending-badge-row {
+          display: flex;
+          justify-content: center;
           gap: 8px;
+          margin-bottom: 8px;
         }
 
-        .order-date-tag {
-          font-size: 11px;
-          color: #71717a;
-        }
-
-        .tx-ref-line {
-          font-size: 11px;
-          color: #64748b;
-        }
-
-        .tx-ref-line code {
-          background: #f1f5f9;
-          padding: 1px 4px;
+        .courier-badge {
+          background: #18181b;
+          color: #ffffff;
+          padding: 3px 8px;
           border-radius: 4px;
-          color: #0f172a;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+
+        .consignment-tag {
+          background: #e0f2fe;
+          color: #0369a1;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .tracking-pending-state h4 {
+          font-size: 14px;
+          font-weight: 700;
+          margin-bottom: 4px;
+          color: #18181b;
+        }
+
+        .tracking-pending-state p {
+          font-size: 12px;
+          color: #71717a;
+          margin: 0;
+          line-height: 1.5;
+        }
+
+        .tracking-timeline {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .timeline-step {
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+        }
+
+        .step-circle {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: bold;
+          flex-shrink: 0;
+        }
+
+        .step-active .step-circle {
+          background: #09090b;
+          color: #ffffff;
+        }
+
+        .step-complete .step-circle {
+          background: #dcfce7;
+          color: #15803d;
+        }
+
+        .step-content strong {
+          display: block;
+          font-size: 13px;
+          color: #18181b;
+        }
+
+        .step-content p {
+          font-size: 12px;
+          color: #71717a;
+          margin: 2px 0 0;
+        }
+
+        .modal-footer {
+          padding: 16px 24px;
+          border-top: 1px solid #f4f4f5;
+          display: flex;
+          justify-content: flex-end;
+          background: #fafafa;
+        }
+
+        @media (max-width: 640px) {
+          .order-card-detailed {
+            padding: 16px;
+          }
+
+          .order-item-row {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .order-item-thumb {
+            width: 48px;
+            height: 48px;
+          }
+
+          .order-card-footer {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .order-actions-cluster {
+            flex-direction: column;
+            width: 100%;
+          }
+
+          .track-order-action-btn, .retry-payment-btn {
+            width: 100%;
+            text-align: center;
+          }
         }
       ` }} />
     </div>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChange, logOut } from '../../lib/firebase/client';
 import { getOrders } from '../../lib/api/orders';
+import { formatPaymentStatus } from '../../lib/api/orderMapper';
+import AccountNav from './AccountNav';
 
 export default function AccountDashboard() {
   const [user, setUser] = useState(null);
@@ -47,6 +49,8 @@ export default function AccountDashboard() {
 
   return (
     <div className="account-dashboard-wrap">
+      <AccountNav activeTab="dashboard" />
+
       {/* Collector Profile Header */}
       <div className="collector-profile-header">
         <div className="collector-avatar-block">
@@ -103,26 +107,34 @@ export default function AccountDashboard() {
           </div>
         ) : (
           <div className="orders-table-compact">
-            {orders.slice(0, 3).map((ord) => (
-              <div key={ord.id} className="order-row-item">
-                <div className="order-meta-info">
-                  <strong>#{ord.order_number || ord.id}</strong>
-                  <span>{new Date(ord.created_at || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            {orders.slice(0, 3).map((ord) => {
+              const paymentInfo = formatPaymentStatus(ord.payment_status);
+              return (
+                <div key={ord.id} className="order-row-item">
+                  <div className="order-meta-info">
+                    <strong>#{ord.order_number || ord.id}</strong>
+                    <span>{new Date(ord.created_at || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  </div>
+                  <div className="order-status-group">
+                    <span className={`payment-pill ${paymentInfo.badgeClass}`}>
+                      {paymentInfo.label}
+                    </span>
+                    <span className="order-status-pill status-ready">
+                      {ord.status || 'Confirmed'}
+                    </span>
+                  </div>
+                  <div className="order-price-info">
+                    ₹{Number(ord.total_amount).toLocaleString('en-IN')}
+                  </div>
+                  <a
+                    href={`/account/orders?track=${ord.id}`}
+                    className="btn btn-outline btn-sm track-order-btn"
+                  >
+                    Track Order →
+                  </a>
                 </div>
-                <div className="order-status-pill status-ready">
-                  {ord.status || 'Confirmed'}
-                </div>
-                <div className="order-price-info">
-                  ₹{Number(ord.total_amount).toLocaleString('en-IN')}
-                </div>
-                <a
-                  href={`/account/orders?track=${ord.id}`}
-                  className="btn btn-outline btn-sm track-order-btn"
-                >
-                  Track Order →
-                </a>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -349,6 +361,47 @@ export default function AccountDashboard() {
         .order-meta-info span {
           font-size: 11px;
           color: #71717a;
+        }
+
+        .order-status-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .payment-pill {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          padding: 3px 8px;
+          border-radius: 9999px;
+        }
+
+        .payment-pill.payment-paid {
+          background: #dcfce7;
+          color: #15803d;
+        }
+
+        .payment-pill.payment-pending {
+          background: #fef3c7;
+          color: #b45309;
+        }
+
+        .payment-pill.payment-failed {
+          background: #fee2e2;
+          color: #b91c1c;
+        }
+
+        .payment-pill.payment-expired {
+          background: #f4f4f5;
+          color: #71717a;
+        }
+
+        .payment-pill.payment-refunded {
+          background: #f3e8ff;
+          color: #7e22ce;
         }
 
         .order-status-pill {

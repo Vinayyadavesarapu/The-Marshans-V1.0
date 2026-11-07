@@ -100,6 +100,30 @@ function rupees(rawObj: Record<string, any>, field: string, storeId: number | un
   return storeId === 2 ? Math.round(raw / 100) : raw;
 }
 
+export interface FormattedPaymentStatus {
+  key: 'paid' | 'pending' | 'failed' | 'expired' | 'refunded';
+  label: string;
+  badgeClass: string;
+  canRetryPayment: boolean;
+}
+
+export function formatPaymentStatus(status: unknown): FormattedPaymentStatus {
+  const clean = str(status).toLowerCase().trim();
+  switch (clean) {
+    case 'paid':
+      return { key: 'paid', label: 'Paid', badgeClass: 'payment-paid', canRetryPayment: false };
+    case 'failed':
+      return { key: 'failed', label: 'Payment Failed', badgeClass: 'payment-failed', canRetryPayment: true };
+    case 'expired':
+      return { key: 'expired', label: 'Payment Expired', badgeClass: 'payment-expired', canRetryPayment: false };
+    case 'refunded':
+      return { key: 'refunded', label: 'Refunded', badgeClass: 'payment-refunded', canRetryPayment: false };
+    case 'pending':
+    default:
+      return { key: 'pending', label: 'Pending Payment', badgeClass: 'payment-pending', canRetryPayment: true };
+  }
+}
+
 /** "READY_TO_SHIP" / "quality check" -> "Ready To Ship" / "Quality Check". */
 export function formatFulfillmentStatus(raw: unknown): string {
   const text = str(raw).replace(/[_\s]+/g, ' ').trim();

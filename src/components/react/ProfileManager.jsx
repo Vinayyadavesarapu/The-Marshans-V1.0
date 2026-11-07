@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChange } from '../../lib/firebase/client';
-import { SAVED_ADDRESS_KEY } from '../../lib/session/cache';
 import {
-  getSavedAddresses,
-  addSavedAddress,
-  updateSavedAddress,
-  deleteSavedAddress,
-  setDefaultAddress
-} from '../../lib/session/addresses';
+  fetchCustomerAddresses,
+  createCustomerAddress,
+  updateCustomerAddress,
+  deleteCustomerAddress,
+  setDefaultCustomerAddress
+} from '../../lib/api/addresses';
+import AccountNav from './AccountNav';
 
 const INITIAL_FORM = {
   label: 'Home',
@@ -24,22 +24,28 @@ const INITIAL_FORM = {
 export default function ProfileManager() {
   const [user, setUser] = useState(null);
   const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null); // null = not editing; 'new' = adding new; string = editing address ID
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const loadAddresses = () => {
-    const list = getSavedAddresses();
-    setAddresses(list);
+  const loadAddresses = async () => {
+    try {
+      const list = await fetchCustomerAddresses();
+      setAddresses(list);
+    } catch (err) {
+      console.warn('Failed to load customer addresses:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     const unsub = onAuthStateChange((currentUser) => {
       setUser(currentUser);
+      loadAddresses();
     });
-
-    loadAddresses();
 
     const handleUpdate = () => {
       loadAddresses();
@@ -96,7 +102,7 @@ export default function ProfileManager() {
     setFormData((prev) => ({ ...prev, label }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -116,14 +122,14 @@ export default function ProfileManager() {
 
     try {
       if (editingId === 'new') {
-        addSavedAddress({
+        await createCustomerAddress({
           ...formData,
           postalCode: pin,
           phone: phoneClean
         });
-        setMessage('New address added successfully.');
+        setMessage('New address added and saved successfully.');
       } else if (editingId) {
-        updateSavedAddress(editingId, {
+        await updateCustomerAddress(editingId, {
           ...formData,
           postalCode: pin,
           phone: phoneClean
@@ -132,7 +138,7 @@ export default function ProfileManager() {
       }
       setEditingId(null);
       setFormData(INITIAL_FORM);
-      loadAddresses();
+      await loadAddresses();
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error(err);
@@ -140,26 +146,29 @@ export default function ProfileManager() {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this address?')) {
-      deleteSavedAddress(id);
-      loadAddresses();
+      await deleteCustomerAddress(id);
+      await loadAddresses();
       setMessage('Address removed.');
       setTimeout(() => setMessage(''), 3000);
     }
   };
 
-  const handleSetDefault = (id) => {
-    setDefaultAddress(id);
-    loadAddresses();
+  const handleSetDefault = async (id) => {
+    await setDefaultCustomerAddress(id);
+    await loadAddresses();
     setMessage('Default address updated.');
     setTimeout(() => setMessage(''), 3000);
   };
 
   return (
-    <div className="profile-manager-card">
-      {/* Top Header with + Add Address Button */}
-      <div className="profile-header-bar">
+    <div className="profile-manager-wrapper">
+      <AccountNav activeTab="addresses" />
+
+      <div className="profile-manager-card">
+        {/* Top Header with + Add Address Button */}
+        <div className="profile-header-bar">
         <div className="profile-header-text">
           <span className="profile-badge">FULFILLMENT DESTINATIONS</span>
           <h2>Saved Addresses</h2>
@@ -744,6 +753,7 @@ export default function ProfileManager() {
           }
         }
       ` }} />
+      </div>
     </div>
   );
 }

@@ -78,6 +78,50 @@ export async function loginWithGoogle(): Promise<User> {
   return res.user;
 }
 
+let authInitPromise: Promise<User | null> | null = null;
+
+export function waitForAuthInit(): Promise<User | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  if ((window as any).__MOCK_AUTH_USER !== undefined) {
+    return Promise.resolve((window as any).__MOCK_AUTH_USER);
+  }
+  const { auth } = getFirebaseClient();
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+
+  if (!authInitPromise) {
+    authInitPromise = new Promise((resolve) => {
+      let resolved = false;
+      const done = (u: User | null) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(u);
+        }
+      };
+
+      if (typeof (auth as any).authStateReady === 'function') {
+        (auth as any).authStateReady().then(() => {
+          done(auth.currentUser);
+        }).catch(() => {
+          done(auth.currentUser);
+        });
+      } else {
+        try {
+          const unsub = onAuthStateChanged(auth, (user) => {
+            try { unsub(); } catch {}
+            done(user);
+          });
+        } catch {
+          done(auth.currentUser);
+        }
+      }
+
+      // Safety timeout so stubbed test runners and disconnected clients never hang
+      setTimeout(() => done(auth.currentUser), 150);
+    });
+  }
+  return authInitPromise;
+}
+
 export function subscribeToAuth(cb: (user: User | null) => void): () => void {
   if (typeof window === 'undefined') return () => {};
   if ((window as any).__MOCK_AUTH_USER !== undefined) {
@@ -100,6 +144,9 @@ export async function getCurrentIdToken(): Promise<string | null> {
   }
   try {
     const { auth } = getFirebaseClient();
+    if (!auth.currentUser) {
+      await waitForAuthInit();
+    }
     if (!auth.currentUser) return null;
     return await auth.currentUser.getIdToken();
   } catch {

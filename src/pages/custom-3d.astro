@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import CollectionHero from '../components/react/collection/CollectionHero.tsx';
+import Custom3DStudio from '../components/react/Custom3DStudio.jsx';
 import { CATEGORIES_CONFIG } from '../config/categoriesConfig';
 import { LADY_JUSTICE_VARIANTS } from '../lib/api/customForge';
 
@@ -44,7 +45,24 @@ const customForgeJsonLd = {
     <!-- SECTION 1: STATIC INNER-PAGE HERO BANNER (Reusing existing CollectionHero layout and styling) -->
     <CollectionHero client:load category={customForgeCategory} />
 
-    <!-- SECTION 2: CUSTOM FORGE LAUNCH SHOWCASE (Lady Justice) -->
+    <!-- SECTION 2: INTERACTIVE CUSTOM 3D PRINTING STUDIO -->
+    <section class="cf-studio-section" id="custom-studio" aria-labelledby="cf-studio-heading">
+      <div class="container">
+        <div class="cf-head">
+          <span class="cf-badge">ON-DEMAND FABRICATION</span>
+          <h2 id="cf-studio-heading" class="cf-title">
+            Custom 3D Printing Studio
+          </h2>
+          <p class="cf-intro">
+            Upload your CAD model (.STL, .3MF, .OBJ, .STEP) or specify custom dimensions. Calculate instant volume, material weight estimates, and generate a live fabrication quote.
+          </p>
+        </div>
+
+        <Custom3DStudio client:load />
+      </div>
+    </section>
+
+    <!-- SECTION 3: CUSTOM FORGE LAUNCH SHOWCASE (Lady Justice) -->
     <section class="cf-landing-section" aria-labelledby="cf-landing-heading">
       <div class="container">
         <!-- Section Header -->
@@ -185,6 +203,12 @@ const customForgeJsonLd = {
     .custom-forge-page .collection-hero-banner-img {
       object-position: 15% 10% !important;
     }
+  }
+
+  .cf-studio-section {
+    padding: clamp(3rem, 5vw, 4.5rem) 0 2.5rem;
+    background-color: #faf9f7;
+    border-bottom: 1px solid rgba(20, 37, 26, 0.08);
   }
 
   .cf-landing-section {
