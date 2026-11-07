@@ -6,7 +6,7 @@ import { isCustomForgeOnly } from '../config/launchMode';
 
 // Centralized launch-mode guard: direct URL protection for retail catalog
 if (isCustomForgeOnly()) {
-  return Astro.redirect('/custom-3d', 302);
+  return Astro.redirect('/product/lady-justice/', 302);
 }
 
 const { products } = await getProducts({ limit: 50 });

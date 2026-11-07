@@ -98,7 +98,7 @@ export default function LadyJusticePurchase() {
       price: unitPrice,
       quantity,
       imageUrl: variantImageUrl,
-      categoryName: 'Custom Forge',
+      categoryName: 'Statues',
       material: isCustom && effectiveMaterial === 'MDF' ? 'Organic Wood / MDF' : 'Precision Polymer',
       options: {
         is_custom_forge: true,

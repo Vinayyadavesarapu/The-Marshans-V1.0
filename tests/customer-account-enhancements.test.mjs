@@ -42,6 +42,13 @@ test('1. formatPaymentStatus distinguishes paid, pending, failed, expired, and r
   assert.equal(sRefunded.badgeClass, 'payment-refunded');
   assert.equal(sRefunded.canRetryPayment, false);
 
+  // Cancelled
+  const sCancelled = formatPaymentStatus('cancelled');
+  assert.equal(sCancelled.key, 'cancelled');
+  assert.equal(sCancelled.label, 'Cancelled');
+  assert.equal(sCancelled.badgeClass, 'payment-cancelled');
+  assert.equal(sCancelled.canRetryPayment, false);
+
   // Default fallback for null/unknown
   const sNull = formatPaymentStatus(null);
   assert.equal(sNull.key, 'pending');
@@ -68,22 +75,20 @@ test('2. OrdersList and AccountDashboard feature payment retry, distinguished ta
   assert.match(dashboardSrc, /payment-pill/, 'AccountDashboard must render payment pill');
 });
 
-test('3. Account Navigation covers Dashboard, Orders & Tracking, Saved Addresses, and Custom 3D', () => {
+test('3. Account Navigation covers Dashboard, Orders & Tracking, and Saved Addresses', () => {
   const navSrc = fs.readFileSync(path.join(ROOT, 'src/components/react/AccountNav.jsx'), 'utf8');
 
   assert.match(navSrc, /\/account/, 'Must link to /account');
   assert.match(navSrc, /\/account\/orders/, 'Must link to /account/orders');
   assert.match(navSrc, /\/account\/profile/, 'Must link to /account/profile');
-  assert.match(navSrc, /\/custom-3d/, 'Must link to /custom-3d');
+  assert.equal(navSrc.includes('/custom-3d'), false, 'Unnecessary Custom 3D link must be removed from customer account subnav');
   assert.match(navSrc, /logOut|handleLogout/, 'Must provide sign out option');
 });
 
-test('4. Custom 3D page mounts Custom 3D Studio and STL upload section', () => {
+test('4. Custom 3D route seamlessly redirects to Lady Justice product page', () => {
   const custom3dSrc = fs.readFileSync(path.join(ROOT, 'src/pages/custom-3d.astro'), 'utf8');
 
-  assert.match(custom3dSrc, /Custom3DStudio/, 'custom-3d.astro must import and mount Custom3DStudio');
-  assert.match(custom3dSrc, /<Custom3DStudio\s+client:load\s*\/>/, 'Custom3DStudio must be rendered with client:load');
-  assert.match(custom3dSrc, /Custom 3D Printing Studio/, 'custom-3d.astro must have studio section heading');
+  assert.match(custom3dSrc, /Astro\.redirect\('\/product\/lady-justice\/'/, 'custom-3d.astro must redirect directly to Lady Justice product page');
 });
 
 test('5. Customer Addresses API layer normalizes backend rows and synchronizes with localStorage', async () => {

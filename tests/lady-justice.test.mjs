@@ -74,7 +74,7 @@ test('Lady Justice product detail page satisfies routing, SEO, and structured da
 
   // SEO & Metadata
   assert.match(page, /canonicalUrl = 'https:\/\/themarshans\.shop\/product\/lady-justice\/'/);
-  assert.match(page, /productTitle = 'LADY JUSTICE — THE MARSHANS \| Custom Forge'/);
+  assert.match(page, /productTitle = 'LADY JUSTICE — THE MARSHANS \| Architectural Sculpture'/);
   assert.match(page, /productDescription =[\s\S]*?A symbol of truth, fairness and justice\./);
 
   // Real product images and gallery
@@ -90,7 +90,7 @@ test('Lady Justice product detail page satisfies routing, SEO, and structured da
   assert.match(page, /'@type': 'Product'/);
   assert.match(page, /'name': 'LADY JUSTICE'/);
   assert.match(page, /'@type': 'BreadcrumbList'/);
-  assert.match(page, /'name': 'Custom Forge'/);
+  assert.match(page, /'name': 'Lady Justice'/);
 
   // Purchase integration island
   assert.match(page, /<LadyJusticePurchase client:load \/>/);
@@ -120,23 +120,13 @@ test('LadyJusticePurchase component enforces variant selection, Custom Mode rule
   assert.doesNotMatch(purchase, /createOrder\(/, 'does NOT submit to retail orders');
 });
 
-test('Custom Forge page (/custom-3d) features Lady Justice launch showcase with static hero and sizing', () => {
+test('Custom 3D page (/custom-3d) redirects directly to Lady Justice product page', () => {
   const pagePath = resolve('src/pages/custom-3d.astro');
   assert.ok(existsSync(pagePath), 'custom-3d.astro exists');
   const page = read('src/pages/custom-3d.astro');
 
-  // Section 1: Static inner-page hero layout (homepage video hero removed)
-  assert.doesNotMatch(page, /<HeroIntro/, 'removes cinematic homepage video hero from custom-3d');
-  assert.match(page, /<CollectionHero client:load category=\{customForgeCategory\} \/>/, 'reuses existing inner-page hero layout');
-  assert.match(page, /const CUSTOM_FORGE_HERO_IMAGE = '\/assets\/categories\/custom-forge\/hero\.webp'/, 'uses easily replaceable static hero image');
-
-  // Section 2: Lady Justice launch showcase
-  assert.match(page, /LADY JUSTICE/, 'showcases Lady Justice');
-  assert.match(page, /LADY_JUSTICE_VARIANTS/, 'displays size editions and pricing');
-  assert.match(page, /href="\/product\/lady-justice\/"/, 'links to /product/lady-justice/');
-
-  // Second product is NOT shown
-  assert.doesNotMatch(page, /Coming Soon|placeholder text|second product|another product/i, 'no mention or placeholder for second product');
+  assert.match(page, /Astro\.redirect\('\/product\/lady-justice\/'/, 'redirects to Lady Justice product page');
+  assert.doesNotMatch(page, /Custom 3D Printing Studio/, 'removes complex custom studio from customer shopping journey');
 });
 
 test('IndustrialOrdersForm contains all 6 required fields, conditional WhatsApp logic, and exact confirmation message', () => {

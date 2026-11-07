@@ -14,8 +14,7 @@ export default function AccountNav({ activeTab = 'dashboard' }) {
   const tabs = [
     { id: 'dashboard', label: 'Collector Dashboard', href: '/account', icon: '📊' },
     { id: 'orders', label: 'Orders & Tracking', href: '/account/orders', icon: '📦' },
-    { id: 'addresses', label: 'Saved Addresses', href: '/account/profile', icon: '📍' },
-    { id: 'custom-3d', label: 'Custom 3D Studio', href: '/custom-3d', icon: '📐' }
+    { id: 'addresses', label: 'Saved Addresses', href: '/account/profile', icon: '📍' }
   ];
 
   return (

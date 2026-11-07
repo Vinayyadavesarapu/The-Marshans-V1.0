@@ -101,7 +101,7 @@ function rupees(rawObj: Record<string, any>, field: string, storeId: number | un
 }
 
 export interface FormattedPaymentStatus {
-  key: 'paid' | 'pending' | 'failed' | 'expired' | 'refunded';
+  key: 'paid' | 'pending' | 'failed' | 'expired' | 'cancelled' | 'refunded';
   label: string;
   badgeClass: string;
   canRetryPayment: boolean;
@@ -116,6 +116,9 @@ export function formatPaymentStatus(status: unknown): FormattedPaymentStatus {
       return { key: 'failed', label: 'Payment Failed', badgeClass: 'payment-failed', canRetryPayment: true };
     case 'expired':
       return { key: 'expired', label: 'Payment Expired', badgeClass: 'payment-expired', canRetryPayment: false };
+    case 'cancelled':
+    case 'canceled':
+      return { key: 'cancelled', label: 'Cancelled', badgeClass: 'payment-cancelled', canRetryPayment: false };
     case 'refunded':
       return { key: 'refunded', label: 'Refunded', badgeClass: 'payment-refunded', canRetryPayment: false };
     case 'pending':

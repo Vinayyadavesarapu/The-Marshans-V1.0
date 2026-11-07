@@ -70,19 +70,11 @@ export default function AccountDashboard() {
 
       {/* Navigation Sections */}
       <div className="account-sections-grid">
-
         <a href="/account/orders" className="account-nav-card">
           <div className="nav-card-icon">📦</div>
           <h3>Orders & Tracking</h3>
           <p>Inspect live dispatch progress, waybill tracking numbers, and invoice receipts.</p>
           <span className="nav-card-arrow">View Orders →</span>
-        </a>
-
-        <a href="/custom-3d" className="account-nav-card">
-          <div className="nav-card-icon">📐</div>
-          <h3>Custom 3D Printing</h3>
-          <p>Submit custom STL/3MF files, calculate weight estimates, and start print jobs.</p>
-          <span className="nav-card-arrow">Launch Studio →</span>
         </a>
 
         <a href="/account/profile" className="account-nav-card">
@@ -103,7 +95,7 @@ export default function AccountDashboard() {
         {orders.length === 0 ? (
           <div className="orders-empty-card">
             <p>You haven't placed any orders yet.</p>
-            <a href="/#home-carousel-section" className="btn btn-primary btn-sm">Explore Drops</a>
+            <a href="/product/lady-justice/" className="btn btn-primary btn-sm">Explore Lady Justice</a>
           </div>
         ) : (
           <div className="orders-table-compact">

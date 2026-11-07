@@ -50,7 +50,6 @@ test('2. NAVIGATION: Retail links hidden during launch, fully restored in RETAIL
   const launchNav = getNavItems('CUSTOM_FORGE_ONLY');
   const launchLabels = launchNav.map((n) => n.label);
   assert.deepEqual(launchNav, CUSTOM_FORGE_NAV_ITEMS);
-  assert.ok(launchLabels.includes('Custom Forge'), 'Custom Forge link present in launch mode');
   assert.ok(launchLabels.includes('Lady Justice'), 'Lady Justice link present in launch mode');
   assert.ok(!launchLabels.includes('Home'), 'Home link hidden in launch mode');
   assert.ok(!launchLabels.includes('LUMO'), 'LUMO link hidden in launch mode');
@@ -70,8 +69,8 @@ test('2. NAVIGATION: Retail links hidden during launch, fully restored in RETAIL
   assert.ok(retailLabels.includes('Custom Forge'), 'Custom Forge retained in retail mode');
 });
 
-test('3. LOGO DESTINATION: Points to /custom-3d in launch mode and / in RETAIL mode', () => {
-  assert.equal(getLogoHref('CUSTOM_FORGE_ONLY'), '/custom-3d', 'Logo links to /custom-3d during launch mode');
+test('3. LOGO DESTINATION: Points to Lady Justice in launch mode and / in RETAIL mode', () => {
+  assert.equal(getLogoHref('CUSTOM_FORGE_ONLY'), '/product/lady-justice/', 'Logo links to Lady Justice during launch mode');
   assert.equal(getLogoHref('RETAIL'), '/', 'Logo links to / during RETAIL mode');
 
   const navbar = read('src/components/react/MarshansNavbar.tsx');
@@ -97,22 +96,22 @@ test('4. SEARCH ISOLATION: Custom Forge indexed only; zero retail leakage in lau
   assert.ok(!CUSTOM_FORGE_SEARCH_SUGGESTIONS.includes('Fandom Statues'), 'Fandom Statues excluded from launch suggestions');
 });
 
-test('5. DIRECT URL PROTECTION: Route guards redirect retail pages to /custom-3d or Lady Justice', () => {
-  // index.astro: redirects to /custom-3d in launch mode, retains retail markup
+test('5. DIRECT URL PROTECTION: Route guards redirect retail pages to Lady Justice', () => {
+  // index.astro: redirects to Lady Justice in launch mode, retains retail markup
   const indexPage = read('src/pages/index.astro');
-  assert.match(indexPage, /if \(isCustomForgeOnly\(\)\) \{\s*return Astro\.redirect\('\/custom-3d', 302\);\s*\}/, 'index.astro redirects to /custom-3d');
+  assert.match(indexPage, /if \(isCustomForgeOnly\(\)\) \{\s*return Astro\.redirect\('\/product\/lady-justice\/', 302\);\s*\}/, 'index.astro redirects to /product/lady-justice/');
   assert.match(indexPage, /<HomeCategoryDiscovery \/>/, 'retains original retail Category Discovery');
   assert.match(indexPage, /<HomeShowcase/, 'retains original retail Showcase');
   assert.match(indexPage, /<HomeProductSection/, 'retains original retail The Collection');
 
-  // shop.astro: redirects to /custom-3d in launch mode, retains retail catalog
+  // shop.astro: redirects to Lady Justice in launch mode, retains retail catalog
   const shopPage = read('src/pages/shop.astro');
-  assert.match(shopPage, /if \(isCustomForgeOnly\(\)\) \{\s*return Astro\.redirect\('\/custom-3d', 302\);\s*\}/, 'shop.astro redirects to /custom-3d');
+  assert.match(shopPage, /if \(isCustomForgeOnly\(\)\) \{\s*return Astro\.redirect\('\/product\/lady-justice\/', 302\);\s*\}/, 'shop.astro redirects to /product/lady-justice/');
   assert.match(shopPage, /<ShopCatalog/, 'retains original retail ShopCatalog');
 
-  // categories/[slug].astro: redirects retail categories to /custom-3d
+  // categories/[slug].astro: redirects retail categories to Lady Justice
   const catPage = read('src/pages/categories/[slug].astro');
-  assert.match(catPage, /if \(isCustomForgeOnly\(\)\) \{\s*return Astro\.redirect\('\/custom-3d', 302\);\s*\}/, 'categories/[slug].astro redirects to /custom-3d');
+  assert.match(catPage, /if \(isCustomForgeOnly\(\)\) \{\s*return Astro\.redirect\('\/product\/lady-justice\/', 302\);\s*\}/, 'categories/[slug].astro redirects to /product/lady-justice/');
   assert.match(catPage, /<CollectionPage/, 'retains original retail CollectionPage');
 
   // product/[slug].astro: redirects retail products to /product/lady-justice/
@@ -213,10 +212,11 @@ test('8. CHECKOUT SAFETY: No retail orders created while dedicated backend queue
 test('9. HOSTINGER .HTACCESS GENERATOR: 302 temporary redirects, no loops, product rewrite intact', () => {
   // Test launch mode generated .htaccess
   const launchHt = generateHtaccessContent('CUSTOM_FORGE_ONLY');
-  assert.match(launchHt, /RewriteRule \^\$ \/custom-3d \[R=302,L\]/, 'Redirects bare root / via 302 to /custom-3d');
-  assert.match(launchHt, /RewriteRule \^index\\\.html\$ \/custom-3d \[R=302,L\]/, 'Redirects /index.html via 302');
-  assert.match(launchHt, /RewriteRule \^shop\/\?\$ \/custom-3d \[R=302,L\]/, 'Redirects /shop via 302');
-  assert.match(launchHt, /RewriteRule \^categories\/\(\?!custom-forge\|custom-3d\)\[\^\/\]\+\/\?\$ \/custom-3d \[R=302,L\]/, 'Redirects retail categories via 302 without touching custom-forge');
+  assert.match(launchHt, /RewriteRule \^\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects bare root / via 302 to /product/lady-justice/');
+  assert.match(launchHt, /RewriteRule \^index\\\.html\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects /index.html via 302');
+  assert.match(launchHt, /RewriteRule \^custom-3d\/\?\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects /custom-3d via 302');
+  assert.match(launchHt, /RewriteRule \^shop\/\?\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects /shop via 302');
+  assert.match(launchHt, /RewriteRule \^categories\/\.\*\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects retail categories via 302');
   assert.match(launchHt, /RewriteRule \^product\/\(\?!lady-justice\)\[\^\/\]\+\/\?\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects retail products via 302 without touching lady-justice');
   assert.match(launchHt, /RewriteRule \^product\/\(\[\^\/\]\+\)\/\?\$ \/product\/\?slug=\$1 \[L,QSA\]/, 'Preserves existing product runtime handler rewrite');
   assert.doesNotMatch(launchHt, /301/, 'Never uses permanent 301 redirects');

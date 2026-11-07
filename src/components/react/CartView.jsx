@@ -135,10 +135,9 @@ export default function CartView() {
         <div className="cart-empty-container">
           <div className="empty-cart-icon">🛒</div>
           <h2>Your Bag is Empty</h2>
-          <p>You haven't added the Lady Justice statue or custom artifacts to your shopping bag yet.</p>
+          <p>You haven't added the Lady Justice statue to your shopping bag yet.</p>
           <div className="empty-cart-actions">
-            <a href="/product/lady-justice/" className="btn btn-primary">Configure Lady Justice</a>
-            <a href="/custom-3d" className="btn btn-outline">Explore Custom Forge</a>
+            <a href="/product/lady-justice/" className="btn btn-primary">View Lady Justice Statue</a>
           </div>
         </div>
       );
@@ -164,8 +163,7 @@ export default function CartView() {
         <h2>Your Bag is Empty</h2>
         <p>You haven't added any 3D printed artifacts or collectibles to your bag yet.</p>
         <div className="empty-cart-actions">
-          <a href="/#home-carousel-section" className="btn btn-primary">Discover Artifacts</a>
-          <a href="/custom-3d" className="btn btn-outline">Upload Custom 3D Model</a>
+          <a href="/product/lady-justice/" className="btn btn-primary">Discover Lady Justice</a>
         </div>
       </div>
     );

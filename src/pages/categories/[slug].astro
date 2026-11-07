@@ -19,9 +19,9 @@ const { universe } = Astro.props;
 
 const meta = universe || getCategoryMeta(slug as string);
 
-// Centralized launch-mode guard: redirect retail categories to Custom Forge landing page
+// Centralized launch-mode guard: redirect retail categories to Lady Justice product page
 if (isCustomForgeOnly()) {
-  return Astro.redirect('/custom-3d', 302);
+  return Astro.redirect('/product/lady-justice/', 302);
 }
 
 // Fetch real production products for Store 2 filtered by this category slug

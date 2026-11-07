@@ -8,9 +8,9 @@ import HomeProductSection from '../components/react/HomeProductSection.tsx';
 import { getProducts } from '../lib/api/products';
 import { isCustomForgeOnly } from '../config/launchMode';
 
-// Centralized launch-mode guard: redirect old retail homepage to Custom Forge landing page
+// Centralized launch-mode guard: redirect to Lady Justice product page
 if (isCustomForgeOnly()) {
-  return Astro.redirect('/custom-3d', 302);
+  return Astro.redirect('/product/lady-justice/', 302);
 }
 
 const { products } = await getProducts({ limit: 12 });

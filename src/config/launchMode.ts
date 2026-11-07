@@ -50,8 +50,8 @@ export const RETAIL_NAV_ITEMS: NavItem[] = [
 ];
 
 export const CUSTOM_FORGE_NAV_ITEMS: NavItem[] = [
-  { label: 'Custom Forge', href: '/custom-3d' },
   { label: 'Lady Justice', href: '/product/lady-justice/' },
+  { label: 'Orders & Tracking', href: '/account/orders' },
 ];
 
 export function getNavItems(mode: LaunchMode = LAUNCH_MODE): NavItem[] {
@@ -59,7 +59,7 @@ export function getNavItems(mode: LaunchMode = LAUNCH_MODE): NavItem[] {
 }
 
 export function getLogoHref(mode: LaunchMode = LAUNCH_MODE): string {
-  return isCustomForgeOnly(mode) ? '/custom-3d' : '/';
+  return isCustomForgeOnly(mode) ? '/product/lady-justice/' : '/';
 }
 
 /**
@@ -102,19 +102,18 @@ export const CUSTOM_FORGE_SEARCH_PRODUCTS = [
     name: 'Lady Justice',
     slug: 'lady-justice',
     sku: 'CF-LJ-01',
-    category_name: 'Custom Forge',
-    category_slug: 'custom-forge',
+    category_name: 'Statues',
+    category_slug: 'statues',
     price: 1600, // Starting price for 6" edition
     primary_image_url: '/assets/products/custom-forge/name plate front.png',
     description: 'A symbol of truth, fairness and justice. Thoughtfully crafted with sculptural balance, bespoke 3D printed nameplate customization, and architectural presence.',
-    keywords: ['lady justice', 'justice', 'statue', 'sculpture', 'custom forge', 'law', 'scales of justice', 'nameplate', 'advocate', 'judge', 'legal']
+    keywords: ['lady justice', 'justice', 'statue', 'sculpture', 'law', 'scales of justice', 'nameplate', 'advocate', 'judge', 'legal']
   }
 ];
 
 export const CUSTOM_FORGE_SEARCH_SUGGESTIONS = [
   'Lady Justice',
-  'Custom Forge',
-  'Bespoke Sculpture',
+  'Statue',
   'Nameplate Customization'
 ];
 

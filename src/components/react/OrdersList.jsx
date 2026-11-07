@@ -204,15 +204,15 @@ export default function OrdersList() {
       {loading ? (
         <div className="orders-loading-wrap">
           <div className="spinner"></div>
-          <p>Retrieving your order dispatches from the Marshan print network...</p>
+          <p>Retrieving your order dispatches from the Marshan network...</p>
         </div>
       ) : orders.length === 0 ? (
         <div className="orders-empty-state">
           <div className="orders-box-icon">📦</div>
-          <h2>No Dispatches Found</h2>
-          <p>Your collection vault is currently empty. Explore our latest drops across the 5 universes or launch a Custom Forge project.</p>
+          <h2>No Orders Found</h2>
+          <p>You haven't placed any orders yet. Discover our signature Lady Justice statue.</p>
           <div className="empty-actions-row">
-            <a href="/#home-carousel-section" className="btn btn-primary">Discover Artifacts</a>
+            <a href="/product/lady-justice/" className="btn btn-primary">View Lady Justice Statue</a>
             <button type="button" onClick={loadOrders} className="btn btn-outline btn-sm">Refresh Orders ↻</button>
           </div>
         </div>
@@ -512,81 +512,142 @@ export default function OrdersList() {
                 </div>
               )}
 
-              {/* Manufacturing & Fulfillment Timeline */}
-              <div className="modal-section-card">
-                <h4 className="modal-section-title">Manufacturing & Carrier Timeline</h4>
-                <div className="carrier-status-summary">
-                  <span>Courier: <strong>{trackingInfo?.courier || selectedOrder.courier || 'Velocity Air Express'}</strong></span>
-                  {trackingInfo?.tracking_no ? (
-                    <span>AWB Waybill: <strong>{trackingInfo.tracking_no}</strong></span>
-                  ) : (
-                    <span style={{ color: '#71717a' }}>AWB Waybill: <em>Assigned upon physical parcel dispatch</em></span>
-                  )}
-                </div>
+              {/* STAGE 1: ORDER PROCESSING TIMELINE */}
+              {(() => {
+                const rawStatus = String(selectedOrder.status || '').toLowerCase();
+                const isDelivered = rawStatus.includes('deliver');
+                const isShipped = isDelivered || rawStatus.includes('ship') || rawStatus.includes('dispatch') || rawStatus.includes('transit');
+                const isReadyToShip = isShipped || rawStatus.includes('ready');
+                const isProcessing = isReadyToShip || rawStatus.includes('process') || rawStatus.includes('produc') || rawStatus.includes('manufactur') || rawStatus.includes('print');
+                const isPlaced = true;
 
-                {trackingInfo?.track_url && (
-                  <div style={{ marginTop: '10px' }}>
-                    <a
-                      href={trackingInfo.track_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-outline btn-sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px' }}
-                    >
-                      Open Carrier Live Tracking ↗
-                    </a>
-                  </div>
-                )}
-
-                {trackingLoading ? (
-                  <div style={{ padding: '24px 0', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
-                    Connecting to live carrier telemetry...
-                  </div>
-                ) : trackingInfo?.activities && trackingInfo.activities.length > 0 ? (
-                  <div className="tracking-timeline" style={{ marginTop: '16px' }}>
-                    {trackingInfo.activities.map((act, idx) => (
-                      <div key={idx} className={`timeline-step ${idx === 0 ? 'step-active' : 'step-complete'}`}>
-                        <div className="step-circle">{idx === 0 ? '●' : '✓'}</div>
-                        <div className="step-content">
-                          <strong>{act.activity || act.status || 'Consignment Update'}</strong>
-                          {act.location && <p>Location: {act.location}</p>}
-                          {(act.date || act.time || act.timestamp) && (
-                            <p style={{ fontSize: '11px', color: '#a1a1aa' }}>
-                              {[act.date, act.time].filter(Boolean).join(' ')}
-                            </p>
-                          )}
+                return (
+                  <div className="modal-section-card">
+                    <h4 className="modal-section-title">Order Processing</h4>
+                    <div className="processing-steps-row">
+                      {/* Step 1: Order Placed */}
+                      <div className={`process-step ${isPlaced ? 'step-done' : 'step-current'}`}>
+                        <div className="step-marker">{isPlaced ? '✓' : '1'}</div>
+                        <div className="step-info">
+                          <strong>Order Placed</strong>
+                          <span>
+                            {new Date(selectedOrder.created_at || Date.now()).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short'
+                            })}
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : trackingInfo?.tracking_no ? (
-                  <div className="tracking-pending-state" style={{ marginTop: '14px' }}>
-                    <div className="pending-badge-row">
-                      <span className="courier-badge">{trackingInfo.courier || selectedOrder.courier || 'Velocity Air Express'}</span>
-                      <span className="consignment-tag">Consignment Registered</span>
+
+                      {/* Step 2: Processing */}
+                      <div className={`process-step ${isReadyToShip ? 'step-done' : isProcessing ? 'step-active' : 'step-pending'}`}>
+                        <div className="step-marker">{isReadyToShip ? '✓' : isProcessing ? '●' : '2'}</div>
+                        <div className="step-info">
+                          <strong>Processing</strong>
+                          <span>{isReadyToShip ? 'Completed' : isProcessing ? 'In Progress' : 'Queued'}</span>
+                        </div>
+                      </div>
+
+                      {/* Step 3: Ready to Ship */}
+                      <div className={`process-step ${isShipped ? 'step-done' : isReadyToShip ? 'step-active' : 'step-pending'}`}>
+                        <div className="step-marker">{isShipped ? '✓' : isReadyToShip ? '●' : '3'}</div>
+                        <div className="step-info">
+                          <strong>Ready to Ship</strong>
+                          <span>{isShipped ? 'Dispatched' : isReadyToShip ? 'Packaged & Ready' : 'Pending'}</span>
+                        </div>
+                      </div>
                     </div>
-                    <h4>In Transit with Velocity Air Express</h4>
-                    <p>
-                      Waybill #{trackingInfo.tracking_no} is active. Physical checkpoint scans will appear as the parcel moves through courier routing hubs.
-                    </p>
                   </div>
-                ) : (
-                  <div className="tracking-pending-state" style={{ marginTop: '14px' }}>
-                    <div className="pending-badge-row">
-                      <span className="courier-badge">Manufacturing Queue</span>
-                      <span className="consignment-tag">{selectedOrder.status || 'Order Placed'}</span>
-                    </div>
-                    <h4>Precision Additive Manufacturing Progress</h4>
-                    <p>
-                      {formatPaymentStatus(selectedOrder.payment_status).canRetryPayment ? (
-                        'Awaiting payment authorization. Once payment is confirmed, your piece enters our digital slicing and fabrication queue.'
-                      ) : (
-                        'Your piece is progressing through additive manufacturing and precision inspection. Live courier waybill telemetry begins upon physical hand-over to Velocity Air Express.'
-                      )}
-                    </p>
+                );
+              })()}
+
+              {/* STAGE 2: COURIER TRACKING */}
+              {(() => {
+                const realAwb = trackingInfo?.tracking_no || selectedOrder.tracking_no;
+                const hasRealAwb = Boolean(realAwb && String(realAwb).trim() !== '');
+                const courierName = trackingInfo?.courier || selectedOrder.courier || 'Velocity Air Express';
+                const shipmentStatus = trackingInfo?.current_status || trackingInfo?.status || 'In Transit';
+                const rawStatus = String(selectedOrder.status || '').toLowerCase();
+                const isDelivered = rawStatus.includes('deliver') || shipmentStatus.toLowerCase().includes('deliver');
+
+                return (
+                  <div className="modal-section-card">
+                    <h4 className="modal-section-title">Courier Tracking</h4>
+                    {hasRealAwb ? (
+                      <div className="courier-tracking-block">
+                        <div className="carrier-status-summary">
+                          <div>
+                            <span className="courier-field-label">Courier: </span>
+                            <strong>{courierName}</strong>
+                          </div>
+                          <div>
+                            <span className="courier-field-label">AWB Number: </span>
+                            <strong className="awb-code">{realAwb}</strong>
+                          </div>
+                          <div>
+                            <span className="courier-field-label">Shipment Status: </span>
+                            <span className="shipment-status-tag">{shipmentStatus}</span>
+                          </div>
+                        </div>
+
+                        {trackingInfo?.track_url && (
+                          <div style={{ marginTop: '10px' }}>
+                            <a
+                              href={trackingInfo.track_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-outline btn-sm"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px' }}
+                            >
+                              Open Carrier Live Tracking ↗
+                            </a>
+                          </div>
+                        )}
+
+                        {trackingLoading ? (
+                          <div style={{ padding: '20px 0', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
+                            Connecting to live carrier telemetry...
+                          </div>
+                        ) : trackingInfo?.activities && trackingInfo.activities.length > 0 ? (
+                          <div className="tracking-timeline" style={{ marginTop: '16px' }}>
+                            {trackingInfo.activities.map((act, idx) => (
+                              <div key={idx} className={`timeline-step ${idx === 0 ? 'step-active' : 'step-complete'}`}>
+                                <div className="step-circle">{idx === 0 ? '●' : '✓'}</div>
+                                <div className="step-content">
+                                  <strong>{act.activity || act.status || 'Consignment Update'}</strong>
+                                  {act.location && <p>Location: {act.location}</p>}
+                                  {(act.date || act.time || act.timestamp) && (
+                                    <p style={{ fontSize: '11px', color: '#a1a1aa' }}>
+                                      {[act.date, act.time].filter(Boolean).join(' ')}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {isDelivered && (
+                          <div className="delivery-confirmed-alert">
+                            <span className="delivery-check-icon">✓</span>
+                            <div>
+                              <strong>Delivery Confirmed</strong>
+                              <p>Your package has been successfully delivered to your shipping address.</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="tracking-pending-notice-card">
+                        <div className="pending-notice-icon">📦</div>
+                        <p className="pending-notice-text">
+                          Your order is being processed. Tracking details will appear once your order is dispatched.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
 
             <div className="modal-footer">
@@ -798,6 +859,11 @@ export default function OrdersList() {
         .payment-tag.payment-refunded {
           background: #f3e8ff;
           color: #7e22ce;
+        }
+
+        .payment-tag.payment-cancelled {
+          background: #f4f4f5;
+          color: #71717a;
         }
 
         .status-tag {
@@ -1199,6 +1265,181 @@ export default function OrdersList() {
           margin: 2px 0;
           font-size: 13px;
           color: #3f3f46;
+        }
+
+        /* Order Processing Step Indicators */
+        .processing-steps-row {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+          margin-top: 4px;
+        }
+
+        .process-step {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          border-radius: 8px;
+          border: 1px solid #e4e4e7;
+          background: #fafafa;
+          transition: all 0.15s ease;
+        }
+
+        .process-step.step-done {
+          background: #f0fdf4;
+          border-color: #bbf7d0;
+        }
+
+        .process-step.step-active {
+          background: #eff6ff;
+          border-color: #bfdbfe;
+        }
+
+        .step-marker {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: 800;
+          flex-shrink: 0;
+          background: #e4e4e7;
+          color: #71717a;
+        }
+
+        .process-step.step-done .step-marker {
+          background: #15803d;
+          color: #ffffff;
+        }
+
+        .process-step.step-active .step-marker {
+          background: #2563eb;
+          color: #ffffff;
+        }
+
+        .step-info {
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+
+        .step-info strong {
+          font-size: 12px;
+          color: #18181b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .step-info span {
+          font-size: 11px;
+          color: #71717a;
+        }
+
+        .process-step.step-done .step-info span {
+          color: #15803d;
+          font-weight: 600;
+        }
+
+        .process-step.step-active .step-info span {
+          color: #2563eb;
+          font-weight: 600;
+        }
+
+        @media (max-width: 580px) {
+          .processing-steps-row {
+            grid-template-columns: 1fr;
+            gap: 8px;
+          }
+        }
+
+        /* Courier Tracking Details */
+        .courier-field-label {
+          color: #71717a;
+          font-size: 11px;
+          text-transform: uppercase;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+        }
+
+        .awb-code {
+          font-family: monospace;
+          background: #f4f4f5;
+          padding: 2px 6px;
+          border-radius: 4px;
+          color: #09090b;
+        }
+
+        .shipment-status-tag {
+          background: #e0f2fe;
+          color: #0369a1;
+          font-weight: 700;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-size: 11px;
+          text-transform: uppercase;
+        }
+
+        .delivery-confirmed-alert {
+          margin-top: 14px;
+          padding: 12px 14px;
+          background: #ecfdf5;
+          border: 1px solid #a7f3d0;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .delivery-check-icon {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: #15803d;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 14px;
+          flex-shrink: 0;
+        }
+
+        .delivery-confirmed-alert strong {
+          display: block;
+          font-size: 13px;
+          color: #065f46;
+        }
+
+        .delivery-confirmed-alert p {
+          margin: 0;
+          font-size: 12px;
+          color: #047857;
+        }
+
+        .tracking-pending-notice-card {
+          background: #fbfbfb;
+          border: 1px dashed #d4d4d8;
+          border-radius: 10px;
+          padding: 20px 16px;
+          text-align: center;
+        }
+
+        .pending-notice-icon {
+          font-size: 28px;
+          margin-bottom: 6px;
+        }
+
+        .pending-notice-text {
+          font-size: 13px;
+          color: #52525b;
+          margin: 0;
+          line-height: 1.5;
+          max-width: 480px;
+          margin: 0 auto;
         }
 
         .carrier-status-summary {

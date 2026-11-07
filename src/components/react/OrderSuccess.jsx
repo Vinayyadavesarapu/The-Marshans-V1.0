@@ -226,8 +226,8 @@ export default function OrderSuccess() {
           <a href="/checkout" className="btn btn-primary">
             Retry Payment
           </a>
-          <a href={isCustomForgeOnly() ? '/custom-3d' : '/shop'} className="btn btn-outline">
-            Return to Store
+          <a href={isCustomForgeOnly() ? '/product/lady-justice/' : '/shop'} className="btn btn-outline">
+            {isCustomForgeOnly() ? 'Return to Lady Justice' : 'Return to Store'}
           </a>
         </div>
       </div>
@@ -261,8 +261,8 @@ export default function OrderSuccess() {
           <a href="/account/orders" className="btn btn-primary">
             Check Order in Account
           </a>
-          <a href={isCustomForgeOnly() ? '/custom-3d' : '/shop'} className="btn btn-outline">
-            Continue Exploring
+          <a href={isCustomForgeOnly() ? '/product/lady-justice/' : '/shop'} className="btn btn-outline">
+            {isCustomForgeOnly() ? 'View Lady Justice Statue' : 'Continue Exploring'}
           </a>
         </div>
       </div>
@@ -287,8 +287,8 @@ export default function OrderSuccess() {
           <a href="/account/orders" className="btn btn-primary">
             View My Orders
           </a>
-          <a href={isCustomForgeOnly() ? '/custom-3d' : '/shop'} className="btn btn-outline">
-            {isCustomForgeOnly() ? 'Explore Custom Forge' : 'Return to Shop'}
+          <a href={isCustomForgeOnly() ? '/product/lady-justice/' : '/shop'} className="btn btn-outline">
+            {isCustomForgeOnly() ? 'View Lady Justice Statue' : 'Return to Shop'}
           </a>
         </div>
       </div>
@@ -396,8 +396,8 @@ export default function OrderSuccess() {
         <a href="/account/orders" className="btn btn-primary">
           Track Order Status
         </a>
-        <a href={isCustomForgeOnly() ? '/custom-3d' : '/shop'} className="btn btn-outline">
-          {isCustomForgeOnly() ? 'Continue Exploring Custom Forge' : 'Continue Discovering Artifacts'}
+        <a href={isCustomForgeOnly() ? '/product/lady-justice/' : '/shop'} className="btn btn-outline">
+          {isCustomForgeOnly() ? 'View Lady Justice Statue' : 'Continue Discovering Artifacts'}
         </a>
       </div>
 

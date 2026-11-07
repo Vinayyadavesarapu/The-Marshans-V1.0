@@ -22,16 +22,17 @@ export function generateHtaccessContent(mode: LaunchMode): string {
   # Switching LAUNCH_MODE to 'RETAIL' removes this entire block automatically.
   # =========================================================================
 
-  # 1. Bare root / and old retail homepage -> /custom-3d
-  RewriteRule ^$ /custom-3d [R=302,L]
+  # 1. Bare root / and old retail homepage -> /product/lady-justice/
+  RewriteRule ^$ /product/lady-justice/ [R=302,L]
   RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\\s/+index\\.html[\\s?] [NC]
-  RewriteRule ^index\\.html$ /custom-3d [R=302,L]
+  RewriteRule ^index\\.html$ /product/lady-justice/ [R=302,L]
 
-  # 2. Retail catalog and discovery routes -> /custom-3d
-  RewriteRule ^shop/?$ /custom-3d [R=302,L]
+  # 2. Custom-3d and retail catalog routes -> /product/lady-justice/
+  RewriteRule ^custom-3d/?$ /product/lady-justice/ [R=302,L]
+  RewriteRule ^shop/?$ /product/lady-justice/ [R=302,L]
 
-  # 3. Retail category pages (except custom-forge and custom-3d) -> /custom-3d
-  RewriteRule ^categories/(?!custom-forge|custom-3d)[^/]+/?$ /custom-3d [R=302,L]
+  # 3. Retail category pages -> /product/lady-justice/
+  RewriteRule ^categories/.*$ /product/lady-justice/ [R=302,L]
 
   # 4. Retail product detail pages (except lady-justice) -> /product/lady-justice/
   RewriteRule ^product/(?!lady-justice)[^/]+/?$ /product/lady-justice/ [R=302,L]
