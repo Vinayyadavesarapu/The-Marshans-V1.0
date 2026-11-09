@@ -8,6 +8,15 @@ import {
 } from '../../lib/api/customForge';
 import { addCustomForgeToCart, type CartItem } from '../../lib/api/cart';
 
+/**
+ * Customer-facing measurement display formatter
+ * Normalizes '1 foot' to customer-facing '1 feet' display while keeping 6 inches and 2 feet intact.
+ */
+const formatDisplaySize = (label: string): string => {
+  if (!label) return label;
+  return label.replace(/\b1\s*foot\b/gi, '1 feet');
+};
+
 export default function LadyJusticePurchase() {
   const [selectedVariant, setSelectedVariant] = useState<CustomForgeSizeVariant>(LADY_JUSTICE_VARIANTS[1]); // Default to 1 foot
   const [customModeEnabled, setCustomModeEnabled] = useState<boolean>(false);
@@ -92,7 +101,7 @@ export default function LadyJusticePurchase() {
     const cartItem: CartItem = {
       id: `cf-lady-justice-${selectedVariant.id}-${Date.now()}`,
       productId: selectedVariant.backendVariantId,
-      name: `Lady Justice Statue (${selectedVariant.sizeLabel})`,
+      name: `Lady Justice Statue (${formatDisplaySize(selectedVariant.sizeLabel)})`,
       slug: 'lady-justice',
       sku: selectedVariant.sku || (selectedVariant.id === 'cf-lj-6in' ? 'MRSH-CF-LJ-6IN' : selectedVariant.id === 'cf-lj-1ft' ? 'MRSH-CF-LJ-1FT' : 'MRSH-CF-LJ-2FT'),
       price: unitPrice,
@@ -105,7 +114,7 @@ export default function LadyJusticePurchase() {
         variant_id: selectedVariant.id,
         variant_key: selectedVariant.id,
         variant_numeric_id: selectedVariant.backendVariantId,
-        size_label: selectedVariant.sizeLabel,
+        size_label: formatDisplaySize(selectedVariant.sizeLabel),
         size_inches: selectedVariant.sizeInches || (selectedVariant.id === 'cf-lj-6in' ? 6 : selectedVariant.id === 'cf-lj-1ft' ? 12 : 24),
         height_mm: selectedVariant.heightMm,
         custom_mode_enabled: isCustom,
@@ -138,7 +147,7 @@ export default function LadyJusticePurchase() {
             <div className="toast-text-wrap">
               <strong className="toast-title">Added to Your Shopping Bag</strong>
               <p className="toast-sub">
-                Lady Justice ({selectedVariant.sizeLabel})
+                Lady Justice ({formatDisplaySize(selectedVariant.sizeLabel)})
                 {customModeEnabled ? ' • Personalized Nameplate (+₹29)' : ''}
                 {nameplateMaterial === 'MDF' ? ' • Organic Wood / MDF (+₹50)' : ''} × {quantity}
               </p>
@@ -166,7 +175,7 @@ export default function LadyJusticePurchase() {
       <div className="purchase-section">
         <div className="section-label-row">
           <label className="section-title">Select Edition</label>
-          <span className="selected-size-label">{selectedVariant.sizeLabel} ({selectedVariant.heightMm}mm)</span>
+          <span className="selected-size-label">{formatDisplaySize(selectedVariant.sizeLabel)} ({selectedVariant.heightMm}mm)</span>
         </div>
 
         <div className="lady-variant-chips-grid" role="radiogroup" aria-label="Statue Size Selection">
@@ -182,7 +191,7 @@ export default function LadyJusticePurchase() {
                 className={`lady-variant-chip ${isSelected ? 'selected' : ''}`}
               >
                 <div className="chip-top-row">
-                  <strong className="chip-name">{variant.sizeLabel}</strong>
+                  <strong className="chip-name">{formatDisplaySize(variant.sizeLabel)}</strong>
                   {variant.isPopular && <span className="chip-badge">Most Popular</span>}
                 </div>
                 <div className="chip-meta-row">
@@ -375,7 +384,7 @@ export default function LadyJusticePurchase() {
           </div>
           <div className="price-breakdown-details">
             <span className="breakdown-line">
-              {selectedVariant.sizeLabel}: ₹{selectedVariant.price.toLocaleString('en-IN')}
+              {formatDisplaySize(selectedVariant.sizeLabel)}: ₹{selectedVariant.price.toLocaleString('en-IN')}
             </span>
             {nameplateCharge > 0 && (
               <span className="breakdown-line paid-add">
