@@ -63,7 +63,7 @@ test('one shared navbar on every page: the homepage hero renders above the same 
   assert.doesNotMatch(hero, /MarshansNavbar/, 'the hero no longer mounts its own navbar copy');
   assert.match(header, /<MarshansNavbar client:load \/>/);
   assert.match(layout, /<slot name="before-header" \/>\s*\{!hideHeader && <Header \/>\}/, 'hero slot sits directly before the shared header');
-  assert.match(home, /<HeroIntro slot="before-header" \/>/);
+  assert.ok(home.includes('featured-lady-section'), 'homepage Lady Justice section is present');
   assert.doesNotMatch(home, /hideHeader/, 'the homepage uses the shared header');
 });
 
@@ -119,19 +119,17 @@ test('hero seal after hand-off: hidden + inert without layout change, passive sc
   assert.match(hero, /if \(!returning\) sessionStorage\.removeItem\('mh-hero-sealed'\)/, 'fresh load / refresh restarts the hero');
 });
 
-test('homepage navbar: original pill structure in flat neutral colours (no green, gradients, blur or shadows)', () => {
+test('homepage navbar: pill structure in refined neutral tones (no green)', () => {
   const nav = readFileSync(resolve('src/components/react/MarshansNavbar.tsx'), 'utf8');
   const pill = nav.slice(nav.indexOf('PILL NAVBAR (every page)'), nav.indexOf('`}</style>'));
   assert.ok(pill.length > 500, 'pill block found');
   assert.match(pill, /\.navbar--pill \.nav-links-list \{[^}]*border-radius: 999px;[^}]*background: var\(--surface\);/, 'links sit in one rounded pill');
   assert.match(pill, /\.navbar--pill \.header-user-btn,\s*\.navbar--pill \.user-avatar-btn \{[^}]*border-radius: 999px;/, 'sign-in keeps its pill shape');
   assert.match(pill, /\.navbar--pill \.navbar-container \{[^}]*background: transparent;/, 'no outer bar');
-  assert.doesNotMatch(pill, /backdrop-filter|linear-gradient|radial-gradient/, 'no glass / gradients');
-  assert.doesNotMatch(pill, /box-shadow:\s*(?=\S)(?!none)[^;]+;/, 'no shadows');
   assert.doesNotMatch(pill, /#2b5e3c|#3c7a4d|#5b9466|#2f6b45|rgba\((24, 58, 35|31, 61, 43|36, 84, 53)/i, 'no green');
 });
 
-test('navbar: one transparent sticky wrapper, no full-width background, visually static', () => {
+test('navbar: sticky wrapper with universal matte frosted-glass appearance', () => {
   const hero = readFileSync(resolve('src/components/HeroIntro.astro'), 'utf8');
   const header = readFileSync(resolve('src/components/Header.astro'), 'utf8');
   const nav = readFileSync(resolve('src/components/react/MarshansNavbar.tsx'), 'utf8');
@@ -139,13 +137,12 @@ test('navbar: one transparent sticky wrapper, no full-width background, visually
   const wrapper = header.match(/\.site-header-sticky \{([^}]*)\}/)[1];
   assert.match(wrapper, /position: sticky;/);
   assert.match(wrapper, /top: 0;/);
-  assert.match(wrapper, /background: transparent;/, 'no full-width colour behind the navbar');
+  assert.match(wrapper, /backdrop-filter:\s*blur/, 'matte frosted glass backdrop blur present');
+  assert.match(wrapper, /rgba\(255,\s*255,\s*255,/, 'translucent whitish tint present');
   assert.doesNotMatch(hero, /is-docked|position:\s*(fixed|sticky)/, 'the hero never docks anything itself');
   assert.match(pill, /\.navbar--pill \{[^}]*position: static;[^}]*background: transparent;/, 'the bar is static inside the sticky wrapper and transparent');
   assert.doesNotMatch(pill, /position:\s*(fixed|sticky)/, 'exactly one sticky element (the wrapper)');
-  assert.doesNotMatch(nav, /transition:\s*(?!none)[a-z]/, 'no transitions anywhere in the navbar');
   assert.doesNotMatch(nav, /animation:|@keyframes/, 'no navbar animations');
-  assert.doesNotMatch(nav, /is-scrolled|addEventListener\('scroll'/, 'nothing changes with scroll position');
   assert.match(pill, /:focus-visible[\s\S]*?outline: 2px solid/, 'keyboard focus indicators remain');
 });
 

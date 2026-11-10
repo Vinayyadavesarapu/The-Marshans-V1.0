@@ -50,6 +50,7 @@ export const RETAIL_NAV_ITEMS: NavItem[] = [
 ];
 
 export const CUSTOM_FORGE_NAV_ITEMS: NavItem[] = [
+  { label: 'Home', href: '/' },
   { label: 'Lady Justice', href: '/product/lady-justice/' },
   { label: 'Orders & Tracking', href: '/account/orders' },
 ];
@@ -59,13 +60,15 @@ export function getNavItems(mode: LaunchMode = LAUNCH_MODE): NavItem[] {
 }
 
 export function getLogoHref(mode: LaunchMode = LAUNCH_MODE): string {
-  return isCustomForgeOnly(mode) ? '/product/lady-justice/' : '/';
+  return '/';
 }
 
 /**
  * Public routes permitted during CUSTOM_FORGE_ONLY mode.
  */
 export const ALLOWED_LAUNCH_ROUTES = [
+  '/',
+  '/shop',
   '/custom-3d',
   '/product/lady-justice',
   '/product/lady-justice/',

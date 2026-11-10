@@ -128,18 +128,19 @@ test('6. LADY JUSTICE VARIANTS & PRICING: Exact 3 sizes with GST inclusive prici
 
   const v6in = LADY_JUSTICE_VARIANTS.find((v) => v.sizeLabel === '6 inches');
   assert.ok(v6in, '6 inches variant exists');
-  assert.equal(v6in.price, 1600, '6 inches price is ₹1,600');
+  assert.equal(v6in.price, 1999, '6 inches price is ₹1,999');
   assert.equal(v6in.customModeAllowed, false, '6 inches Custom Mode is unavailable');
 
   const v1ft = LADY_JUSTICE_VARIANTS.find((v) => v.sizeLabel === '1 foot');
   assert.ok(v1ft, '1 foot variant exists');
-  assert.equal(v1ft.price, 3500, '1 foot price is ₹3,500');
+  assert.equal(v1ft.price, 3699, '1 foot price is ₹3,699');
   assert.equal(v1ft.customModeAllowed, true, '1 foot Custom Mode is allowed');
 
   const v2ft = LADY_JUSTICE_VARIANTS.find((v) => v.sizeLabel === '2 feet');
   assert.ok(v2ft, '2 feet variant exists');
-  assert.equal(v2ft.price, 5600, '2 feet price is ₹5,600');
+  assert.equal(v2ft.price, 5999, '2 feet price is ₹5,999');
   assert.equal(v2ft.customModeAllowed, true, '2 feet Custom Mode is allowed');
+  assert.equal(v2ft.isPopular, true, '2 feet variant carries MOST POPULAR badge');
 });
 
 test('7. CUSTOM MODE VALIDATION RULES: 35/50 char limits, NIL accepted, Plastic/MDF required', () => {

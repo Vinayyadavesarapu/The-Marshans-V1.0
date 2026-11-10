@@ -24,6 +24,7 @@ export interface OrderItem {
   image_url: string;
   material: string;
   nameplate_material?: string;
+  nameplate_material_label?: string;
   finishing: string;
   customization?: {
     name?: string;
@@ -157,24 +158,46 @@ export function normalizeOrderItem(raw: any, storeId?: number): OrderItem {
   const isCustom = Boolean(customData && (customData.name || item.custom_mode_enabled));
   const rawMat = str(options.material || item.material || item.nameplate_material || customData?.material);
   const isMdf = /mdf/i.test(rawMat) || /wood/i.test(rawMat);
+  const isPlastic = /plastic/i.test(rawMat) || /polymer/i.test(rawMat);
+  const isVinyl = /vinyl/i.test(rawMat) || /sticker/i.test(rawMat);
 
   const unitPrice = rupees(item, 'unit_price', storeId);
   const explicitNameplate = num(options.nameplate_charge ?? item.nameplate_charge);
-  const explicitMaterial = num(options.material_charge ?? item.material_charge);
+  const explicitMaterial = num(options.material_charge ?? item.material_charge ?? customData?.material_charge);
 
   let nameplateCharge = 0;
   let materialCharge = 0;
   let basePrice = unitPrice;
 
-  if (explicitNameplate !== null && explicitNameplate !== undefined) {
-    nameplateCharge = explicitNameplate;
-    materialCharge = explicitMaterial ?? 0;
+  if (explicitMaterial !== null && explicitMaterial !== undefined) {
+    nameplateCharge = explicitNameplate ?? 0;
+    materialCharge = explicitMaterial;
     basePrice = Math.max(0, unitPrice - nameplateCharge - materialCharge);
+  } else if (explicitNameplate !== null && explicitNameplate !== undefined) {
+    nameplateCharge = explicitNameplate;
+    materialCharge = explicitMaterial ?? (isMdf ? 49 : isPlastic ? 29 : 0);
+    basePrice = Math.max(0, unitPrice - nameplateCharge - materialCharge);
+  } else if (isCustom && (unitPrice === 3728 || unitPrice === 3748 || unitPrice === 6028 || unitPrice === 6048)) {
+    nameplateCharge = 0;
+    materialCharge = (unitPrice === 3748 || unitPrice === 6048 || isMdf) ? 49 : 29;
+    basePrice = Math.max(0, unitPrice - materialCharge);
+  } else if (isCustom && (unitPrice === 3699 || unitPrice === 5999)) {
+    nameplateCharge = 0;
+    materialCharge = 0;
+    basePrice = unitPrice;
   } else if (isCustom && (unitPrice === 3529 || unitPrice === 3579 || unitPrice === 5629 || unitPrice === 5679)) {
     nameplateCharge = 29;
     materialCharge = isMdf ? 50 : 0;
     basePrice = Math.max(0, unitPrice - nameplateCharge - materialCharge);
   }
+
+  const materialLabel = isCustom
+    ? (isMdf
+        ? 'MFD Engraving (Wooden Board)'
+        : isPlastic
+          ? 'Precision Polymer (Plastic)'
+          : 'Vinyl Sticker')
+    : (rawMat || '');
 
   return {
     id: item.id ?? '',
@@ -189,8 +212,9 @@ export function normalizeOrderItem(raw: any, storeId?: number): OrderItem {
     nameplate_charge: nameplateCharge > 0 ? nameplateCharge : undefined,
     material_charge: materialCharge > 0 ? materialCharge : undefined,
     image_url: str(item.img || item.product_image || item.image_url),
-    material: rawMat,
-    nameplate_material: str(item.nameplate_material || customData?.material || (isMdf ? 'MDF' : (isCustom ? 'Plastic' : ''))),
+    material: materialLabel,
+    nameplate_material: str(item.nameplate_material || customData?.material || (isMdf ? 'MDF' : isPlastic ? 'Plastic' : (isCustom ? 'Vinyl' : ''))),
+    nameplate_material_label: isCustom ? materialLabel : undefined,
     finishing: str(options.finishing || options.finish || options.size || item.size_label || item.finishing),
     customization: customData
   };

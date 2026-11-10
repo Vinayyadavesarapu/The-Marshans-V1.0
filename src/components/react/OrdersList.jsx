@@ -262,10 +262,16 @@ export default function OrdersList() {
                       const isCustom = Boolean(item.customization && (item.customization.name || item.customization.custom_mode_enabled));
                       const matName = item.nameplate_material || item.customization?.material || item.material;
                       const isWood = /mdf/i.test(matName) || /wood/i.test(matName);
-                      const hasCustomCharges = isCustom && (item.nameplate_charge || item.material_charge || item.price === 3529 || item.price === 3579 || item.price === 5629 || item.price === 5679);
-                      const nameplateFee = item.nameplate_charge || (hasCustomCharges ? 29 : 0);
-                      const woodFee = item.material_charge || (hasCustomCharges && isWood ? 50 : 0);
-                      const baseUnit = item.base_price || (hasCustomCharges ? (item.price - nameplateFee - woodFee) : item.price);
+                      const isPlastic = /plastic/i.test(matName) || /polymer/i.test(matName);
+                      const hasCustomCharges = isCustom && (
+                        item.nameplate_charge ||
+                        item.material_charge ||
+                        item.price === 3728 || item.price === 3748 || item.price === 6028 || item.price === 6048 ||
+                        item.price === 3529 || item.price === 3579 || item.price === 5629 || item.price === 5679
+                      );
+                      const nameplateFee = item.nameplate_charge || 0;
+                      const materialFee = item.material_charge || (hasCustomCharges ? (isWood ? 49 : isPlastic ? 29 : 0) : 0);
+                      const baseUnit = item.base_price || (hasCustomCharges ? (item.price - nameplateFee - materialFee) : item.price);
 
                       return (
                         <div key={idx} className="order-item-row">
@@ -278,7 +284,7 @@ export default function OrdersList() {
                             <h4 className="item-title">{item.name}</h4>
                             <div className="item-specs">
                               {item.finishing && <span className="spec-pill">Edition: {item.finishing}</span>}
-                              {matName && <span className="spec-pill">Plinth: {isWood ? 'Organic Wood / MDF' : 'Precision Polymer'}</span>}
+                              {matName && <span className="spec-pill">Plinth: {isWood ? 'MFD Engraving (Wooden Board)' : 'Precision Polymer (Plastic)'}</span>}
                               <span>Qty: {item.quantity}</span>
                             </div>
 
@@ -293,7 +299,7 @@ export default function OrdersList() {
                                   {item.customization.second_name && (
                                     <span>Person 2: <strong>{item.customization.second_name}</strong>{item.customization.second_designation && item.customization.second_designation.toUpperCase() !== 'NIL' ? ` (${item.customization.second_designation})` : ''}</span>
                                   )}
-                                  <span>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></span>
+                                  <span>Material: <strong>{isWood ? 'MFD Engraving (Wooden Board) (+₹49)' : isPlastic ? 'Precision Polymer (Plastic) (+₹29)' : 'Vinyl Sticker (FREE)'}</strong></span>
                                 </div>
                               </div>
                             )}
@@ -302,7 +308,7 @@ export default function OrdersList() {
                               <div className="item-pricing-breakdown">
                                 <span>Base: ₹{Number(baseUnit).toLocaleString('en-IN')}</span>
                                 {nameplateFee > 0 && <span className="add-fee">• Nameplate: +₹{nameplateFee}</span>}
-                                {woodFee > 0 && <span className="add-fee">• Wood / MDF: +₹{woodFee}</span>}
+                                {materialFee > 0 && <span className="add-fee">• {isWood ? 'MFD Engraving' : 'Precision Polymer'}: +₹{materialFee}</span>}
                               </div>
                             )}
                           </div>
@@ -430,10 +436,16 @@ export default function OrdersList() {
                     const isCustom = Boolean(item.customization && (item.customization.name || item.customization.custom_mode_enabled));
                     const matName = item.nameplate_material || item.customization?.material || item.material;
                     const isWood = /mdf/i.test(matName) || /wood/i.test(matName);
-                    const hasCustomCharges = isCustom && (item.nameplate_charge || item.material_charge || item.price === 3529 || item.price === 3579 || item.price === 5629 || item.price === 5679);
-                    const nameplateFee = item.nameplate_charge || (hasCustomCharges ? 29 : 0);
-                    const woodFee = item.material_charge || (hasCustomCharges && isWood ? 50 : 0);
-                    const baseUnit = item.base_price || (hasCustomCharges ? (item.price - nameplateFee - woodFee) : item.price);
+                    const isPlastic = /plastic/i.test(matName) || /polymer/i.test(matName);
+                    const hasCustomCharges = isCustom && (
+                      item.nameplate_charge ||
+                      item.material_charge ||
+                      item.price === 3728 || item.price === 3748 || item.price === 6028 || item.price === 6048 ||
+                      item.price === 3529 || item.price === 3579 || item.price === 5629 || item.price === 5679
+                    );
+                    const nameplateFee = item.nameplate_charge || 0;
+                    const materialFee = item.material_charge || (hasCustomCharges ? (isWood ? 49 : isPlastic ? 29 : 0) : 0);
+                    const baseUnit = item.base_price || (hasCustomCharges ? (item.price - nameplateFee - materialFee) : item.price);
 
                     return (
                       <div key={idx} className="modal-item-row">
@@ -446,7 +458,7 @@ export default function OrdersList() {
                           <strong className="item-name">{item.name}</strong>
                           <div className="item-meta-tags">
                             {item.finishing && <span>Edition: {item.finishing}</span>}
-                            {matName && <span>Plinth: {isWood ? 'Organic Wood / MDF' : 'Precision Polymer'}</span>}
+                            {matName && <span>Plinth: {isWood ? 'MFD Engraving (Wooden Board)' : isPlastic ? 'Precision Polymer (Plastic)' : 'Vinyl Sticker'}</span>}
                             <span>Quantity: {item.quantity}</span>
                           </div>
 
@@ -460,7 +472,7 @@ export default function OrdersList() {
                               {item.customization.second_name && (
                                 <p>Person 2: <strong>{item.customization.second_name}</strong>{item.customization.second_designation && item.customization.second_designation.toUpperCase() !== 'NIL' ? ` (${item.customization.second_designation})` : ''}</p>
                               )}
-                              <p>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></p>
+                              <p>Material: <strong>{isWood ? 'MFD Engraving (Wooden Board) (+₹49)' : isPlastic ? 'Precision Polymer (Plastic) (+₹29)' : 'Vinyl Sticker (FREE)'}</strong></p>
                             </div>
                           )}
 
@@ -468,7 +480,7 @@ export default function OrdersList() {
                             <div className="modal-price-breakdown">
                               <span>Base Edition: ₹{Number(baseUnit).toLocaleString('en-IN')}</span>
                               {nameplateFee > 0 && <span>+ Nameplate Personalization: ₹{nameplateFee}</span>}
-                              {woodFee > 0 && <span>+ Organic Wood Upgrade: ₹{woodFee}</span>}
+                              {materialFee > 0 && <span>+ {isWood ? 'MFD Engraving' : 'Precision Polymer'}: ₹{materialFee}</span>}
                             </div>
                           )}
                         </div>

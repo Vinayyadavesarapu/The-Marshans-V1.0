@@ -380,7 +380,10 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
           bottom: 0;
           width: 85%;
           max-width: 380px;
-          background-color: #ffffff;
+          background-color: rgba(255, 255, 255, 0.92);
+          backdrop-filter: blur(20px) saturate(160%);
+          -webkit-backdrop-filter: blur(20px) saturate(160%);
+          border-left: 1px solid rgba(255, 255, 255, 0.6);
           z-index: 100;
           transform: translateX(100%);
           box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
@@ -520,10 +523,10 @@ export default function MarshansNavbar(_props: MarshansNavbarProps) {
         .navbar--pill {
           --ink: #1f1c18;
           --ink-soft: #4a453f;
-          --surface: #fbf8f3;        /* soft cream matching reference */
+          --surface: rgba(255, 255, 255, 0.7);        /* soft matte frosted surface matching universal glass */
           --surface-hover: #ffffff;
-          --rim: rgba(31, 28, 24, 0.12);
-          --rim-strong: rgba(31, 28, 24, 0.22);
+          --rim: rgba(20, 31, 23, 0.08);
+          --rim-strong: rgba(20, 31, 23, 0.18);
           position: static; /* the sticky wrapper in Header.astro positions the bar */
           background: transparent;
           border-bottom: none;

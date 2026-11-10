@@ -8,12 +8,16 @@ const src = read('src/components/home/HomeCategoryDiscovery.astro');
 const css = src.match(/<style>([\s\S]*)<\/style>/)[1];
 const script = src.match(/<script>([\s\S]*)<\/script>/)[1];
 
-test('homepage order: hero → navbar → category discovery → New Arrivals → Lady Justice Feature → The Collection', () => {
+test('homepage contains Coming Soon hero and Lady Justice featured section with other sections removed', () => {
   const home = read('src/pages/index.astro');
-  const order = ['<HeroIntro slot="before-header"', '<HomeCategoryDiscovery', '<HomeShowcase', '<HomeLadyJusticeFeature', 'The Collection</h2>', '<HomeProductSection'];
-  const at = order.map((s) => home.indexOf(s));
-  at.forEach((i, n) => assert.ok(i > -1, `${order[n]} present`));
-  assert.deepEqual([...at].sort((a, b) => a - b), at, `in order: ${order.join(' → ')}`);
+  const heroIdx = home.indexOf('hero-coming-soon-section');
+  const ladyIdx = home.indexOf('featured-lady-section');
+  assert.ok(heroIdx > -1, 'hero-coming-soon-section present');
+  assert.ok(ladyIdx > -1, 'featured-lady-section present');
+  assert.ok(heroIdx < ladyIdx, 'Coming Soon hero is placed above Lady Justice section');
+  assert.ok(!home.includes('home-hero-section'), 'old hero section removed');
+  assert.ok(!home.includes('what-we-do-section'), 'what-we-do section removed');
+  assert.ok(!home.includes('industrial-section'), 'industrial section removed');
 });
 
 test('six collections with their existing routes, short copy and no product data', () => {
@@ -101,9 +105,10 @@ test('swipe without hijacking vertical scrolling; reduced motion has no autoplay
   assert.match(reduced, /animation: none;/);
 });
 
-test('New Arrivals is positioned on the homepage directly after the category carousel and before The Collection', () => {
+test('Lady Justice is positioned on the homepage as the sole featured section', () => {
   const home = read('src/pages/index.astro');
-  assert.match(home, /<HomeCategoryDiscovery \/>\s*\n\s*<!--[^>]*-->\s*\n\s*<HomeShowcase client:visible/);
+  const ladyIdx = home.indexOf('featured-lady-section');
+  assert.ok(ladyIdx > -1, 'featured-lady-section is present');
 });
 
 test('navbar sits inside the carousel scene: section pulled up behind the sticky navbar', () => {

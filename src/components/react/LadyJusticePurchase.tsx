@@ -25,7 +25,7 @@ export default function LadyJusticePurchase() {
   const [secondPersonEnabled, setSecondPersonEnabled] = useState<boolean>(false);
   const [secondCustomName, setSecondCustomName] = useState<string>('');
   const [secondCustomDesignation, setSecondCustomDesignation] = useState<string>('');
-  const [nameplateMaterial, setNameplateMaterial] = useState<'Plastic' | 'MDF'>('Plastic');
+  const [nameplateMaterial, setNameplateMaterial] = useState<'Vinyl' | 'Plastic' | 'MDF'>('Vinyl');
   const [quantity, setQuantity] = useState<number>(1);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showAddedConfirmation, setShowAddedConfirmation] = useState<boolean>(false);
@@ -44,7 +44,7 @@ export default function LadyJusticePurchase() {
     setSelectedVariant(v);
     if (!v.customModeAllowed) {
       setCustomModeEnabled(false);
-      setNameplateMaterial('Plastic');
+      setNameplateMaterial('Vinyl');
       setSecondPersonEnabled(false);
       setSecondCustomName('');
       setSecondCustomDesignation('');
@@ -67,7 +67,7 @@ export default function LadyJusticePurchase() {
     }
     setCustomModeEnabled(checked);
     if (!checked) {
-      setNameplateMaterial('Plastic');
+      setNameplateMaterial('Vinyl');
       setSecondPersonEnabled(false);
       setSecondCustomName('');
       setSecondCustomDesignation('');
@@ -81,7 +81,7 @@ export default function LadyJusticePurchase() {
   const priceMetrics = calculateLadyJusticePrice(
     selectedVariant.price,
     isCustomActive,
-    isCustomActive ? nameplateMaterial : 'Plastic',
+    isCustomActive ? nameplateMaterial : 'Vinyl',
     quantity
   );
   const { nameplateCharge, materialCharge, unitPrice, totalPrice } = priceMetrics;
@@ -89,7 +89,7 @@ export default function LadyJusticePurchase() {
   // Handle Add to Cart
   const handleAddToCart = async () => {
     const isCustom = customModeEnabled && selectedVariant.customModeAllowed;
-    const effectiveMaterial = isCustom ? nameplateMaterial : 'Plastic';
+    const effectiveMaterial: 'Vinyl' | 'Plastic' | 'MDF' = isCustom ? nameplateMaterial : 'Vinyl';
     const val = validateCustomForgeCustomization(selectedVariant, isCustom, {
       name: customName,
       designation: customDesignation,
@@ -119,7 +119,9 @@ export default function LadyJusticePurchase() {
       quantity,
       imageUrl: variantImageUrl,
       categoryName: 'Statues',
-      material: isCustom && effectiveMaterial === 'MDF' ? 'Organic Wood / MDF' : 'Precision Polymer',
+      material: isCustom
+        ? (effectiveMaterial === 'MDF' ? 'MFD Engraving (Wooden Board)' : effectiveMaterial === 'Plastic' ? 'Precision Polymer (Plastic)' : 'Vinyl Sticker')
+        : 'Precision Polymer (Plastic)',
       options: {
         is_custom_forge: true,
         variant_id: selectedVariant.id,
@@ -134,9 +136,10 @@ export default function LadyJusticePurchase() {
         custom_second_name: isCustom && secondPersonEnabled && secondCustomName.trim() ? secondCustomName.trim() : null,
         custom_second_designation: isCustom && secondPersonEnabled && secondCustomName.trim() ? (secondCustomDesignation.trim().toUpperCase() === 'NIL' ? 'NIL' : secondCustomDesignation.trim()) : null,
         nameplate_material: effectiveMaterial,
-        nameplate_charge: nameplateCharge,
+        nameplate_material_label: effectiveMaterial === 'MDF' ? 'MFD Engraving (Wooden Board)' : effectiveMaterial === 'Plastic' ? 'Precision Polymer (Plastic)' : 'Vinyl Sticker',
+        nameplate_charge: 0,
         material_charge: materialCharge,
-        customization_charge: nameplateCharge + materialCharge
+        customization_charge: materialCharge
       }
     };
 
@@ -161,8 +164,9 @@ export default function LadyJusticePurchase() {
               <strong className="toast-title">Added to Your Shopping Bag</strong>
               <p className="toast-sub">
                 Lady Justice ({formatDisplaySize(selectedVariant.sizeLabel)})
-                {customModeEnabled ? ' • Personalized Nameplate (+₹29)' : ''}
-                {nameplateMaterial === 'MDF' ? ' • Organic Wood / MDF (+₹50)' : ''} × {quantity}
+                {customModeEnabled
+                  ? ` • Personalized Nameplate (${nameplateMaterial === 'MDF' ? 'MFD Engraving (Wooden Board) +₹49' : nameplateMaterial === 'Plastic' ? 'Precision Polymer (Plastic) +₹29' : 'Vinyl Sticker (FREE)'})`
+                  : ''} × {quantity}
               </p>
             </div>
           </div>
@@ -188,12 +192,15 @@ export default function LadyJusticePurchase() {
       <div className="purchase-section">
         <div className="section-label-row">
           <label className="section-title">Select Edition</label>
-          <span className="selected-size-label">{formatDisplaySize(selectedVariant.sizeLabel)} ({selectedVariant.heightMm}mm)</span>
+          <span className="selected-size-label">
+            {formatDisplaySize(selectedVariant.sizeLabel)} • {selectedVariant.heightMm}mm • {selectedVariant.weightLabel || (selectedVariant.id === 'cf-lj-6in' ? '400 grams' : selectedVariant.id === 'cf-lj-1ft' ? '1 kg' : '2 kg')}
+          </span>
         </div>
 
         <div className="lady-variant-chips-grid" role="radiogroup" aria-label="Statue Size Selection">
           {LADY_JUSTICE_VARIANTS.map((variant) => {
             const isSelected = selectedVariant.id === variant.id;
+            const weightText = variant.weightLabel || (variant.id === 'cf-lj-6in' ? '400 grams' : variant.id === 'cf-lj-1ft' ? '1 kg' : '2 kg');
             return (
               <button
                 key={variant.id}
@@ -208,12 +215,32 @@ export default function LadyJusticePurchase() {
                   {variant.isPopular && <span className="chip-badge">Most Popular</span>}
                 </div>
                 <div className="chip-meta-row">
-                  <span className="chip-dimensions">{variant.heightMm} mm tall</span>
+                  <span className="chip-dimensions">{variant.heightMm} mm • {weightText}</span>
                   <span className="chip-price">₹{variant.price.toLocaleString('en-IN')}</span>
                 </div>
               </button>
             );
           })}
+        </div>
+
+        {/* Edition Live Specifications Bar */}
+        <div className="edition-spec-summary-bar">
+          <div className="spec-summary-item">
+            <span className="spec-summary-label">Edition</span>
+            <strong className="spec-summary-val">{formatDisplaySize(selectedVariant.sizeLabel)}</strong>
+          </div>
+          <div className="spec-summary-item">
+            <span className="spec-summary-label">Height</span>
+            <strong className="spec-summary-val">{selectedVariant.heightMm} mm</strong>
+          </div>
+          <div className="spec-summary-item">
+            <span className="spec-summary-label">Weight</span>
+            <strong className="spec-summary-val">{selectedVariant.weightLabel || (selectedVariant.id === 'cf-lj-6in' ? '400 grams' : selectedVariant.id === 'cf-lj-1ft' ? '1 kg' : '2 kg')}</strong>
+          </div>
+          <div className="spec-summary-item">
+            <span className="spec-summary-label">Craft Material</span>
+            <strong className="spec-summary-val">{selectedVariant.id === 'cf-lj-6in' ? 'Premium Resin' : 'PLA'}</strong>
+          </div>
         </div>
       </div>
 
@@ -221,14 +248,12 @@ export default function LadyJusticePurchase() {
           CUSTOMIZATION OPTIONS: PERSONALIZED NAMEPLATE & MATERIAL
          ========================================================================= */}
       <div className="purchase-section custom-mode-container">
-        {/* Master Option: Personalized Nameplate Toggle (+₹29) */}
+        {/* Master Option: Personalized Nameplate Toggle */}
         <div className="custom-toggle-card">
           <div className="custom-toggle-info">
             <div className="toggle-heading-row">
               <strong className="toggle-title">Personalized Nameplate</strong>
-              {selectedVariant.customModeAllowed ? (
-                <span className="toggle-price-tag">+₹29</span>
-              ) : (
+              {!selectedVariant.customModeAllowed && (
                 <span className="toggle-disabled-tag">1ft & 2ft Editions Only</span>
               )}
             </div>
@@ -245,7 +270,7 @@ export default function LadyJusticePurchase() {
               checked={customModeEnabled}
               disabled={!selectedVariant.customModeAllowed}
               onChange={handleCustomModeToggle}
-              aria-label="Enable bespoke nameplate customization (+₹29)"
+              aria-label="Enable bespoke nameplate customization"
             />
             <span className="switch-slider" />
           </label>
@@ -255,7 +280,7 @@ export default function LadyJusticePurchase() {
         {customModeEnabled && selectedVariant.customModeAllowed && (
           <div className="custom-fields-panel" role="region" aria-label="Bespoke Nameplate Inputs">
             <div className="custom-form-intro">
-              <span className="form-intro-tag">EMBOSSED SPECIFICATIONS (+₹29)</span>
+              <span className="form-intro-tag">EMBOSSED SPECIFICATIONS (FREE)</span>
               <p className="form-intro-desc">Enter the details exactly as you wish them mounted on the lotus pedestal.</p>
             </div>
 
@@ -300,7 +325,7 @@ export default function LadyJusticePurchase() {
                 placeholder="e.g. Senior Advocate, High Court (or NIL)"
                 className={`field-input ${validationErrors.designation ? 'has-error' : ''}`}
               />
-              <span className="field-hint">Enter your designation or 'NIL' if only your name should appear (included in ₹29 price).</span>
+              <span className="field-hint">Enter your designation or 'NIL' if only your name should appear (name & designation are free).</span>
               {validationErrors.designation && (
                 <p className="field-error-msg" role="alert">{validationErrors.designation}</p>
               )}
@@ -430,10 +455,26 @@ export default function LadyJusticePurchase() {
               <div className="material-header-row">
                 <label className="field-label">Nameplate Material</label>
                 <span className="material-price-hint">
-                  {nameplateMaterial === 'MDF' ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}
+                  {nameplateMaterial === 'MDF'
+                    ? 'MFD Engraving (Wooden Board) (+₹49)'
+                    : nameplateMaterial === 'Plastic'
+                      ? 'Precision Polymer (Plastic) (+₹29)'
+                      : 'Vinyl Sticker (FREE)'}
                 </span>
               </div>
               <div className="material-toggle-row">
+                <button
+                  type="button"
+                  className={`material-choice-btn ${nameplateMaterial === 'Vinyl' ? 'active' : ''}`}
+                  onClick={() => setNameplateMaterial('Vinyl')}
+                  aria-pressed={nameplateMaterial === 'Vinyl'}
+                >
+                  <div className="material-btn-top">
+                    <span className="material-btn-title">Vinyl Sticker</span>
+                    <span className="material-price-badge free">FREE</span>
+                  </div>
+                  <span className="material-btn-sub">High-grade matte adhesive vinyl decal</span>
+                </button>
                 <button
                   type="button"
                   className={`material-choice-btn ${nameplateMaterial === 'Plastic' ? 'active' : ''}`}
@@ -441,8 +482,8 @@ export default function LadyJusticePurchase() {
                   aria-pressed={nameplateMaterial === 'Plastic'}
                 >
                   <div className="material-btn-top">
-                    <span className="material-btn-title">Precision Polymer</span>
-                    <span className="material-price-badge free">+₹0</span>
+                    <span className="material-btn-title">Precision Polymer (Plastic)</span>
+                    <span className="material-price-badge paid">+₹29</span>
                   </div>
                   <span className="material-btn-sub">Smooth matte monochrome matching statue</span>
                 </button>
@@ -453,8 +494,8 @@ export default function LadyJusticePurchase() {
                   aria-pressed={nameplateMaterial === 'MDF'}
                 >
                   <div className="material-btn-top">
-                    <span className="material-btn-title">Organic Wood / MDF</span>
-                    <span className="material-price-badge paid">+₹50</span>
+                    <span className="material-btn-title">MFD Engraving (Wooden Board)</span>
+                    <span className="material-price-badge paid">+₹49</span>
                   </div>
                   <span className="material-btn-sub">Warm natural grain contrast plinth</span>
                 </button>
@@ -464,7 +505,7 @@ export default function LadyJusticePurchase() {
             {/* Live Visual Preview Card */}
             <div className="nameplate-live-preview">
               <span className="preview-label">MOUNTED PLINTH PREVIEW</span>
-              <div className={`preview-plate ${nameplateMaterial === 'MDF' ? 'mdf-texture' : 'polymer-texture'}`}>
+              <div className={`preview-plate ${nameplateMaterial === 'MDF' ? 'mdf-texture' : nameplateMaterial === 'Plastic' ? 'polymer-texture' : 'vinyl-texture'}`}>
                 <div className="plate-inner-border">
                   <span className="preview-name">
                     {customName || 'YOUR FULL NAME'}
@@ -483,6 +524,63 @@ export default function LadyJusticePurchase() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* =========================================================================
+          MATERIAL & CRAFTSMANSHIP INFORMATION (Dynamic size-dependent)
+         ========================================================================= */}
+      <div className="purchase-section lady-craft-info-section" aria-label="Material & Craftsmanship">
+        <h3 className="lady-craft-heading">Craftsmanship & Character</h3>
+        <div className="lady-craft-grid">
+          {/* Point 01: Dynamic Material Information (Size-dependent) */}
+          {selectedVariant.id === 'cf-lj-6in' ? (
+            <div className="lady-craft-item" data-material="resin">
+              <span className="lady-craft-num">01</span>
+              <div className="lady-craft-content">
+                <h4 className="lady-craft-title">PREMIUM RESIN MATERIAL</h4>
+                <ul className="lady-craft-bullets">
+                  <li>Made using premium-quality resin.</li>
+                  <li>High-precision detailing for fine sculptural features.</li>
+                  <li>A solid, substantial model with a premium finish.</li>
+                </ul>
+              </div>
+            </div>
+          ) : (
+            <div className="lady-craft-item" data-material="pla">
+              <span className="lady-craft-num">01</span>
+              <div className="lady-craft-content">
+                <h4 className="lady-craft-title">PLA MATERIAL</h4>
+                <ul className="lady-craft-bullets">
+                  <li>PLA stands for <strong>Polylactic Acid</strong>.</li>
+                  <li>A thermoplastic material commonly used in 3D printing.</li>
+                  <li>Suitable for producing detailed, precision-crafted models.</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Point 02: Precision Fabrication */}
+          <div className="lady-craft-item">
+            <span className="lady-craft-num">02</span>
+            <div className="lady-craft-content">
+              <h4 className="lady-craft-title">Precision Fabrication</h4>
+              <p className="lady-craft-text">
+                Formed through high-precision additive manufacturing, retaining pure contours and an authentic tactile finish.
+              </p>
+            </div>
+          </div>
+
+          {/* Point 03: Archival Presentation */}
+          <div className="lady-craft-item">
+            <span className="lady-craft-num">03</span>
+            <div className="lady-craft-content">
+              <h4 className="lady-craft-title">Archival Presentation</h4>
+              <p className="lady-craft-text">
+                Every creation is delivered in custom-padded protective packaging tailored for display and preservation.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* =========================================================================
@@ -524,14 +622,13 @@ export default function LadyJusticePurchase() {
             <span className="breakdown-line">
               {formatDisplaySize(selectedVariant.sizeLabel)}: ₹{selectedVariant.price.toLocaleString('en-IN')}
             </span>
-            {nameplateCharge > 0 && (
+            {isCustomActive && (
               <span className="breakdown-line paid-add">
-                • Nameplate: +₹29
-              </span>
-            )}
-            {materialCharge > 0 && (
-              <span className="breakdown-line paid-add">
-                • Wood / MDF: +₹50
+                • {nameplateMaterial === 'MDF'
+                    ? 'MFD Engraving (Wooden Board): +₹49'
+                    : nameplateMaterial === 'Plastic'
+                      ? 'Precision Polymer (Plastic): +₹29'
+                      : 'Vinyl Sticker: FREE'}
               </span>
             )}
             {quantity > 1 && (
@@ -697,6 +794,46 @@ export default function LadyJusticePurchase() {
 
         .lady-variant-chip.selected .chip-price {
           color: #ffffff;
+        }
+
+        /* Edition Live Specifications Bar */
+        .edition-spec-summary-bar {
+          margin-top: 10px;
+          background: #ffffff;
+          border: 1px solid rgba(20, 37, 26, 0.08);
+          border-radius: 12px;
+          padding: 8px 14px;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+        }
+
+        .spec-summary-item {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .spec-summary-label {
+          font-size: 10px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #71717a;
+        }
+
+        .spec-summary-val {
+          font-size: 12.5px;
+          font-weight: 800;
+          color: #14251a;
+        }
+
+        @media (max-width: 480px) {
+          .edition-spec-summary-bar {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 8px;
+            padding: 10px 12px;
+          }
         }
 
         /* Custom Mode Card */
@@ -917,22 +1054,27 @@ export default function LadyJusticePurchase() {
         }
 
         .material-toggle-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
         }
 
         .material-choice-btn {
           background: #ffffff;
           border: 1.5px solid #e4e4e7;
           border-radius: 10px;
-          padding: 10px 12px;
+          padding: 10px 14px;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
           cursor: pointer;
           transition: all 0.15s ease;
           text-align: left;
+        }
+
+        .material-choice-btn:hover:not(.active) {
+          border-color: #a1a1aa;
+          background: #fafaf9;
         }
 
         .material-choice-btn.active {
@@ -1014,6 +1156,12 @@ export default function LadyJusticePurchase() {
           justify-content: center;
           align-items: center;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .preview-plate.vinyl-texture {
+          background: #1c261e;
+          color: #f4f5f4;
+          border: 1px solid rgba(255, 255, 255, 0.25);
         }
 
         .preview-plate.polymer-texture {
@@ -1294,6 +1442,92 @@ export default function LadyJusticePurchase() {
           background: #f0fdf4;
         }
 
+        /* Material & Craftsmanship Info Section */
+        .lady-craft-info-section {
+          padding: 1.25rem 1.4rem;
+          background: #fbf9f5;
+          border: 1px solid rgba(20, 37, 26, 0.08);
+          border-radius: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .lady-craft-heading {
+          margin: 0;
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          color: #14251a;
+          text-transform: uppercase;
+        }
+
+        .lady-craft-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 1.15rem;
+        }
+
+        .lady-craft-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .lady-craft-num {
+          font-size: 11px;
+          font-weight: 800;
+          color: #2f6b45;
+          background: rgba(47, 107, 69, 0.09);
+          border: 1px solid rgba(47, 107, 69, 0.15);
+          padding: 2px 7px;
+          border-radius: 5px;
+          flex-shrink: 0;
+          margin-top: 2px;
+          letter-spacing: 0.02em;
+        }
+
+        .lady-craft-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .lady-craft-title {
+          margin: 0 0 5px;
+          font-size: 13.5px;
+          font-weight: 800;
+          color: #14251a;
+          letter-spacing: -0.01em;
+        }
+
+        .lady-craft-text {
+          margin: 0;
+          font-size: 13px;
+          line-height: 1.55;
+          color: #52525b;
+        }
+
+        .lady-craft-bullets {
+          margin: 0;
+          padding-left: 1.15rem;
+          list-style-type: disc;
+          font-size: 13px;
+          line-height: 1.55;
+          color: #52525b;
+        }
+
+        .lady-craft-bullets li {
+          margin-bottom: 3px;
+        }
+
+        .lady-craft-bullets li:last-child {
+          margin-bottom: 0;
+        }
+
+        .lady-craft-bullets strong {
+          color: #14251a;
+        }
+
         /* Trust Footnote */
         .lady-guarantee-row {
           display: flex;
@@ -1313,6 +1547,27 @@ export default function LadyJusticePurchase() {
         }
 
         @media (max-width: 640px) {
+          .lady-craft-info-section {
+            padding: 1rem 1rem;
+            border-radius: 12px;
+          }
+          .lady-craft-heading {
+            font-size: 12px;
+          }
+          .lady-craft-grid {
+            gap: 1rem;
+          }
+          .lady-craft-item {
+            gap: 10px;
+          }
+          .lady-craft-title {
+            font-size: 13px;
+          }
+          .lady-craft-text,
+          .lady-craft-bullets {
+            font-size: 12.5px;
+            line-height: 1.5;
+          }
           .lady-variant-chips-grid {
             grid-template-columns: 1fr;
           }

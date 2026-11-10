@@ -20,20 +20,11 @@ test('Lady Justice image exists and is a valid transparent or truecolor PNG', ()
   assert.ok(existsSync(resolve('public/assets/products/custom-forge/6 inches back.png')), '6 inches back.png exists');
 });
 
-test('Homepage features Lady Justice banner strictly between New Arrivals and The Collection', () => {
+test('Homepage features Lady Justice section prominently', () => {
   const home = read('src/pages/index.astro');
-  const showcaseIndex = home.indexOf('<HomeShowcase');
-  const ladyJusticeIndex = home.indexOf('<HomeLadyJusticeFeature');
-  const collectionIndex = home.indexOf('The Collection</h2>');
-
-  assert.ok(showcaseIndex > -1, 'HomeShowcase is present');
-  assert.ok(ladyJusticeIndex > -1, 'HomeLadyJusticeFeature is present');
-  assert.ok(collectionIndex > -1, 'The Collection heading is present');
-
-  assert.ok(
-    showcaseIndex < ladyJusticeIndex && ladyJusticeIndex < collectionIndex,
-    'HomeLadyJusticeFeature is strictly between HomeShowcase and The Collection'
-  );
+  assert.ok(home.includes('featured-lady-section'), 'featured-lady-section is present');
+  assert.ok(home.includes('Lady Justice Statue'), 'Lady Justice Statue is present');
+  assert.ok(home.includes('/product/lady-justice/'), 'Links directly to /product/lady-justice/');
 });
 
 test('HomeLadyJusticeFeature contains all required editorial content, compact dimensions, and CTA link', () => {
@@ -156,4 +147,41 @@ test('IndustrialOrdersForm contains all 6 required fields, conditional WhatsApp 
   // Prevents duplicate submissions and shows loading state
   assert.match(form, /disabled=\{isSubmitting\}/);
   assert.match(form, /Submitting Inquiry\.\.\./);
+});
+
+test('Lady Justice product page includes dynamic material & craftsmanship section between nameplate and quantity', () => {
+  const purchase = read('src/components/react/LadyJusticePurchase.tsx');
+  const astroPage = read('src/pages/product/lady-justice.astro');
+
+  // Verify section placement: between custom-mode-container and quantity-price-row
+  const customIdx = purchase.indexOf('custom-mode-container');
+  const craftIdx = purchase.indexOf('lady-craft-info-section');
+  const qtyIdx = purchase.indexOf('quantity-price-row');
+
+  assert.ok(customIdx > -1, 'custom-mode-container exists');
+  assert.ok(craftIdx > -1, 'lady-craft-info-section exists');
+  assert.ok(qtyIdx > -1, 'quantity-price-row exists');
+  assert.ok(customIdx < craftIdx, 'Craft section is placed after Personalized Nameplate');
+  assert.ok(craftIdx < qtyIdx, 'Craft section is placed before Quantity / Payable Total');
+
+  // Verify dynamic size-dependent content
+  assert.match(purchase, /PREMIUM RESIN MATERIAL/, 'contains Premium Resin heading for 6 inches');
+  assert.match(purchase, /Made using premium-quality resin\./);
+  assert.match(purchase, /High-precision detailing for fine sculptural features\./);
+  assert.match(purchase, /A solid, substantial model with a premium finish\./);
+
+  assert.match(purchase, /PLA MATERIAL/, 'contains PLA heading for 1ft and 2ft');
+  assert.match(purchase, /PLA stands for <strong>Polylactic Acid<\/strong>\./);
+  assert.match(purchase, /A thermoplastic material commonly used in 3D printing\./);
+  assert.match(purchase, /Suitable for producing detailed, precision-crafted models\./);
+
+  // Verify Points 02 & 03
+  assert.match(purchase, /Precision Fabrication/);
+  assert.match(purchase, /Archival Presentation/);
+
+  // Verify that astro page does not have extra sections below the purchase island
+  const purchaseIslandIdx = astroPage.indexOf('<LadyJusticePurchase client:load />');
+  const afterPurchase = astroPage.slice(purchaseIslandIdx + '<LadyJusticePurchase client:load />'.length);
+  assert.doesNotMatch(afterPurchase, /lady-craft-section/, 'no craft section below the purchase island');
+  assert.doesNotMatch(afterPurchase, /<section/, 'no additional sections below purchase island');
 });

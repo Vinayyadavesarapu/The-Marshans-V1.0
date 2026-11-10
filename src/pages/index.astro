@@ -1,147 +1,925 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import HeroIntro from '../components/HeroIntro.astro';
-import HomeCategoryDiscovery from '../components/home/HomeCategoryDiscovery.astro';
-import HomeShowcase from '../components/home/HomeShowcase.tsx';
-import HomeLadyJusticeFeature from '../components/home/HomeLadyJusticeFeature.astro';
-import HomeProductSection from '../components/react/HomeProductSection.tsx';
-import { getProducts } from '../lib/api/products';
-import { isCustomForgeOnly } from '../config/launchMode';
+import Layout from "../layouts/Layout.astro";
+import { getLogoHref } from "../config/launchMode";
 
-// Centralized launch-mode guard: redirect to Lady Justice product page
-if (isCustomForgeOnly()) {
-  return Astro.redirect('/product/lady-justice/', 302);
-}
+/**
+ * THE MARSHANS — Homepage
+ *
+ * Section 1: Full-Screen Coming Soon Hero (100svh split-screen editorial)
+ *            Featuring the supplied miniature construction atelier photography.
+ * Section 2: Lady Justice Featured Section
+ *            Complete authentic product presentation, specs, and CTA.
+ * Section 3: Shared Footer via Layout.
+ */
 
-const { products } = await getProducts({ limit: 12 });
+const pageTitle = "THE MARSHANS — Coming Soon | Precision 3D Printing Atelier";
+const pageDescription =
+  "New ideas. New possibilities. New innovations. Something extraordinary is taking shape at THE MARSHANS. Explore our signature Lady Justice Statue.";
+const canonicalUrl = "https://themarshans.shop/";
+const heroImage = "/assets/home/samplehome/hero.png";
+
+const homeJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "THE MARSHANS",
+      url: "https://themarshans.shop",
+      logo: "https://themarshans.shop/assets/branding/marshans-logo.png",
+      description: pageDescription,
+    },
+    {
+      "@type": "WebSite",
+      name: "THE MARSHANS",
+      url: "https://themarshans.shop",
+    },
+  ],
+};
 ---
 
 <Layout
-  title="THE MARSHANS — Made to be Discovered | Precision 3D Printed Artifacts"
-  description="Precision 3D printed artifacts, ambient luminous sculptures, collectible figures, and functional desk gear."
+  title={pageTitle}
+  description={pageDescription}
+  canonical={canonicalUrl}
+  image={heroImage}
+  jsonLd={homeJsonLd}
 >
-  <!-- 1. Cinematic cloud/video hero, rendered above the shared site navbar (2. Layout's sticky Header) -->
-  <HeroIntro slot="before-header" />
+  <div class="marshans-home-root">
+    {
+      /* =========================================================================
+        SECTION ONE: FULL-SCREEN COMING SOON HERO (100svh)
+        Full-viewport hero with the construction image occupying the entire screen,
+        and refined minimal text overlaid directly over the image.
+       ========================================================================= */
+    }
+    <section
+      class="hero-coming-soon-section"
+      id="hero-coming-soon"
+      aria-label="Coming Soon Hero"
+    >
+      <div class="hero-bg-media">
+        <img
+          src="/assets/home/samplehome/hero.png"
+          alt="Miniature craftsmen and architectural wooden construction on drafting desk"
+          class="hero-full-bg-img"
+          fetchpriority="high"
+          loading="eager"
+          decoding="async"
+          width="2752"
+          height="1536"
+        />
+        <div class="hero-cinematic-scrim" aria-hidden="true"></div>
+      </div>
 
-  <!-- 3. Category discovery carousel: the collections, not products -->
-  <HomeCategoryDiscovery />
+      <div class="home-container hero-overlay-container">
+        <div class="hero-text-overlay">
+          <div class="hero-eyebrow-row">
+            <span class="hero-live-dot" aria-hidden="true"></span>
+            <span class="hero-eyebrow">SOMETHING NEW IS TAKING SHAPE</span>
+          </div>
 
-  <!-- 4. New Arrivals showcase carousel -->
-  <HomeShowcase client:visible={{ rootMargin: "600px" }} initialProducts={products} />
+          <h1 class="hero-main-title">COMING SOON.</h1>
 
-  <!-- 5. Lady Justice Custom Forge Feature Banner -->
-  <HomeLadyJusticeFeature />
+          <p class="hero-sub-title">Building What's Next.</p>
 
-  <!-- 6. Homepage catalogue (runtime capable) -->
-  <div class="home-catalogue-head">
-    <h2 class="home-catalogue-title">The Collection</h2>
-    <a class="home-catalogue-link" href="/shop">Browse the full shop →</a>
+          <p class="hero-description">
+            New ideas. New possibilities. New innovations. Something
+            extraordinary is taking shape at THE MARSHANS.
+          </p>
+
+          <a
+            href="#featured-lady-heading"
+            class="hero-scroll-cue"
+            aria-label="Scroll to discover Lady Justice Statue"
+          >
+            <span class="scroll-cue-text">Discover Lady Justice</span>
+            <svg
+              class="scroll-cue-arrow"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    {
+      /* =========================================================================
+        SECTION TWO: LADY JUSTICE
+        When visitors scroll below the Coming Soon hero, they see the signature
+        Lady Justice section with authentic photography, updated pricing and specs.
+       ========================================================================= */
+    }
+    <section
+      class="featured-lady-section"
+      id="featured-lady-section"
+      aria-labelledby="featured-lady-heading"
+    >
+      <div class="home-container">
+        <div class="lady-featured-card">
+          <div class="lady-image-col">
+            <div class="lady-gallery-stage" id="lady-gallery-root">
+              <div class="lady-spotlight" aria-hidden="true"></div>
+
+              <div class="lady-main-frame">
+                <img
+                  id="lady-active-photo"
+                  src="/assets/products/custom-forge/name plate front.png"
+                  alt="Lady Justice 3D printed architectural sculpture with bespoke engraved nameplate"
+                  class="lady-hero-img"
+                  loading="lazy"
+                  decoding="async"
+                  width="1024"
+                  height="1536"
+                />
+              </div>
+
+              <div class="lady-badge-overlay">
+                <span class="lady-badge-pill">SIGNATURE EDITION</span>
+              </div>
+
+              {/* Multi-angle photography views */}
+              <div
+                class="lady-thumb-strip"
+                role="group"
+                aria-label="Lady Justice photography views"
+              >
+                <button
+                  type="button"
+                  class="lady-thumb-btn active"
+                  data-src="/assets/products/custom-forge/name plate front.png"
+                  aria-label="View front with bespoke nameplate"
+                >
+                  <img
+                    src="/assets/products/custom-forge/name plate front.png"
+                    alt="Front view with nameplate"
+                    width="60"
+                    height="90"
+                    loading="lazy"
+                  />
+                  <span class="thumb-caption">Bespoke Plinth</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="lady-thumb-btn"
+                  data-src="/assets/products/custom-forge/6 inches front.png"
+                  aria-label="View classic statue edition"
+                >
+                  <img
+                    src="/assets/products/custom-forge/6 inches front.png"
+                    alt="Classic statue view"
+                    width="60"
+                    height="90"
+                    loading="lazy"
+                  />
+                  <span class="thumb-caption">Classic Plinth</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="lady-thumb-btn"
+                  data-src="/assets/products/custom-forge/name plate back.png"
+                  aria-label="View drapery and scale craftsmanship"
+                >
+                  <img
+                    src="/assets/products/custom-forge/name plate back.png"
+                    alt="Back view showing drapery detailing"
+                    width="60"
+                    height="90"
+                    loading="lazy"
+                  />
+                  <span class="thumb-caption">Drapery Detail</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="lady-content-col">
+            <div class="lady-eyebrow-row">
+              <span class="section-eyebrow">FEATURED CREATION</span>
+              <span class="lady-edition-tag">Atelier Flagship</span>
+            </div>
+
+            <h2 id="featured-lady-heading" class="lady-title">
+              Lady Justice Statue
+            </h2>
+
+            <p class="lady-lead">
+              A symbol of truth, fairness and justice. A statement piece
+              inspired by Lady Justice, thoughtfully crafted to bring meaning
+              and architectural character to your workspace, chambers, or
+              private gallery.
+            </p>
+
+            <div class="lady-highlights-list">
+              {/* Point 1: Exceptional Attention to Detail */}
+              <div class="highlight-item">
+                <div class="highlight-bullet" aria-hidden="true">✓</div>
+                <div>
+                  <strong class="highlight-title"
+                    >Exceptional Attention to Detail</strong
+                  >
+                  <p class="highlight-desc">
+                    Carefully crafted details with a refined and detailed
+                    finish.
+                  </p>
+                </div>
+              </div>
+
+              {
+                /* Point 2: Premium Quality Materials (integrating resin and FDM/PLA descriptions) */
+              }
+              <div class="highlight-item">
+                <div class="highlight-bullet" aria-hidden="true">✓</div>
+                <div>
+                  <strong class="highlight-title"
+                    >Premium Quality Materials</strong
+                  >
+                  <p class="highlight-desc">
+                    Made using carefully selected materials for a premium
+                    finish. Crafted with <strong>Premium Resin Material</strong> for
+                    high-detail printing and refined finishing with strong attention
+                    to detail for premium-quality models, alongside <strong
+                      >Fused Deposition Modeling (FDM)</strong
+                    > using <strong>Polylactic Acid (PLA)</strong>—a versatile
+                    material suitable for creative and functional models with
+                    consistent printing and refined finishes for different
+                    design requirements.
+                  </p>
+                </div>
+              </div>
+
+              {/* Point 3: Personalized Nameplate */}
+              <div class="highlight-item">
+                <div class="highlight-bullet" aria-hidden="true">✓</div>
+                <div>
+                  <strong class="highlight-title">Personalized Nameplate</strong
+                  >
+                  <p class="highlight-desc">
+                    Personalize your Lady Justice sculpture with a nameplate.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="lady-action-row">
+              <a href="/product/lady-justice/" class="btn-primary lady-cta-btn">
+                <span>Explore Lady Justice</span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </a>
+              <div class="lady-pricing-summary">
+                <span class="summary-edition-tag">6 inches</span>
+                <span class="summary-sep">•</span>
+                <span class="summary-edition-tag">1 ft</span>
+                <span class="summary-sep">•</span>
+                <span class="summary-edition-tag">2 ft</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
-  <HomeProductSection client:load initialProducts={products} />
 </Layout>
 
-<style is:global>
-  /* The homepage's cream page background (previously painted only behind the navbar); the transparent navbar shows it */
-  :root {
-    --page-bg: #f6eee4;
+<script>
+  // Client-side interactive thumbnail switcher for Lady Justice gallery
+  document.addEventListener("DOMContentLoaded", () => {
+    const root = document.getElementById("lady-gallery-root");
+    if (!root) return;
+
+    const mainPhoto = document.getElementById(
+      "lady-active-photo",
+    ) as HTMLImageElement | null;
+    const thumbBtns =
+      root.querySelectorAll<HTMLButtonElement>(".lady-thumb-btn");
+
+    if (!mainPhoto || !thumbBtns.length) return;
+
+    thumbBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetSrc = btn.getAttribute("data-src");
+        if (!targetSrc || targetSrc === mainPhoto.getAttribute("src")) return;
+
+        mainPhoto.style.opacity = "0.4";
+        setTimeout(() => {
+          mainPhoto.setAttribute("src", targetSrc);
+          mainPhoto.style.opacity = "1";
+        }, 120);
+
+        thumbBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+  });
+</script>
+
+<style>
+  /* =========================================================================
+     HOMEPAGE TOKENS & BASE
+     Scoped strictly to .marshans-home-root — zero leakage into other pages.
+     ========================================================================= */
+  .marshans-home-root {
+    --color-bg-canvas: #f7f5ef;
+    --color-bg-card: #ffffff;
+    --color-text-main: #141f17;
+    --color-text-muted: #566459;
+    --color-text-dim: #7d8b80;
+    --color-brand-forest: #1b3826;
+    --color-brand-moss: #2b5539;
+    --color-brand-amber: #c49352;
+    --color-brand-bronze: #9f753e;
+    --color-border-card: rgba(20, 31, 23, 0.08);
+
+    background-color: var(--color-bg-canvas);
+    color: var(--color-text-main);
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
   }
 
-  .home-catalogue-head {
+  .home-container {
     width: 100%;
-    margin: 0;
-    /* full-width band; content aligned with the 1440px catalogue column */
-    padding: 0.5rem max(1.5rem, calc((100% - 1440px) / 2 + 1.5rem)) 0.25rem;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    box-sizing: border-box;
-    background-color: #faf9f7;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
   }
 
-  .home-section-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.25rem;
+  @media (min-width: 1024px) {
+    .home-container {
+      padding: 0 2.5rem;
+    }
   }
 
-  .home-catalogue-title {
-    margin: 0;
-    font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
-    font-size: clamp(24px, 3vw, 36px);
+  /* =========================================================================
+     SECTION ONE: FULL-SCREEN COMING SOON HERO (100svh)
+     Full viewport hero: construction photo covers the entire visible screen.
+     Minimal text sits directly over the image with a subtle frosted backing.
+     ========================================================================= */
+  .hero-coming-soon-section {
+    position: relative;
+    width: 100%;
+    min-height: calc(100svh - var(--site-nav-h, 88px));
+    height: calc(100svh - var(--site-nav-h, 88px));
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .hero-bg-media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .hero-full-bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 48%;
+    display: block;
+    transform: scale(1.01);
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hero-coming-soon-section:hover .hero-full-bg-img {
+    transform: scale(1.03);
+  }
+
+  .hero-cinematic-scrim {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 24% 50%,
+      rgba(247, 245, 239, 0.94) 0%,
+      rgba(247, 245, 239, 0.78) 35%,
+      rgba(247, 245, 239, 0.32) 70%,
+      rgba(247, 245, 239, 0.1) 100%
+    );
+    pointer-events: none;
+  }
+
+  .hero-overlay-container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .hero-text-overlay {
+    max-width: 530px;
+    padding: clamp(1.75rem, 3.5vw, 2.75rem);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 24px;
+    box-shadow: 0 16px 40px -10px rgba(20, 31, 23, 0.12);
+  }
+
+  .hero-eyebrow-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(43, 85, 57, 0.08);
+    border: 1px solid rgba(43, 85, 57, 0.16);
+    padding: 6px 14px;
+    border-radius: 9999px;
+    margin-bottom: 1rem;
+  }
+
+  .hero-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-brand-amber);
+    box-shadow: 0 0 8px var(--color-brand-amber);
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
     font-weight: 800;
-    letter-spacing: -0.02em;
-    color: #14251a;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-brand-moss);
   }
 
-  .home-catalogue-link {
-    font-family: var(--font-sans, 'Manrope', -apple-system, sans-serif);
-    font-size: 14px;
-    font-weight: 700;
-    color: #2f6b45;
+  .hero-main-title {
+    font-family:
+      "Bebas Neue",
+      -apple-system,
+      sans-serif;
+    font-size: clamp(48px, 6vw, 76px);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: 0.95;
+    color: var(--color-text-main);
+    margin: 0 0 0.5rem;
+  }
+
+  .hero-sub-title {
+    font-size: clamp(22px, 2.5vw, 32px);
+    font-weight: 850;
+    letter-spacing: -0.025em;
+    line-height: 1.18;
+    color: var(--color-brand-forest);
+    margin: 0 0 1rem;
+  }
+
+  .hero-description {
+    font-size: clamp(14.5px, 1.4vw, 16.5px);
+    line-height: 1.65;
+    color: var(--color-text-muted);
+    margin: 0 0 1.5rem;
+    max-width: 480px;
+  }
+
+  .hero-scroll-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 750;
+    color: var(--color-brand-moss);
     text-decoration: none;
+    padding: 8px 16px;
+    background: rgba(43, 85, 57, 0.06);
+    border: 1px solid rgba(43, 85, 57, 0.14);
+    border-radius: 9999px;
+    transition: all 0.2s ease;
   }
 
-  .home-catalogue-link:hover {
-    text-decoration: underline;
+  .hero-scroll-cue:hover {
+    background: rgba(43, 85, 57, 0.12);
+    transform: translateY(2px);
   }
 
-  /* Homepage catalogue: isolated renders sit fully inside the card (no cropping); transparent WebP stays
-     transparent over a white stage, and the reserved aspect ratio prevents layout shift. */
-  #product-cards .marshans-image-stage,
-  #home-best-sellers .marshans-image-stage {
+  .scroll-cue-arrow {
+    transition: transform 0.2s ease;
+  }
+
+  .hero-scroll-cue:hover .scroll-cue-arrow {
+    transform: translateY(3px);
+  }
+
+  /* =========================================================================
+     SECTION TWO: LADY JUSTICE STYLING
+     Preserved authentic product showcase with gallery plinth and specs.
+     ========================================================================= */
+  .featured-lady-section {
+    padding: clamp(3rem, 6vw, 5rem) 0;
+  }
+
+  .lady-featured-card {
     background: #ffffff;
-  }
-
-  #product-cards .marshans-product-img,
-  #home-best-sellers .marshans-product-img {
-    object-fit: contain;
-    padding: 6%;
-    box-sizing: border-box;
-  }
-
-  .home-products-section {
-    width: 100%;
-    padding: 2.5rem 0 5rem;
-    box-sizing: border-box;
-    background-color: #faf9f7;
-  }
-
-  .home-products-grid {
+    border: 1px solid var(--color-border-card);
+    border-radius: 28px;
+    padding: clamp(2rem, 4vw, 3.5rem);
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
+    grid-template-columns: 1fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+    box-shadow: 0 24px 60px -20px rgba(20, 31, 23, 0.08);
+  }
+
+  @media (min-width: 920px) {
+    .lady-featured-card {
+      grid-template-columns: 1fr 1.15fr;
+    }
+  }
+
+  .lady-image-col {
+    display: flex;
+    justify-content: center;
+  }
+
+  .lady-gallery-stage {
+    position: relative;
     width: 100%;
-    box-sizing: border-box;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: radial-gradient(
+      circle at 50% 40%,
+      #ffffff 0%,
+      #f7f5ef 65%,
+      #ece8dd 100%
+    );
+    border: 1px solid rgba(20, 31, 23, 0.08);
+    border-radius: 24px;
+    padding: 2.25rem 1.5rem 1.5rem;
+    overflow: hidden;
   }
 
-  @media (max-width: 1100px) {
-    .home-products-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+  .lady-spotlight {
+    position: absolute;
+    top: -20%;
+    left: 10%;
+    width: 80%;
+    height: 70%;
+    background: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.8) 0%,
+      rgba(247, 245, 239, 0) 70%
+    );
+    pointer-events: none;
   }
 
-  @media (max-width: 768px) {
-    .home-products-section {
-      padding: 1.5rem 0 3.5rem;
+  .lady-main-frame {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 380px;
+    margin-bottom: 1.5rem;
+  }
+
+  .lady-hero-img {
+    max-width: 320px;
+    max-height: 420px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 20px 30px rgba(20, 31, 23, 0.12));
+    transition:
+      opacity 0.2s ease,
+      transform 0.4s ease;
+  }
+
+  .lady-gallery-stage:hover .lady-hero-img {
+    transform: scale(1.02);
+  }
+
+  .lady-badge-overlay {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+  }
+
+  .lady-badge-pill {
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-brand-moss);
+    background: rgba(43, 85, 57, 0.08);
+    border: 1px solid rgba(43, 85, 57, 0.16);
+    padding: 4px 12px;
+    border-radius: 9999px;
+  }
+
+  /* Lady Justice Thumbnails */
+  .lady-thumb-strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(20, 31, 23, 0.08);
+    padding: 6px;
+    border-radius: 14px;
+    z-index: 2;
+  }
+
+  .lady-thumb-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .lady-thumb-btn img {
+    width: 30px;
+    height: 42px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .thumb-caption {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--color-text-dim);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .lady-thumb-btn:hover {
+    background: rgba(20, 31, 23, 0.04);
+  }
+
+  .lady-thumb-btn.active {
+    background: #ffffff;
+    border-color: var(--color-brand-amber);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .lady-thumb-btn.active .thumb-caption {
+    color: var(--color-brand-forest);
+    font-weight: 850;
+  }
+
+  /* Lady Content Column */
+  .lady-content-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-eyebrow {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-brand-moss);
+    margin-bottom: 0.5rem;
+  }
+
+  .lady-eyebrow-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0.5rem;
+  }
+
+  .lady-edition-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-brand-bronze);
+    background: rgba(196, 147, 82, 0.12);
+    padding: 2px 10px;
+    border-radius: 9999px;
+  }
+
+  .lady-title {
+    font-size: clamp(32px, 3.8vw, 46px);
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    color: var(--color-text-main);
+    margin: 0 0 1rem;
+    line-height: 1.15;
+  }
+
+  .lady-lead {
+    font-size: clamp(15px, 1.4vw, 16.5px);
+    line-height: 1.65;
+    color: var(--color-text-muted);
+    margin: 0 0 1.75rem;
+    max-width: 580px;
+  }
+
+  .lady-highlights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    width: 100%;
+  }
+
+  .highlight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .highlight-bullet {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(43, 85, 57, 0.1);
+    color: var(--color-brand-moss);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 900;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .highlight-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 750;
+    color: var(--color-text-main);
+    margin-bottom: 2px;
+  }
+
+  .highlight-desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-dim);
+  }
+
+  .lady-action-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--color-brand-forest);
+    color: #ffffff;
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    padding: 13px 28px;
+    border-radius: 9999px;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 14px rgba(27, 56, 38, 0.2);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-brand-moss);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(27, 56, 38, 0.3);
+    color: #ffffff;
+  }
+
+  .lady-pricing-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--color-brand-moss);
+    flex-wrap: wrap;
+  }
+
+  .summary-edition-tag {
+    background: rgba(43, 85, 57, 0.07);
+    padding: 4px 10px;
+    border-radius: 9999px;
+    border: 1px solid rgba(43, 85, 57, 0.12);
+  }
+
+  .summary-sep {
+    color: var(--color-text-dim);
+    font-size: 11px;
+  }
+
+  /* =========================================================================
+     RESPONSIVE ADAPTATIONS
+     ========================================================================= */
+  @media (max-width: 959px) {
+    .hero-coming-soon-section {
+      min-height: calc(100svh - var(--site-nav-h, 72px));
+      height: auto;
+      padding: 2.5rem 0;
     }
 
-    .home-products-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
+    .hero-cinematic-scrim {
+      background: linear-gradient(
+        180deg,
+        rgba(247, 245, 239, 0.92) 0%,
+        rgba(247, 245, 239, 0.75) 55%,
+        rgba(247, 245, 239, 0.35) 100%
+      );
+    }
+
+    .hero-full-bg-img {
+      object-position: center 32%;
+    }
+
+    .hero-text-overlay {
       max-width: 100%;
+      padding: 1.75rem 1.5rem;
+      border-radius: 20px;
     }
   }
 
-  @media (max-width: 480px) {
-    .home-products-grid {
-      grid-template-columns: 1fr;
-      max-width: 340px;
-      margin: 0 auto;
+  @media (max-width: 640px) {
+    .hero-coming-soon-section {
+      min-height: calc(100svh - 60px);
+      padding: 1.5rem 0;
+    }
+
+    .hero-main-title {
+      font-size: 44px;
+    }
+
+    .hero-sub-title {
+      font-size: 20px;
+    }
+
+    .hero-description {
+      font-size: 14px;
+      margin-bottom: 1.25rem;
+    }
+
+    .lady-action-row {
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+    }
+
+    .lady-cta-btn {
+      width: 100%;
+    }
+
+    .lady-pricing-summary {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .lady-thumb-strip {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-supplied-img,
+    .lady-hero-img,
+    .btn-primary,
+    .hero-scroll-cue {
+      transition: none !important;
+      transform: none !important;
     }
   }
 </style>

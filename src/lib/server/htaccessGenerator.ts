@@ -20,14 +20,10 @@ export function generateHtaccessContent(mode: LaunchMode): string {
   # THE MARSHANS — CUSTOM FORGE LAUNCH MODE REDIRECTS (Temporary HTTP 302)
   # Automatically generated based on LAUNCH_MODE = 'CUSTOM_FORGE_ONLY'.
   # Switching LAUNCH_MODE to 'RETAIL' removes this entire block automatically.
+  # Note: Bare root / serves the fresh homepage and is NOT redirected.
   # =========================================================================
 
-  # 1. Bare root / and old retail homepage -> /product/lady-justice/
-  RewriteRule ^$ /product/lady-justice/ [R=302,L]
-  RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\\s/+index\\.html[\\s?] [NC]
-  RewriteRule ^index\\.html$ /product/lady-justice/ [R=302,L]
-
-  # 2. Custom-3d and retail catalog routes -> /product/lady-justice/
+  # 1. Custom-3d route -> /product/lady-justice/
   RewriteRule ^custom-3d/?$ /product/lady-justice/ [R=302,L]
   RewriteRule ^shop/?$ /product/lady-justice/ [R=302,L]
 

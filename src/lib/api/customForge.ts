@@ -45,6 +45,8 @@ export interface CustomForgeSizeVariant {
   sku?: string;
   sizeInches?: number;
   heightMm: number;
+  weightLabel?: string;
+  weightGrams?: number;
   price: number; // GST-inclusive (paise or INR)
   customModeAllowed: boolean;
   description: string;
@@ -59,7 +61,9 @@ export const LADY_JUSTICE_VARIANTS: CustomForgeSizeVariant[] = [
     sku: 'MRSH-CF-LJ-6IN',
     sizeInches: 6,
     heightMm: 152,
-    price: 1600,
+    weightLabel: '400 grams',
+    weightGrams: 400,
+    price: 1999,
     customModeAllowed: false,
     description: 'Compact desktop statuette with ultra-fine 0.12mm sculptural details.'
   },
@@ -70,9 +74,10 @@ export const LADY_JUSTICE_VARIANTS: CustomForgeSizeVariant[] = [
     sku: 'MRSH-CF-LJ-1FT',
     sizeInches: 12,
     heightMm: 305,
-    price: 3500,
+    weightLabel: '1 kg',
+    weightGrams: 1000,
+    price: 3699,
     customModeAllowed: true,
-    isPopular: true,
     description: 'Architectural scale study with optional bespoke personalized nameplate.'
   },
   {
@@ -82,8 +87,11 @@ export const LADY_JUSTICE_VARIANTS: CustomForgeSizeVariant[] = [
     sku: 'MRSH-CF-LJ-2FT',
     sizeInches: 24,
     heightMm: 610,
-    price: 5600,
+    weightLabel: '2 kg',
+    weightGrams: 2000,
+    price: 5999,
     customModeAllowed: true,
+    isPopular: true,
     description: 'Heroic courtroom & executive gallery centerpiece with optional bespoke personalized nameplate.'
   }
 ];
@@ -128,7 +136,7 @@ export interface CustomForgeCustomizationInput {
   designation: string;
   second_name?: string | null;
   second_designation?: string | null;
-  material: 'Plastic' | 'MDF';
+  material: 'Vinyl' | 'Plastic' | 'MDF';
 }
 
 export interface CustomForgeValidationResult {
@@ -146,7 +154,7 @@ export interface CreateCustomForgeOrderItemPayload {
     customer_designation: string;
     second_customer_name?: string | null;
     second_customer_designation?: string | null;
-    nameplate_material: 'Plastic' | 'MDF';
+    nameplate_material: 'Vinyl' | 'Plastic' | 'MDF';
   } | null;
 }
 
@@ -161,7 +169,7 @@ export interface CreateCustomForgeOrderPayload {
     customer_designation: string;
     second_customer_name?: string | null;
     second_customer_designation?: string | null;
-    nameplate_material: 'Plastic' | 'MDF';
+    nameplate_material: 'Vinyl' | 'Plastic' | 'MDF';
   } | null;
   items?: CreateCustomForgeOrderItemPayload[];
   shipping_address: {
@@ -205,26 +213,41 @@ export interface CustomForgeOrderRecord {
   customization?: {
     customer_name: string;
     customer_designation: string;
-    nameplate_material: 'Plastic' | 'MDF';
+    nameplate_material: 'Vinyl' | 'Plastic' | 'MDF';
   } | null;
 }
 
 /**
  * Lady Justice Customization Pricing (Authoritative Constants)
- * - Personalized Nameplate: +₹29
- * - Organic Wood / MDF engraving: +₹50
- * - Precision Polymer: +₹0
- * Formula: unitPrice = editionPrice + nameplateCharge + materialCharge
+ * - Adding a name: FREE (₹0)
+ * - Adding a designation: FREE (₹0)
+ * - Adding a second person: FREE (₹0)
+ * - Vinyl Sticker: FREE (₹0)
+ * - Precision Polymer (Plastic): +₹29
+ * - MFD Engraving (Wooden Board): +₹49
+ * Formula: unitPrice = editionPrice + materialCharge
  */
 export const LADY_JUSTICE_CUSTOMIZATION_PRICING = {
-  NAMEPLATE_RUPEES: 29,
-  WOOD_MDF_RUPEES: 50
+  NAME_FREE: 0,
+  DESIGNATION_FREE: 0,
+  SECOND_PERSON_FREE: 0,
+  VINYL_RUPEES: 0,
+  PLASTIC_RUPEES: 29,
+  MFD_RUPEES: 49,
+  NAMEPLATE_RUPEES: 0,
+  WOOD_MDF_RUPEES: 49
+} as const;
+
+export const LADY_JUSTICE_MATERIAL_LABELS = {
+  Vinyl: 'Vinyl Sticker',
+  Plastic: 'Precision Polymer (Plastic)',
+  MDF: 'MFD Engraving (Wooden Board)'
 } as const;
 
 export function calculateLadyJusticePrice(
   editionPrice: number,
   customModeEnabled: boolean,
-  material: 'Plastic' | 'MDF',
+  material: 'Vinyl' | 'Plastic' | 'MDF' = 'Vinyl',
   quantity: number = 1
 ): {
   editionPrice: number;
@@ -233,10 +256,18 @@ export function calculateLadyJusticePrice(
   unitPrice: number;
   totalPrice: number;
 } {
-  const nameplateCharge = customModeEnabled ? LADY_JUSTICE_CUSTOMIZATION_PRICING.NAMEPLATE_RUPEES : 0;
-  // Wooden engraving is strictly dependent on Personalized Nameplate being enabled
-  const materialCharge = (customModeEnabled && material === 'MDF') ? LADY_JUSTICE_CUSTOMIZATION_PRICING.WOOD_MDF_RUPEES : 0;
-  const unitPrice = editionPrice + nameplateCharge + materialCharge;
+  // Adding name, designation, and second person is completely FREE (₹0)
+  const nameplateCharge = 0;
+  // Material charge applies when Custom Mode is enabled:
+  // Vinyl Sticker: ₹0 | Precision Polymer (Plastic): +₹29 | MFD Engraving (Wooden Board): +₹49
+  const materialCharge = customModeEnabled
+    ? (material === 'MDF'
+        ? LADY_JUSTICE_CUSTOMIZATION_PRICING.MFD_RUPEES
+        : material === 'Plastic'
+          ? LADY_JUSTICE_CUSTOMIZATION_PRICING.PLASTIC_RUPEES
+          : LADY_JUSTICE_CUSTOMIZATION_PRICING.VINYL_RUPEES)
+    : 0;
+  const unitPrice = editionPrice + materialCharge;
   const totalPrice = unitPrice * Math.max(1, quantity);
 
   return {
@@ -253,12 +284,13 @@ export function calculateLadyJusticePrice(
  * - 6-inch variant: Custom Mode unavailable.
  * - 1-foot / 2-feet: Custom Mode optional.
  * - When Custom Mode is enabled:
- *     - Name required, max 35 chars.
- *     - Designation optional, max 50 chars (literal 'NIL' accepted).
- *     - Nameplate material required: 'Plastic' (+₹0) or 'MDF' (+₹50).
+ *     - Name required, max 35 chars (FREE).
+ *     - Designation optional, max 50 chars (literal 'NIL' accepted, FREE).
+ *     - Optional Second person (FREE).
+ *     - Nameplate material required: 'Vinyl' (FREE), 'Plastic' (+₹29), or 'MDF' (+₹49).
  * - When Custom Mode is disabled:
  *     - Customization fields must not be required.
- *     - Material cannot be MDF (wood engraving requires personalized nameplate).
+ *     - Material cannot be MDF (MFD engraving requires personalized nameplate).
  */
 export function validateCustomForgeCustomization(
   variant: CustomForgeSizeVariant,
@@ -269,7 +301,7 @@ export function validateCustomForgeCustomization(
 
   if (!customModeEnabled) {
     if (data?.material === 'MDF' || /wood/i.test(String(data?.material || ''))) {
-      errors.material = 'Wooden engraving (+₹50) is only available when Personalized Nameplate is enabled.';
+      errors.material = 'MFD Engraving (+₹49) is only available when Personalized Nameplate is enabled.';
       return { valid: false, errors };
     }
     return { valid: true, errors: {} };
@@ -312,8 +344,8 @@ export function validateCustomForgeCustomization(
   }
 
   const material = data?.material;
-  if (!material || (material !== 'Plastic' && material !== 'MDF')) {
-    errors.material = 'Please select a nameplate material (Plastic or MDF).';
+  if (!material || (material !== 'Vinyl' && material !== 'Plastic' && material !== 'MDF')) {
+    errors.material = 'Please select a nameplate material (Vinyl Sticker, Precision Polymer, or MFD Engraving).';
   }
 
   return {

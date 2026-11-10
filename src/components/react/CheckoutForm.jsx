@@ -301,12 +301,27 @@ export default function CheckoutForm() {
                 customer_designation: isPrimaryCustom ? (primaryCf.options?.custom_designation || 'NIL') : null,
                 second_customer_name: isPrimaryCustom && primaryCf.options?.custom_second_name ? primaryCf.options.custom_second_name : null,
                 second_customer_designation: isPrimaryCustom && primaryCf.options?.custom_second_designation ? primaryCf.options.custom_second_designation : null,
-                nameplate_material: isPrimaryCustom ? (primaryCf.options?.nameplate_material || 'Plastic') : 'Plastic'
+                nameplate_material: isPrimaryCustom ? (primaryCf.options?.nameplate_material || 'Vinyl') : 'Vinyl',
+                nameplate_material_label: isPrimaryCustom
+                  ? (primaryCf.options?.nameplate_material === 'MDF'
+                      ? 'MFD Engraving (Wooden Board)'
+                      : primaryCf.options?.nameplate_material === 'Plastic'
+                        ? 'Precision Polymer (Plastic)'
+                        : 'Vinyl Sticker')
+                  : 'Vinyl Sticker',
+                material_charge: isPrimaryCustom
+                  ? (primaryCf.options?.nameplate_material === 'MDF'
+                      ? 49
+                      : primaryCf.options?.nameplate_material === 'Plastic'
+                        ? 29
+                        : 0)
+                  : 0
               },
               items: cfItems.map(it => {
                 const numId = resolveVariantNumericId(it.options?.variant_numeric_id || it.options?.variant_id || it.productId);
                 const varKey = resolveVariantKey(it.options?.variant_key || it.options?.variant_id || it.productId);
                 const isItemCustom = Boolean(it.options?.custom_mode_enabled);
+                const itemMat = isItemCustom ? (it.options?.nameplate_material || 'Vinyl') : 'Vinyl';
                 return {
                   variant_id: numId,
                   variant_key: varKey,
@@ -317,7 +332,21 @@ export default function CheckoutForm() {
                     customer_designation: isItemCustom ? (it.options?.custom_designation || 'NIL') : null,
                     second_customer_name: isItemCustom && it.options?.custom_second_name ? it.options.custom_second_name : null,
                     second_customer_designation: isItemCustom && it.options?.custom_second_designation ? it.options.custom_second_designation : null,
-                    nameplate_material: isItemCustom ? (it.options?.nameplate_material || 'Plastic') : 'Plastic'
+                    nameplate_material: itemMat,
+                    nameplate_material_label: isItemCustom
+                      ? (itemMat === 'MDF'
+                          ? 'MFD Engraving (Wooden Board)'
+                          : itemMat === 'Plastic'
+                            ? 'Precision Polymer (Plastic)'
+                            : 'Vinyl Sticker')
+                      : 'Vinyl Sticker',
+                    material_charge: isItemCustom
+                      ? (itemMat === 'MDF'
+                          ? 49
+                          : itemMat === 'Plastic'
+                            ? 29
+                            : 0)
+                      : 0
                   }
                 };
               }),
@@ -862,19 +891,19 @@ export default function CheckoutForm() {
                         <span className="cf-spec-edition-tag">Edition: {item.options.size_label}</span>
                         {item.options.custom_mode_enabled ? (
                           <div className="cf-mounted-summary-line">
-                            <span>Nameplate (+₹29): <strong>{item.options.custom_name}</strong></span>
+                            <span>Nameplate: <strong>{item.options.custom_name}</strong></span>
                             {item.options.custom_designation && item.options.custom_designation !== 'NIL' && (
                               <span> ({item.options.custom_designation})</span>
                             )}
                             {item.options.custom_second_name && (
                               <span> & <strong>{item.options.custom_second_name}</strong>{item.options.custom_second_designation && item.options.custom_second_designation !== 'NIL' ? ` (${item.options.custom_second_designation})` : ''}</span>
                             )}
-                            <span> [{item.options.nameplate_material === 'MDF' ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer'}]</span>
+                            <span> [{item.options.nameplate_material === 'MDF' ? 'MFD Engraving (Wooden Board) (+₹49)' : item.options.nameplate_material === 'Plastic' ? 'Precision Polymer (Plastic) (+₹29)' : 'Vinyl Sticker (FREE)'}]</span>
                           </div>
                         ) : (
                           item.options.nameplate_material === 'MDF' && (
                             <div className="cf-mounted-summary-line">
-                              <span>Material: [Organic Wood / MDF (+₹50)]</span>
+                              <span>Material: [MFD Engraving (Wooden Board) (+₹49)]</span>
                             </div>
                           )
                         )}

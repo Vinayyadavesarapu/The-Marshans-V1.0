@@ -18,7 +18,7 @@ test('Variant ID Regression 1: LADY_JUSTICE_VARIANTS defines exact slugs cf-lj-6
   assert.ok(v6);
   assert.equal(v6.backendVariantId, 1);
   assert.equal(v6.sizeLabel, '6 inches');
-  assert.equal(v6.price, 1600);
+  assert.equal(v6.price, 1999);
   assert.equal(v6.customModeAllowed, false);
   assert.equal(resolveVariantNumericId('cf-lj-6in'), 1);
   assert.equal(resolveVariantKey(1), 'cf-lj-6in');
@@ -28,7 +28,7 @@ test('Variant ID Regression 1: LADY_JUSTICE_VARIANTS defines exact slugs cf-lj-6
   assert.ok(v12);
   assert.equal(v12.backendVariantId, 2);
   assert.equal(v12.sizeLabel, '1 foot');
-  assert.equal(v12.price, 3500);
+  assert.equal(v12.price, 3699);
   assert.equal(v12.customModeAllowed, true);
   assert.equal(resolveVariantNumericId('cf-lj-1ft'), 2);
   assert.equal(resolveVariantKey(2), 'cf-lj-1ft');
@@ -38,7 +38,7 @@ test('Variant ID Regression 1: LADY_JUSTICE_VARIANTS defines exact slugs cf-lj-6
   assert.ok(v24);
   assert.equal(v24.backendVariantId, 3);
   assert.equal(v24.sizeLabel, '2 feet');
-  assert.equal(v24.price, 5600);
+  assert.equal(v24.price, 5999);
   assert.equal(v24.customModeAllowed, true);
   assert.equal(resolveVariantNumericId('cf-lj-2ft'), 3);
   assert.equal(resolveVariantKey(3), 'cf-lj-2ft');
@@ -54,9 +54,9 @@ test('Variant ID Regression 2: Cart preserves slug and numeric variant IDs throu
 
   // Test all 3 variants added independently
   const variantsToTest = [
-    { slug: 'cf-lj-6in', numId: 1, label: '6 inches', price: 1600, custom: false },
-    { slug: 'cf-lj-1ft', numId: 2, label: '1 foot', price: 3500, custom: true, name: 'Adv. A. Sharma' },
-    { slug: 'cf-lj-2ft', numId: 3, label: '2 feet', price: 5600, custom: true, name: 'Justice K. Rao' }
+    { slug: 'cf-lj-6in', numId: 1, label: '6 inches', price: 1999, custom: false },
+    { slug: 'cf-lj-1ft', numId: 2, label: '1 foot', price: 3699, custom: true, name: 'Adv. A. Sharma' },
+    { slug: 'cf-lj-2ft', numId: 3, label: '2 feet', price: 5999, custom: true, name: 'Justice K. Rao' }
   ];
 
   for (const v of variantsToTest) {
