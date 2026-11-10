@@ -134,6 +134,8 @@ export async function addCustomForgeToCart(item: CartItem): Promise<{ success: b
     Boolean(it.options?.custom_mode_enabled) === Boolean(item.options?.custom_mode_enabled) &&
     (it.options?.custom_name || '') === (item.options?.custom_name || '') &&
     (it.options?.custom_designation || '') === (item.options?.custom_designation || '') &&
+    (it.options?.custom_second_name || '') === (item.options?.custom_second_name || '') &&
+    (it.options?.custom_second_designation || '') === (item.options?.custom_second_designation || '') &&
     (it.options?.nameplate_material || '') === (item.options?.nameplate_material || '')
   );
 
@@ -165,6 +167,7 @@ export async function addToCart(item: {
   price?: number;
   quantity?: number;
   imageUrl?: string;
+  categoryName?: string;
   material?: string;
   finishing?: string;
   options?: Record<string, any>;

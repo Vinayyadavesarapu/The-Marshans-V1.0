@@ -22,6 +22,9 @@ export default function LadyJusticePurchase() {
   const [customModeEnabled, setCustomModeEnabled] = useState<boolean>(false);
   const [customName, setCustomName] = useState<string>('');
   const [customDesignation, setCustomDesignation] = useState<string>('');
+  const [secondPersonEnabled, setSecondPersonEnabled] = useState<boolean>(false);
+  const [secondCustomName, setSecondCustomName] = useState<string>('');
+  const [secondCustomDesignation, setSecondCustomDesignation] = useState<string>('');
   const [nameplateMaterial, setNameplateMaterial] = useState<'Plastic' | 'MDF'>('Plastic');
   const [quantity, setQuantity] = useState<number>(1);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -42,6 +45,9 @@ export default function LadyJusticePurchase() {
     if (!v.customModeAllowed) {
       setCustomModeEnabled(false);
       setNameplateMaterial('Plastic');
+      setSecondPersonEnabled(false);
+      setSecondCustomName('');
+      setSecondCustomDesignation('');
     }
     setValidationErrors({});
     setShowAddedConfirmation(false);
@@ -62,6 +68,9 @@ export default function LadyJusticePurchase() {
     setCustomModeEnabled(checked);
     if (!checked) {
       setNameplateMaterial('Plastic');
+      setSecondPersonEnabled(false);
+      setSecondCustomName('');
+      setSecondCustomDesignation('');
     }
     setValidationErrors({});
     setShowAddedConfirmation(false);
@@ -84,6 +93,8 @@ export default function LadyJusticePurchase() {
     const val = validateCustomForgeCustomization(selectedVariant, isCustom, {
       name: customName,
       designation: customDesignation,
+      second_name: secondPersonEnabled ? secondCustomName : undefined,
+      second_designation: secondPersonEnabled ? secondCustomDesignation : undefined,
       material: effectiveMaterial
     });
 
@@ -119,7 +130,9 @@ export default function LadyJusticePurchase() {
         height_mm: selectedVariant.heightMm,
         custom_mode_enabled: isCustom,
         custom_name: isCustom ? customName.trim() : null,
-        custom_designation: isCustom ? (customDesignation.trim() || 'NIL') : null,
+        custom_designation: isCustom ? (customDesignation.trim().toUpperCase() === 'NIL' ? 'NIL' : customDesignation.trim()) : null,
+        custom_second_name: isCustom && secondPersonEnabled && secondCustomName.trim() ? secondCustomName.trim() : null,
+        custom_second_designation: isCustom && secondPersonEnabled && secondCustomName.trim() ? (secondCustomDesignation.trim().toUpperCase() === 'NIL' ? 'NIL' : secondCustomDesignation.trim()) : null,
         nameplate_material: effectiveMaterial,
         nameplate_charge: nameplateCharge,
         material_charge: materialCharge,
@@ -272,7 +285,7 @@ export default function LadyJusticePurchase() {
             {/* Field 2: Designation */}
             <div className="input-group">
               <div className="label-with-counter">
-                <label htmlFor="custom-designation" className="field-label">Designation / Title (Optional)</label>
+                <label htmlFor="custom-designation" className="field-label">Designation / Title *</label>
                 <span className="char-count">{customDesignation.length} / 50</span>
               </div>
               <input
@@ -287,11 +300,130 @@ export default function LadyJusticePurchase() {
                 placeholder="e.g. Senior Advocate, High Court (or NIL)"
                 className={`field-input ${validationErrors.designation ? 'has-error' : ''}`}
               />
-              <span className="field-hint">Leave blank or enter 'NIL' if only your name should appear (included in ₹29 price).</span>
+              <span className="field-hint">Enter your designation or 'NIL' if only your name should appear (included in ₹29 price).</span>
               {validationErrors.designation && (
                 <p className="field-error-msg" role="alert">{validationErrors.designation}</p>
               )}
             </div>
+
+            {/* Optional Person 2 Section */}
+            {!secondPersonEnabled ? (
+              <div style={{ marginTop: '10px', marginBottom: '14px' }}>
+                <button
+                  type="button"
+                  id="cf-add-second-person-btn"
+                  className="add-person-btn"
+                  onClick={() => setSecondPersonEnabled(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    color: '#0284c7',
+                    background: '#f0f9ff',
+                    border: '1px dashed #0284c7',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  + Add Another Person
+                </button>
+              </div>
+            ) : (
+              <div
+                id="cf-second-person-panel"
+                style={{
+                  marginTop: '12px',
+                  marginBottom: '16px',
+                  padding: '12px',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Person 2 (Optional)
+                  </span>
+                  <button
+                    type="button"
+                    id="cf-remove-second-person-btn"
+                    onClick={() => {
+                      setSecondPersonEnabled(false);
+                      setSecondCustomName('');
+                      setSecondCustomDesignation('');
+                      setValidationErrors(prev => {
+                        const next = { ...prev };
+                        delete next.second_name;
+                        delete next.second_designation;
+                        return next;
+                      });
+                    }}
+                    style={{
+                      padding: '3px 8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: '#dc2626',
+                      background: '#fee2e2',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
+
+                {/* Person 2: Name */}
+                <div className="input-group">
+                  <div className="label-with-counter">
+                    <label htmlFor="custom-second-name" className="field-label">Name on Nameplate (Person 2) *</label>
+                    <span className="char-count">{secondCustomName.length} / 35</span>
+                  </div>
+                  <input
+                    id="custom-second-name"
+                    type="text"
+                    maxLength={35}
+                    value={secondCustomName}
+                    onChange={(e) => {
+                      setSecondCustomName(e.target.value);
+                      if (validationErrors.second_name) setValidationErrors(prev => ({ ...prev, second_name: '' }));
+                    }}
+                    placeholder="e.g. Adv. Priya Sen"
+                    className={`field-input ${validationErrors.second_name ? 'has-error' : ''}`}
+                  />
+                  {validationErrors.second_name && (
+                    <p className="field-error-msg" role="alert">{validationErrors.second_name}</p>
+                  )}
+                </div>
+
+                {/* Person 2: Designation */}
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <div className="label-with-counter">
+                    <label htmlFor="custom-second-designation" className="field-label">Designation / Title (Person 2) *</label>
+                    <span className="char-count">{secondCustomDesignation.length} / 50</span>
+                  </div>
+                  <input
+                    id="custom-second-designation"
+                    type="text"
+                    maxLength={50}
+                    value={secondCustomDesignation}
+                    onChange={(e) => {
+                      setSecondCustomDesignation(e.target.value);
+                      if (validationErrors.second_designation) setValidationErrors(prev => ({ ...prev, second_designation: '' }));
+                    }}
+                    placeholder="e.g. Advocate (or NIL)"
+                    className={`field-input ${validationErrors.second_designation ? 'has-error' : ''}`}
+                  />
+                  <span className="field-hint">Enter designation or 'NIL' if only name should appear.</span>
+                  {validationErrors.second_designation && (
+                    <p className="field-error-msg" role="alert">{validationErrors.second_designation}</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Dependent Option: Nameplate Plinth Material Choice */}
             <div className="custom-material-card">
@@ -334,11 +466,17 @@ export default function LadyJusticePurchase() {
               <span className="preview-label">MOUNTED PLINTH PREVIEW</span>
               <div className={`preview-plate ${nameplateMaterial === 'MDF' ? 'mdf-texture' : 'polymer-texture'}`}>
                 <div className="plate-inner-border">
-                  <span className="preview-name">{customName || 'YOUR FULL NAME'}</span>
+                  <span className="preview-name">
+                    {customName || 'YOUR FULL NAME'}
+                    {secondPersonEnabled && secondCustomName.trim() ? ` & ${secondCustomName.trim()}` : ''}
+                  </span>
                   <span className="preview-desig">
                     {customDesignation && customDesignation.toUpperCase() !== 'NIL'
                       ? customDesignation
                       : (customDesignation.toUpperCase() === 'NIL' ? '' : 'DESIGNATION / CHAMBER / COURT')}
+                    {secondPersonEnabled && secondCustomDesignation.trim() && secondCustomDesignation.toUpperCase() !== 'NIL'
+                      ? ` | ${secondCustomDesignation.trim()}`
+                      : ''}
                   </span>
                 </div>
               </div>

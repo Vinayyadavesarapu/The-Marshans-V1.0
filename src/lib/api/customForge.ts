@@ -48,6 +48,7 @@ export interface CustomForgeSizeVariant {
   price: number; // GST-inclusive (paise or INR)
   customModeAllowed: boolean;
   description: string;
+  isPopular?: boolean;
 }
 
 export const LADY_JUSTICE_VARIANTS: CustomForgeSizeVariant[] = [
@@ -71,6 +72,7 @@ export const LADY_JUSTICE_VARIANTS: CustomForgeSizeVariant[] = [
     heightMm: 305,
     price: 3500,
     customModeAllowed: true,
+    isPopular: true,
     description: 'Architectural scale study with optional bespoke personalized nameplate.'
   },
   {
@@ -124,6 +126,8 @@ export function resolveVariantKey(id: string | number | undefined | null): strin
 export interface CustomForgeCustomizationInput {
   name: string;
   designation: string;
+  second_name?: string | null;
+  second_designation?: string | null;
   material: 'Plastic' | 'MDF';
 }
 
@@ -140,6 +144,8 @@ export interface CreateCustomForgeOrderItemPayload {
   customization?: {
     customer_name: string;
     customer_designation: string;
+    second_customer_name?: string | null;
+    second_customer_designation?: string | null;
     nameplate_material: 'Plastic' | 'MDF';
   } | null;
 }
@@ -153,6 +159,8 @@ export interface CreateCustomForgeOrderPayload {
   customization?: {
     customer_name: string;
     customer_designation: string;
+    second_customer_name?: string | null;
+    second_customer_designation?: string | null;
     nameplate_material: 'Plastic' | 'MDF';
   } | null;
   items?: CreateCustomForgeOrderItemPayload[];
@@ -280,8 +288,27 @@ export function validateCustomForgeCustomization(
   }
 
   const designation = (data?.designation || '').trim();
-  if (designation && designation.length > 50) {
+  if (!designation) {
+    errors.designation = 'Designation is required (or enter NIL).';
+  } else if (designation.length > 50) {
     errors.designation = 'Designation must be 50 characters or fewer.';
+  }
+
+  // Validate optional second person details
+  const secondName = (data?.second_name || '').trim();
+  const secondDesignation = (data?.second_designation || '').trim();
+  if (secondName || secondDesignation) {
+    if (!secondName) {
+      errors.second_name = 'Second person name is required when second person details are provided.';
+    } else if (secondName.length > 35) {
+      errors.second_name = 'Second person name must be 35 characters or fewer.';
+    }
+
+    if (!secondDesignation) {
+      errors.second_designation = 'Second person designation is required (or enter NIL).';
+    } else if (secondDesignation.length > 50) {
+      errors.second_designation = 'Second person designation must be 50 characters or fewer.';
+    }
   }
 
   const material = data?.material;

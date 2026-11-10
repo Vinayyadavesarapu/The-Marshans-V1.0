@@ -290,6 +290,9 @@ export default function OrdersList() {
                                   {item.customization.designation && item.customization.designation.toUpperCase() !== 'NIL' && (
                                     <span>Designation: <strong>{item.customization.designation}</strong></span>
                                   )}
+                                  {item.customization.second_name && (
+                                    <span>Person 2: <strong>{item.customization.second_name}</strong>{item.customization.second_designation && item.customization.second_designation.toUpperCase() !== 'NIL' ? ` (${item.customization.second_designation})` : ''}</span>
+                                  )}
                                   <span>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></span>
                                 </div>
                               </div>
@@ -453,6 +456,9 @@ export default function OrdersList() {
                               <p>Name: <strong>{item.customization.name}</strong></p>
                               {item.customization.designation && item.customization.designation.toUpperCase() !== 'NIL' && (
                                 <p>Title: <strong>{item.customization.designation}</strong></p>
+                              )}
+                              {item.customization.second_name && (
+                                <p>Person 2: <strong>{item.customization.second_name}</strong>{item.customization.second_designation && item.customization.second_designation.toUpperCase() !== 'NIL' ? ` (${item.customization.second_designation})` : ''}</p>
                               )}
                               <p>Material: <strong>{isWood ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}</strong></p>
                             </div>

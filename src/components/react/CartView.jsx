@@ -233,6 +233,9 @@ export default function CartView() {
                           {item.options.custom_designation && item.options.custom_designation !== 'NIL' && (
                             <span className="cf-mount-line"><strong>Title:</strong> {item.options.custom_designation}</span>
                           )}
+                          {item.options.custom_second_name && (
+                            <span className="cf-mount-line"><strong>Person 2:</strong> {item.options.custom_second_name}{item.options.custom_second_designation && item.options.custom_second_designation !== 'NIL' ? ` (${item.options.custom_second_designation})` : ''}</span>
+                          )}
                           <span className="cf-mount-line">
                             <strong>Material:</strong> {item.options.nameplate_material === 'MDF' ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer (+₹0)'}
                           </span>

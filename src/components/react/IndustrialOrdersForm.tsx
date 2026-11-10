@@ -143,7 +143,8 @@ export default function IndustrialOrdersForm() {
       } else {
         // Backend endpoint exists or responded with failure; do not invent a success state
         setServerError(
-          res?.error?.message ||
+          res?.error ||
+          res?.message ||
           'Backend inquiry endpoint is currently pending deployment. Your inquiry has not been recorded.'
         );
       }

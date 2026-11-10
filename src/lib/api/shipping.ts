@@ -49,8 +49,9 @@ export function getCachedShippingPolicy(): ShippingPolicy {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed.standardFee === 'number') {
-          inMemoryPolicy = { ...parsed, source: 'cache' };
-          return inMemoryPolicy;
+          const cachedPolicy: ShippingPolicy = { ...parsed, source: 'cache' };
+          inMemoryPolicy = cachedPolicy;
+          return cachedPolicy;
         }
       }
     } catch {}

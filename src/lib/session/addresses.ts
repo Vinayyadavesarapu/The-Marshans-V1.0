@@ -112,7 +112,7 @@ export function addSavedAddress(data: NewAddressInput): SavedAddress {
   const id = `addr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const isDefault = addresses.length === 0 || Boolean(data.isDefault);
 
-  const updatedList = addresses.map((a) => ({
+  const updatedList: SavedAddress[] = addresses.map((a) => ({
     ...a,
     isDefault: isDefault ? false : a.isDefault,
     selected: false
@@ -179,7 +179,7 @@ export function deleteSavedAddress(id: string): void {
  */
 export function setDefaultAddress(id: string): void {
   const addresses = getSavedAddresses();
-  const updatedList = addresses.map((a) => ({
+  const updatedList: SavedAddress[] = addresses.map((a) => ({
     ...a,
     isDefault: a.id === id
   }));
@@ -192,7 +192,7 @@ export function setDefaultAddress(id: string): void {
  */
 export function selectAddress(id: string): void {
   const addresses = getSavedAddresses();
-  const updatedList = addresses.map((a) => ({
+  const updatedList: SavedAddress[] = addresses.map((a) => ({
     ...a,
     selected: a.id === id
   }));

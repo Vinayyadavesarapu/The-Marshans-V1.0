@@ -3,6 +3,7 @@ import type { CategoryMeta } from '../../../config/categoriesConfig';
 
 export interface CollectionHeroProps {
   category: CategoryMeta;
+  totalProducts?: number;
 }
 
 /**

@@ -30,13 +30,14 @@ test('1. LAUNCH MODE CONFIGURATION: Single Source of Truth & Toggleability', () 
   assert.equal(isCustomForgeOnly('RETAIL'), false, 'isCustomForgeOnly returns false for RETAIL');
 
   // Route permission checks in CUSTOM_FORGE_ONLY mode
+  assert.equal(isRouteAllowed('/', 'CUSTOM_FORGE_ONLY'), true);
+  assert.equal(isRouteAllowed('/shop', 'CUSTOM_FORGE_ONLY'), true);
   assert.equal(isRouteAllowed('/custom-3d', 'CUSTOM_FORGE_ONLY'), true);
   assert.equal(isRouteAllowed('/product/lady-justice/', 'CUSTOM_FORGE_ONLY'), true);
   assert.equal(isRouteAllowed('/cart', 'CUSTOM_FORGE_ONLY'), true);
   assert.equal(isRouteAllowed('/checkout', 'CUSTOM_FORGE_ONLY'), true);
   assert.equal(isRouteAllowed('/account', 'CUSTOM_FORGE_ONLY'), true);
   assert.equal(isRouteAllowed('/terms-and-conditions', 'CUSTOM_FORGE_ONLY'), true);
-  assert.equal(isRouteAllowed('/shop', 'CUSTOM_FORGE_ONLY'), false);
   assert.equal(isRouteAllowed('/categories/lumo', 'CUSTOM_FORGE_ONLY'), false);
   assert.equal(isRouteAllowed('/product/cute-lamp', 'CUSTOM_FORGE_ONLY'), false);
 
@@ -46,15 +47,16 @@ test('1. LAUNCH MODE CONFIGURATION: Single Source of Truth & Toggleability', () 
   assert.equal(isRouteAllowed('/product/cute-lamp', 'RETAIL'), true);
 });
 
-test('2. NAVIGATION: Retail links hidden during launch, fully restored in RETAIL mode', () => {
+test('2. NAVIGATION: Navigation includes Home, Lady Justice, and Orders & Tracking (Shop removed)', () => {
   const launchNav = getNavItems('CUSTOM_FORGE_ONLY');
   const launchLabels = launchNav.map((n) => n.label);
   assert.deepEqual(launchNav, CUSTOM_FORGE_NAV_ITEMS);
-  assert.ok(launchLabels.includes('Lady Justice'), 'Lady Justice link present in launch mode');
-  assert.ok(!launchLabels.includes('Home'), 'Home link hidden in launch mode');
+  assert.ok(launchLabels.includes('Home'), 'Home link present in navigation');
+  assert.ok(!launchLabels.includes('Shop'), 'Shop link removed from navigation');
+  assert.ok(launchLabels.includes('Lady Justice'), 'Lady Justice link present in navigation');
+  assert.ok(launchLabels.includes('Orders & Tracking'), 'Orders & Tracking link present in navigation');
   assert.ok(!launchLabels.includes('LUMO'), 'LUMO link hidden in launch mode');
   assert.ok(!launchLabels.includes('Fandom Tribe'), 'Fandom Tribe link hidden in launch mode');
-  assert.ok(!launchLabels.includes('Shop'), 'Shop link hidden in launch mode');
 
   // Retail mode restoration
   const retailNav = getNavItems('RETAIL');
@@ -69,8 +71,8 @@ test('2. NAVIGATION: Retail links hidden during launch, fully restored in RETAIL
   assert.ok(retailLabels.includes('Custom Forge'), 'Custom Forge retained in retail mode');
 });
 
-test('3. LOGO DESTINATION: Points to Lady Justice in launch mode and / in RETAIL mode', () => {
-  assert.equal(getLogoHref('CUSTOM_FORGE_ONLY'), '/product/lady-justice/', 'Logo links to Lady Justice during launch mode');
+test('3. LOGO DESTINATION: Points to / for homepage in both modes', () => {
+  assert.equal(getLogoHref('CUSTOM_FORGE_ONLY'), '/', 'Logo links to / during launch mode');
   assert.equal(getLogoHref('RETAIL'), '/', 'Logo links to / during RETAIL mode');
 
   const navbar = read('src/components/react/MarshansNavbar.tsx');
@@ -96,13 +98,14 @@ test('4. SEARCH ISOLATION: Custom Forge indexed only; zero retail leakage in lau
   assert.ok(!CUSTOM_FORGE_SEARCH_SUGGESTIONS.includes('Fandom Statues'), 'Fandom Statues excluded from launch suggestions');
 });
 
-test('5. DIRECT URL PROTECTION: Route guards redirect retail pages to Lady Justice', () => {
-  // index.astro: redirects to Lady Justice in launch mode, retains retail markup
+test('5. DIRECT URL PROTECTION: Route guards protect retail catalog while homepage is active', () => {
+  // index.astro: active focused Coming Soon & Lady Justice homepage
   const indexPage = read('src/pages/index.astro');
-  assert.match(indexPage, /if \(isCustomForgeOnly\(\)\) \{\s*return Astro\.redirect\('\/product\/lady-justice\/', 302\);\s*\}/, 'index.astro redirects to /product/lady-justice/');
-  assert.match(indexPage, /<HomeCategoryDiscovery \/>/, 'retains original retail Category Discovery');
-  assert.match(indexPage, /<HomeShowcase/, 'retains original retail Showcase');
-  assert.match(indexPage, /<HomeProductSection/, 'retains original retail The Collection');
+  assert.match(indexPage, /hero-coming-soon-section/, 'index.astro features Coming Soon hero');
+  assert.match(indexPage, /Lady Justice Statue/, 'index.astro features Lady Justice');
+  assert.ok(!indexPage.includes('home-hero-section'), 'Hero section removed');
+  assert.ok(!indexPage.includes('what-we-do-section'), 'What We Do section removed');
+  assert.ok(!indexPage.includes('industrial-section'), 'Industrial section removed');
 
   // shop.astro: redirects to Lady Justice in launch mode, retains retail catalog
   const shopPage = read('src/pages/shop.astro');
@@ -152,11 +155,11 @@ test('7. CUSTOM MODE VALIDATION RULES: 35/50 char limits, NIL accepted, Plastic/
   assert.equal(res6in.valid, false);
   assert.ok(res6in.errors.variant);
 
-  // Empty fields when Custom Mode enabled -> name & material required, designation is optional
+  // Empty fields when Custom Mode enabled -> name, designation & material required (literal NIL accepted for designation)
   const resEmpty = validateCustomForgeCustomization(v1ft, true, {});
   assert.equal(resEmpty.valid, false);
   assert.ok(resEmpty.errors.name);
-  assert.equal(resEmpty.errors.designation, undefined, 'Designation is optional');
+  assert.ok(resEmpty.errors.designation, 'Designation is required (or enter NIL)');
   assert.ok(resEmpty.errors.material);
 
   // Name > 35 characters -> invalid
@@ -212,8 +215,7 @@ test('8. CHECKOUT SAFETY: No retail orders created while dedicated backend queue
 test('9. HOSTINGER .HTACCESS GENERATOR: 302 temporary redirects, no loops, product rewrite intact', () => {
   // Test launch mode generated .htaccess
   const launchHt = generateHtaccessContent('CUSTOM_FORGE_ONLY');
-  assert.match(launchHt, /RewriteRule \^\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects bare root / via 302 to /product/lady-justice/');
-  assert.match(launchHt, /RewriteRule \^index\\\.html\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects /index.html via 302');
+  assert.doesNotMatch(launchHt, /RewriteRule \^\$ \/product\/lady-justice\//, 'Does NOT redirect bare root / so homepage is served');
   assert.match(launchHt, /RewriteRule \^custom-3d\/\?\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects /custom-3d via 302');
   assert.match(launchHt, /RewriteRule \^shop\/\?\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects /shop via 302');
   assert.match(launchHt, /RewriteRule \^categories\/\.\*\$ \/product\/lady-justice\/ \[R=302,L\]/, 'Redirects retail categories via 302');

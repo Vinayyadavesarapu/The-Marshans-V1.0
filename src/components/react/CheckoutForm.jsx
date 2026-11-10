@@ -299,6 +299,8 @@ export default function CheckoutForm() {
               customization: {
                 customer_name: isPrimaryCustom ? (primaryCf.options?.custom_name || '') : null,
                 customer_designation: isPrimaryCustom ? (primaryCf.options?.custom_designation || 'NIL') : null,
+                second_customer_name: isPrimaryCustom && primaryCf.options?.custom_second_name ? primaryCf.options.custom_second_name : null,
+                second_customer_designation: isPrimaryCustom && primaryCf.options?.custom_second_designation ? primaryCf.options.custom_second_designation : null,
                 nameplate_material: isPrimaryCustom ? (primaryCf.options?.nameplate_material || 'Plastic') : 'Plastic'
               },
               items: cfItems.map(it => {
@@ -313,6 +315,8 @@ export default function CheckoutForm() {
                   customization: {
                     customer_name: isItemCustom ? (it.options?.custom_name || '') : null,
                     customer_designation: isItemCustom ? (it.options?.custom_designation || 'NIL') : null,
+                    second_customer_name: isItemCustom && it.options?.custom_second_name ? it.options.custom_second_name : null,
+                    second_customer_designation: isItemCustom && it.options?.custom_second_designation ? it.options.custom_second_designation : null,
                     nameplate_material: isItemCustom ? (it.options?.nameplate_material || 'Plastic') : 'Plastic'
                   }
                 };
@@ -861,6 +865,9 @@ export default function CheckoutForm() {
                             <span>Nameplate (+₹29): <strong>{item.options.custom_name}</strong></span>
                             {item.options.custom_designation && item.options.custom_designation !== 'NIL' && (
                               <span> ({item.options.custom_designation})</span>
+                            )}
+                            {item.options.custom_second_name && (
+                              <span> & <strong>{item.options.custom_second_name}</strong>{item.options.custom_second_designation && item.options.custom_second_designation !== 'NIL' ? ` (${item.options.custom_second_designation})` : ''}</span>
                             )}
                             <span> [{item.options.nameplate_material === 'MDF' ? 'Organic Wood / MDF (+₹50)' : 'Precision Polymer'}]</span>
                           </div>
