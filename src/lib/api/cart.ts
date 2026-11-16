@@ -9,7 +9,7 @@
 import { apiClient } from './client';
 import { getFirebaseClient } from '../firebase/client';
 import { CART_CACHE_KEY, PENDING_CART_ITEM_KEY } from '../session/cache';
-import { resolveVariantKey } from './customForge';
+import { resolveVariantKey, getLiveLadyJusticeVariants, calculateLadyJusticePrice } from './customForge';
 
 export interface CartItem {
   id: string; // Cart item ID from backend database
@@ -75,10 +75,63 @@ export function saveLocalCart(items: CartItem[]): void {
 }
 
 /**
+ * Synchronize local Custom Forge cart items with the live authoritative backend prices.
+ * If prices have changed in the Admin Panel, updates unit prices, line totals and local storage.
+ */
+export async function syncCustomForgeCartPrices(items: CartItem[] = getLocalCart()): Promise<{ items: CartItem[]; hasChanged: boolean }> {
+  const hasCf = items.some(it => it.options?.is_custom_forge);
+  if (!hasCf) return { items, hasChanged: false };
+
+  try {
+    const { variants: liveVariants, isLive } = await getLiveLadyJusticeVariants();
+    if (!isLive) return { items, hasChanged: false };
+
+    let hasChanged = false;
+    const updated = items.map((it) => {
+      if (!it.options?.is_custom_forge) return it;
+
+      const varKey = resolveVariantKey(it.options?.variant_key || it.options?.variant_id || it.productId);
+      const liveVar = liveVariants.find(v => v.id === varKey || v.backendVariantId === it.productId);
+      if (!liveVar) return it;
+
+      const isCustom = Boolean(it.options?.custom_mode_enabled);
+      const material = it.options?.nameplate_material || 'Vinyl';
+      const pricing = calculateLadyJusticePrice(liveVar.price, isCustom, material, it.quantity);
+
+      if (it.price !== pricing.unitPrice || it.options?.base_price !== liveVar.price) {
+        hasChanged = true;
+        return {
+          ...it,
+          price: pricing.unitPrice,
+          options: {
+            ...it.options,
+            base_price: liveVar.price,
+            unit_price: pricing.unitPrice,
+            material_charge: pricing.materialCharge
+          }
+        };
+      }
+      return it;
+    });
+
+    if (hasChanged) {
+      saveLocalCart(updated);
+    }
+    return { items: updated, hasChanged };
+  } catch (err) {
+    console.warn('[Cart] Live Custom Forge price synchronization notice:', err);
+    return { items, hasChanged: false };
+  }
+}
+
+/**
  * Fetch authoritative cart from backend /api/cart
  */
 export async function getBackendCart(): Promise<{ items: CartItem[]; subtotal: number; count: number }> {
-  const localCustomForgeItems = getLocalCart().filter(it => it.options?.is_custom_forge);
+  const localCart = getLocalCart();
+  // Ensure Custom Forge items are synchronized with live backend prices
+  const { items: syncedLocalCart } = await syncCustomForgeCartPrices(localCart);
+  const localCustomForgeItems = syncedLocalCart.filter(it => it.options?.is_custom_forge);
 
   if (!isCustomerAuthenticated()) {
     saveLocalCart(localCustomForgeItems);

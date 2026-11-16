@@ -5,6 +5,7 @@ import {
   removeFromCart,
   getCartSummary,
   getBackendCart,
+  syncCustomForgeCartPrices,
   isCustomerAuthenticated,
   getShippingPolicy,
   getCachedShippingPolicy,
@@ -38,6 +39,13 @@ export default function CartView() {
     setItems(getLocalCart());
     setIsAuthenticated(isCustomerAuthenticated());
     setAppliedCoupon(getAppliedCoupon());
+
+    // Synchronize Custom Forge items with live backend prices
+    syncCustomForgeCartPrices().then((res) => {
+      if (res && res.hasChanged) {
+        setItems(res.items);
+      }
+    }).catch(() => {});
 
     // 2. Fetch authoritative backend shipping policy
     getShippingPolicy().then((policy) => {

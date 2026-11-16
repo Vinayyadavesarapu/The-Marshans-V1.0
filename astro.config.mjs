@@ -29,6 +29,16 @@ function marshansHtaccessIntegration() {
 // https://astro.build/config
 export default defineConfig({
   site: 'https://themarshans.shop',
+  vite: {
+    server: {
+      proxy: {
+        '/api': {
+          target: 'https://api.chipakk.shop',
+          changeOrigin: true
+        }
+      }
+    }
+  },
   integrations: [
     react(),
     marshansHtaccessIntegration(),

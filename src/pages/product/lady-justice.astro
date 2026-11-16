@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import LadyJusticePurchase from '../../components/react/LadyJusticePurchase.tsx';
 import ProductGallery from '../../components/react/ProductGallery.tsx';
 import { getLogoHref, isCustomForgeOnly } from '../../config/launchMode';
+import { getLiveLadyJusticeVariants } from '../../lib/api/customForge';
 
 /**
  * Lady Justice curated photography and architectural gallery.
@@ -49,6 +50,11 @@ const productImage = LADY_JUSTICE_PRIMARY_IMAGE;
 
 const homeHref = getLogoHref();
 
+const { variants: catalogVariants } = await getLiveLadyJusticeVariants();
+const variantPrices = catalogVariants.map((v) => v.price);
+const lowPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : 1999;
+const highPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : 5999;
+
 const ladyJusticeJsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -65,9 +71,9 @@ const ladyJusticeJsonLd = {
       'offers': {
         '@type': 'AggregateOffer',
         'priceCurrency': 'INR',
-        'lowPrice': 1600,
-        'highPrice': 5600,
-        'offerCount': 3
+        'lowPrice': lowPrice,
+        'highPrice': highPrice,
+        'offerCount': catalogVariants.length
       }
     },
     {

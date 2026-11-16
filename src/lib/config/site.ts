@@ -8,7 +8,16 @@ export const siteConfig = {
   description: "Cinematic & editorial 3D printed artifacts, ambient luminous sculptures, collectible figures, and precision utility objects.",
   storeId: 2,
   storeCode: "marshans",
-  apiBaseUrl: import.meta.env.PUBLIC_API_BASE_URL || "https://api.chipakk.shop/api",
+  get apiBaseUrl(): string {
+    // When running in the browser during local development, route through same-origin /api proxy to prevent browser CORS blocks from live production API
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      return '/api';
+    }
+    if (import.meta.env.PUBLIC_API_BASE_URL) {
+      return import.meta.env.PUBLIC_API_BASE_URL;
+    }
+    return 'https://api.chipakk.shop/api';
+  },
   
   // Configurable Mascot Asset
   mascot: {

@@ -4,6 +4,7 @@ import {
   clearCart,
   getCartSummary,
   getBackendCart,
+  syncCustomForgeCartPrices,
   isCustomerAuthenticated,
   getShippingPolicy,
   getCachedShippingPolicy
@@ -65,6 +66,13 @@ export default function CheckoutForm() {
 
   useEffect(() => {
     setItems(getLocalCart());
+
+    // Synchronize Custom Forge items with live backend prices
+    syncCustomForgeCartPrices().then((res) => {
+      if (res && res.hasChanged) {
+        setItems(res.items);
+      }
+    }).catch(() => {});
 
     // Fetch authoritative backend shipping policy
     getShippingPolicy().then((policy) => {

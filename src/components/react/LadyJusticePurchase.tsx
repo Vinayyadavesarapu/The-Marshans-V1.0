@@ -4,7 +4,8 @@ import {
   type CustomForgeSizeVariant,
   validateCustomForgeCustomization,
   calculateLadyJusticePrice,
-  LADY_JUSTICE_CUSTOMIZATION_PRICING
+  LADY_JUSTICE_CUSTOMIZATION_PRICING,
+  getLiveLadyJusticeVariants
 } from '../../lib/api/customForge';
 import { addCustomForgeToCart, type CartItem } from '../../lib/api/cart';
 
@@ -17,8 +18,16 @@ const formatDisplaySize = (label: string): string => {
   return label.replace(/\b1\s*foot\b/gi, '1 feet');
 };
 
-export default function LadyJusticePurchase() {
-  const [selectedVariant, setSelectedVariant] = useState<CustomForgeSizeVariant>(LADY_JUSTICE_VARIANTS[1]); // Default to 1 foot
+interface LadyJusticePurchaseProps {
+  initialVariants?: CustomForgeSizeVariant[];
+}
+
+export default function LadyJusticePurchase({ initialVariants }: LadyJusticePurchaseProps = {}) {
+  const defaultVariants = initialVariants && initialVariants.length > 0 ? initialVariants : LADY_JUSTICE_VARIANTS;
+  const [variants, setVariants] = useState<CustomForgeSizeVariant[]>(defaultVariants);
+  const [selectedVariant, setSelectedVariant] = useState<CustomForgeSizeVariant>(
+    defaultVariants.find(v => v.id === 'cf-lj-1ft' || v.backendVariantId === 2) || defaultVariants[1] || defaultVariants[0]
+  );
   const [customModeEnabled, setCustomModeEnabled] = useState<boolean>(false);
   const [customName, setCustomName] = useState<string>('');
   const [customDesignation, setCustomDesignation] = useState<string>('');
@@ -37,6 +46,45 @@ export default function LadyJusticePurchase() {
         detail: { variantId: selectedVariant.id, sizeLabel: selectedVariant.sizeLabel }
       }));
     }
+  }, []);
+
+  // Live dynamic pricing synchronization from Store 2 Custom Forge backend
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadLivePrices() {
+      const { variants: liveVariants, isLive } = await getLiveLadyJusticeVariants();
+      if (!isMounted || !isLive) return;
+
+      setVariants(liveVariants);
+      setSelectedVariant((prev) => {
+        const matching = liveVariants.find((v) => v.id === prev.id || v.backendVariantId === prev.backendVariantId);
+        return matching || prev;
+      });
+    }
+
+    loadLivePrices();
+
+    const handleFocus = () => {
+      loadLivePrices();
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadLivePrices();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('marshans:refresh-prices', handleFocus);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('marshans:refresh-prices', handleFocus);
+    };
   }, []);
 
   // Switch variant & synchronize product gallery immediately
@@ -198,7 +246,7 @@ export default function LadyJusticePurchase() {
         </div>
 
         <div className="lady-variant-chips-grid" role="radiogroup" aria-label="Statue Size Selection">
-          {LADY_JUSTICE_VARIANTS.map((variant) => {
+          {variants.map((variant) => {
             const isSelected = selectedVariant.id === variant.id;
             const weightText = variant.weightLabel || (variant.id === 'cf-lj-6in' ? '400 grams' : variant.id === 'cf-lj-1ft' ? '1 kg' : '2 kg');
             return (

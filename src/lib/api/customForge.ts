@@ -355,10 +355,62 @@ export function validateCustomForgeCustomization(
 }
 
 /**
+ * Merges raw backend Custom Forge variant rows with frontend display metadata.
+ * Authoritative backend prices (in paise or rupees) override hardcoded defaults.
+ */
+export function mergeBackendVariantsWithDefaults(backendVariants: any[]): CustomForgeSizeVariant[] {
+  if (!Array.isArray(backendVariants) || backendVariants.length === 0) {
+    return [...LADY_JUSTICE_VARIANTS];
+  }
+
+  return LADY_JUSTICE_VARIANTS.map((def) => {
+    const match = backendVariants.find((bv: any) =>
+      Number(bv.id) === def.backendVariantId ||
+      String(bv.variant_sku || '').toUpperCase() === String(def.sku || '').toUpperCase() ||
+      String(bv.size_label || '').trim().toLowerCase() === String(def.sizeLabel).trim().toLowerCase()
+    );
+
+    if (!match) return { ...def };
+
+    const rawPrice = match.price_rupees != null
+      ? Number(match.price_rupees)
+      : (match.price != null ? Math.round(Number(match.price) / 100) : def.price);
+
+    return {
+      ...def,
+      price: !isNaN(rawPrice) && rawPrice > 0 ? rawPrice : def.price,
+      heightMm: Number(match.height_mm) || def.heightMm,
+      customModeAllowed: match.custom_mode_allowed !== undefined ? Boolean(match.custom_mode_allowed) : def.customModeAllowed
+    };
+  });
+}
+
+/**
  * Fetch Lady Justice product catalog data from Custom Forge backend
  */
 export async function fetchLadyJusticeCatalog(): Promise<ApiResponse<any>> {
   return callApi('/custom-forge/products/lady-justice', { method: 'GET' });
+}
+
+/**
+ * Fetches the live Lady Justice variants with updated prices from the backend.
+ * Falls back to default LADY_JUSTICE_VARIANTS gracefully if the API is unreachable.
+ */
+export async function getLiveLadyJusticeVariants(): Promise<{
+  variants: CustomForgeSizeVariant[];
+  isLive: boolean;
+}> {
+  try {
+    const res = await fetchLadyJusticeCatalog();
+    if (res && res.success && res.data && Array.isArray(res.data.variants)) {
+      const merged = mergeBackendVariantsWithDefaults(res.data.variants);
+      return { variants: merged, isLive: true };
+    }
+  } catch (err) {
+    console.warn('[CustomForge] Using fallback variant prices due to API notice:', err);
+  }
+
+  return { variants: [...LADY_JUSTICE_VARIANTS], isLive: false };
 }
 
 /**
